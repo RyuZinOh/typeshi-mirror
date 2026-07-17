@@ -19,6 +19,7 @@ Window {
         TypingEngine.startTest(Config.words);
         inputCatcher.forceActiveFocus();
         console.log(History);
+        // History.recordResult(85.5, 90.2, 96.0, 88.0, 30, 40, 2, 1, 0);
     }
 
     FontMetrics {
@@ -269,6 +270,12 @@ Window {
         active: TypingEngine.finished
         opacity: TypingEngine.finished ? 1 : 0
         scale: TypingEngine.finished ? 1 : 0
+
+        onActiveChanged: {
+            if (active) {
+                History.recordResult(TypingEngine.wpm, TypingEngine.rawWpm, TypingEngine.accuracy, TypingEngine.consistency, Math.round(TypingEngine.elapsedMs / 1000), TypingEngine.correctCount, TypingEngine.incorrectCount, TypingEngine.extraCount, TypingEngine.missedCount);
+            }
+        }
 
         Behavior on opacity {
             NumberAnimation {

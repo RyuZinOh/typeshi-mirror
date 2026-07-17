@@ -13,7 +13,13 @@ public:
   explicit HistoryManager(QObject *parent = nullptr);
   ~HistoryManager() override;
 
+  Q_INVOKABLE void recordResult(double wpm, double rawWpm, double accuracy,
+                                double consistency, int durationSeconds,
+                                int correctCount, int incorrectCount,
+                                int extraCount, int missedCount);
+
 private:
   QSqlDatabase m_db;
   QString dbPath() const;
+  void ensureSchema();
 };
