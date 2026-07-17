@@ -18,6 +18,7 @@ Window {
     Component.onCompleted: {
         TypingEngine.startTest(Config.words);
         inputCatcher.forceActiveFocus();
+        console.log(History);
     }
 
     FontMetrics {
