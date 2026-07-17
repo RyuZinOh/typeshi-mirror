@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=typeShi
+Comment=A typing application
+Exec=typeshi
+Icon=typeshi
+Terminal=false
+Categories=Game;
