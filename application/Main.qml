@@ -31,6 +31,22 @@ Window {
         font.pixelSize: appWindow.passageFontSize
     }
 
+    ConfettiRenderer {
+        id: confetti
+        anchors.fill: parent
+        z: 100
+
+        property bool hasBurst: false
+
+        function tryBurst() {
+            if (confetti.hasBurst || confetti.width <= 0 || confetti.height <= 0) {
+                return;
+            }
+            confetti.hasBurst = true;
+            confetti.spawnBurst([Theme.primaryColor, Theme.secondaryColor, Theme.tertiaryColor]);
+        }
+    }
+
     Text {
         anchors {
             top: parent.top
@@ -286,7 +302,12 @@ Window {
 
         onActiveChanged: {
             if (active) {
+                const oldBest = History.bestWpm;
                 History.recordResult(TypingEngine.wpm, TypingEngine.rawWpm, TypingEngine.accuracy, TypingEngine.consistency, Math.round(TypingEngine.elapsedMs / 1000), TypingEngine.correctCount, TypingEngine.incorrectCount, TypingEngine.extraCount, TypingEngine.missedCount);
+
+                if (TypingEngine.wpm > 0 && TypingEngine.wpm > oldBest) {
+                    confetti.tryBurst();
+                }
             }
         }
 
@@ -304,31 +325,6 @@ Window {
         }
         sourceComponent: Aftermath {
             onRestartRequested: appWindow.restartTest()
-        }
-    }
-
-    ConfettiRenderer {
-        id: confetti
-        anchors.fill: parent
-        z: 100
-
-        property bool hasBurst: false
-
-        function tryBurst() {
-            if (confetti.hasBurst || confetti.width <= 0 || confetti.height <= 0) {
-                return;
-            }
-            confetti.hasBurst = true;
-            confetti.spawnBurst([Theme.primaryColor, Theme.secondaryColor, Theme.tertiaryColor]);
-        }
-
-        Connections {
-            target: TypingEngine
-            function onFinishedChanged() {
-                if (TypingEngine.finished) {
-                    confetti.tryBurst();
-                }
-            }
         }
     }
 
