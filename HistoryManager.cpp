@@ -90,4 +90,84 @@ void HistoryManager::recordResult(double wpm, double rawWpm, double accuracy,
   if (!q.exec()) {
     qWarning() << "HistoryManager: insert failed: " << q.lastError().text();
   }
+  emit historyChanged();
+}
+
+double HistoryManager::bestWpm() const {
+  if (!m_db.isOpen()) {
+    return 0.0;
+  }
+  QSqlQuery q(m_db);
+  q.exec("select max(wpm) from results");
+  return q.next() ? q.value(0).toDouble() : 0.0;
+}
+
+int HistoryManager::testsToday() const {
+  if (!m_db.isOpen()) {
+    return 0;
+  }
+  QSqlQuery q(m_db);
+  q.exec("select count(*) from results where date  = ?");
+  q.addBindValue(QDate::currentDate().toString("yyyy-MM-dd"));
+  q.exec();
+  return q.next() ? q.value(0).toInt() : 0;
+}
+
+QVariantList HistoryManager::dailySummary() const {
+  QVariantList out;
+  if (!m_db.isOpen()) {
+    return out;
+  }
+  QSqlQuery q(m_db);
+  q.exec(
+      R"(
+      select date, count(*) as tests, max(wpm) as best_wpm
+      from results
+      group by date 
+      order by date asc
+      )");
+
+  while (q.next()) {
+    QVariantMap row;
+    row["date"] = q.value(0).toString();
+    row["tests"] = q.value(1).toInt();
+    row["bestWpm"] = q.value(2).toDouble();
+    out.append(row);
+  }
+  return out;
+}
+
+// streaks
+int HistoryManager::currentStreak() const {
+  if (!m_db.isOpen()) {
+    return 0;
+  }
+  QSqlQuery q(m_db);
+  q.exec("select distinct date from results order by date desc");
+  QVector<QDate> dates;
+  while (q.next()) {
+    dates.append(QDate::fromString(q.value(0).toString(), "yyyy-MM-dd"));
+  }
+  if (dates.isEmpty()) {
+    return 0;
+  }
+
+  const QDate today = QDate::currentDate();
+
+  // breaking it if the most recent test is not today or yesterday
+  if (dates[0] != today && dates[0] != today.addDays(-1)) {
+    return 0;
+  }
+  int streak = 1;
+  QDate cursor = dates[0];
+  for (int i = 1; i < dates.size(); ++i) {
+    const QDate expected = cursor.addDays(-1);
+    if (dates[i] == expected) {
+      streak++;
+      cursor = expected;
+    } else {
+      break;
+    }
+  }
+  return streak;
 }

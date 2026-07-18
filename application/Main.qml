@@ -20,6 +20,10 @@ Window {
         inputCatcher.forceActiveFocus();
         console.log(History);
         // History.recordResult(85.5, 90.2, 96.0, 88.0, 30, 40, 2, 1, 0);
+        // const summary = History.dailySummary();
+        // for (let i = 0; i < summary.length; i++) {
+        //     console.log(summary[i].date, "-", summary[i].tests, "test, best: ", summary[i].bestWpm);
+        // }
     }
 
     FontMetrics {
@@ -40,6 +44,14 @@ Window {
             TypingEngine.wpm;
             return "wpm " + TypingEngine.wpm.toFixed(0) + "\nraw " + TypingEngine.rawWpm.toFixed(0) + "\naccuracy " + TypingEngine.accuracy.toFixed(0) + "\nconsistency " + TypingEngine.consistency.toFixed(0) + " %";
         }
+    }
+    Text {
+        anchors.top: parent.top
+        anchors.left: parent.left
+        anchors.margins: 20
+        font.pixelSize: 16
+        color: Theme.onSurfaceVariant
+        text: "best wpm: " + History.bestWpm.toFixed(1) + "\ntests today:" + History.testsToday
     }
 
     Item {
