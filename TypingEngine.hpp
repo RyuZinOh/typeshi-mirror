@@ -122,7 +122,7 @@ private:
 
   bool m_started = false;
   bool m_finished = false;
-  int m_testDurationSeconds = 5;
+  int m_testDurationSeconds = 60;
   int m_frozenElapsedMs = 0;
   QElapsedTimer m_elapsedTimer;
   QTimer m_tickTimer;
