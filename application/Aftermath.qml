@@ -7,6 +7,7 @@ Item {
     anchors.fill: parent
 
     readonly property int sidePadding: 160
+    readonly property bool isNewBest: TypingEngine.wpm > 0 && Math.abs(TypingEngine.wpm - History.bestWpm) < 0.01
 
     signal restartRequested
 
@@ -63,10 +64,22 @@ Item {
                 Column {
                     spacing: 0
 
-                    Text {
-                        text: "wpm"
-                        font.pixelSize: 16
-                        color: Theme.onSurfaceVariant
+                    Row {
+                        spacing: 6
+
+                        Text {
+                            text: "wpm"
+                            font.pixelSize: 16
+                            color: Theme.onSurfaceVariant
+                        }
+
+                        Icon {
+                            visible: aftermatch.isNewBest
+                            source: "assets/icons/crown.svg"
+                            iconSize: 16
+                            color: Theme.primaryColor
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
                     }
 
                     Text {
@@ -76,7 +89,6 @@ Item {
                         color: Theme.primaryColor
                     }
                 }
-
                 Column {
                     spacing: 0
 
