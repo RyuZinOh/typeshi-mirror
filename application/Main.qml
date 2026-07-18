@@ -541,13 +541,23 @@ Window {
                     }
                 }
                 Icon {
+                    id: refreshIcon
                     anchors.centerIn: parent
+                    property int turns: 0
+                    rotation: turns * 360
                     source: "assets/icons/refresh.svg"
                     iconSize: 28
                     color: refreshButton.activeFocus ? Theme.primaryColor : (refreshArea.containsMouse ? Theme.primaryColor : Theme.onSurfaceVariant)
+
                     Behavior on color {
                         ColorAnimation {
                             duration: 150
+                        }
+                    }
+                    Behavior on rotation {
+                        NumberAnimation {
+                            duration: 1200
+                            easing.type: Easing.OutCubic
                         }
                     }
                 }
@@ -608,12 +618,15 @@ Window {
     }
 
     function restartTest() {
+        refreshIcon.turns++;
+
         if (appWindow.quoteModeActive) {
             const q = Quotes.randomQuote();
             TypingEngine.startQuoteTest(q.text);
         } else {
             TypingEngine.startTest(Config.words);
         }
+
         confetti.hasBurst = false;
         inputCatcher.forceActiveFocus();
     }

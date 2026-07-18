@@ -441,19 +441,26 @@ Item {
             height: 28
 
             Icon {
+                id: restartIcon
                 anchors.horizontalCenter: parent.horizontalCenter
                 anchors.verticalCenter: parent.verticalCenter
                 source: "assets/icons/refresh.svg"
                 iconSize: 26
                 color: restartArea.containsMouse ? Theme.primaryColor : Theme.onSurfaceVariant
+                rotation: restartArea.containsMouse ? 180 : 0
 
                 Behavior on color {
                     ColorAnimation {
                         duration: 150
                     }
                 }
+                Behavior on rotation {
+                    NumberAnimation {
+                        duration: 300
+                        easing.type: Easing.OutCubic
+                    }
+                }
             }
-
             MouseArea {
                 id: restartArea
                 anchors.centerIn: parent
