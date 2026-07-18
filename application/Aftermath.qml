@@ -3,7 +3,7 @@ import QtQuick
 import typeShitter
 
 Item {
-    id: aftermatch
+    id: aftermath
     anchors.fill: parent
 
     readonly property int sidePadding: 160
@@ -29,7 +29,7 @@ Item {
         const words = TypingEngine.wordBoundaries;
         const result = [];
         for (let i = 0; i < words.length; i++) {
-            if (words[i].end <= aftermatch.reviewLength) {
+            if (words[i].end <= aftermath.reviewLength) {
                 result.push(words[i]);
             } else {
                 break;
@@ -49,7 +49,7 @@ Item {
         id: contentColumn
         anchors.left: parent.left
         anchors.right: parent.right
-        anchors.margins: aftermatch.sidePadding
+        anchors.margins: aftermath.sidePadding
         anchors.verticalCenter: parent.verticalCenter
         spacing: 32
 
@@ -74,7 +74,7 @@ Item {
                         }
 
                         Icon {
-                            visible: aftermatch.isNewBest
+                            visible: aftermath.isNewBest
                             source: "assets/icons/crown.svg"
                             iconSize: 16
                             color: Theme.primaryColor
@@ -359,7 +359,7 @@ Item {
                         }
 
                         Text {
-                            text: aftermatch.formatTime(TypingEngine.elapsedMs)
+                            text: aftermath.formatTime(TypingEngine.elapsedMs)
                             font.pixelSize: 24
                             font.bold: true
                             color: Theme.primaryColor
@@ -386,7 +386,7 @@ Item {
                 spacing: 6
 
                 Repeater {
-                    model: aftermatch.reviewWords
+                    model: aftermath.reviewWords
 
                     delegate: Row {
                         id: wordRow
@@ -441,7 +441,7 @@ Item {
                 height: 28
                 hoverEnabled: true
                 cursorShape: Qt.PointingHandCursor
-                onClicked: aftermatch.restartRequested()
+                onClicked: aftermath.restartRequested()
             }
         }
     }

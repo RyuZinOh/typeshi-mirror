@@ -123,3 +123,21 @@ void ConfigManager::reload() { load(); }
 
 QVariantMap ConfigManager::theme() const { return m_theme; }
 QStringList ConfigManager::words() const { return m_words; }
+
+QColor ConfigManager::themeColor(const QString &key) const {
+  const QVariant value = m_theme.value(key);
+  const QString str = value.toString();
+
+  if (!value.isValid() || str.isEmpty() || str.contains(QStringLiteral("{{"))) {
+    qWarning() << "Theme: bad/missing matugen color for key:" << key
+               << "value:" << str;
+    return QColor(Qt::red);
+  }
+
+  const QColor color(str);
+  if (!color.isValid()) {
+    qWarning() << "Theme: unparseable color for key:" << key << "value:" << str;
+    return QColor(Qt::red);
+  }
+  return color;
+}

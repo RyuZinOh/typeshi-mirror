@@ -1,4 +1,5 @@
 #pragma once
+#include <QColor>
 #include <QFileSystemWatcher>
 #include <QObject>
 #include <QStringList>
@@ -19,6 +20,7 @@ public:
   QStringList words() const;
 
   Q_INVOKABLE void reload();
+  Q_INVOKABLE QColor themeColor(const QString &key) const;
 
 signals:
   void configChanged();
