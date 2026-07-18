@@ -307,8 +307,34 @@ Window {
         }
     }
 
+    ConfettiRenderer {
+        id: confetti
+        anchors.fill: parent
+        z: 100
+
+        property bool hasBurst: false
+
+        function tryBurst() {
+            if (confetti.hasBurst || confetti.width <= 0 || confetti.height <= 0) {
+                return;
+            }
+            confetti.hasBurst = true;
+            confetti.spawnBurst([Theme.primaryColor, Theme.secondaryColor, Theme.tertiaryColor]);
+        }
+
+        Connections {
+            target: TypingEngine
+            function onFinishedChanged() {
+                if (TypingEngine.finished) {
+                    confetti.tryBurst();
+                }
+            }
+        }
+    }
+
     function restartTest() {
         TypingEngine.startTest(Config.words);
+        confetti.hasBurst = false;
         inputCatcher.forceActiveFocus();
     }
     Item {

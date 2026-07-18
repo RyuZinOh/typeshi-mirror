@@ -49,6 +49,8 @@ qt_add_qml_module(typeshi
         TypingEngine.hpp
         HistoryManager.cpp
         HistoryManager.hpp
+        ConfettiRenderer.cpp
+        ConfettiRenderer.hpp
 )
 
 qt_add_resources(typeshi "assets"

@@ -2,5 +2,3 @@ build/
 compile_commands.json
 .cache/
 application/.qmlls.ini
-application/assets/confetti
-generateshapes.js
