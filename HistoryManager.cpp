@@ -171,3 +171,32 @@ int HistoryManager::currentStreak() const {
   }
   return streak;
 }
+
+int HistoryManager::longestStreak() const {
+  if (!m_db.isOpen()) {
+    return 0;
+  }
+  QSqlQuery q(m_db);
+  q.exec("select distinct date from results order by date asc");
+  QVector<QDate> dates;
+  while (q.next()) {
+    dates.append(QDate::fromString(q.value(0).toString(), "yyyy-MM-dd"));
+  }
+  if (dates.isEmpty()) {
+    return 0;
+  }
+
+  int longest = 1;
+  int running = 1;
+
+  for (int i = 1; i < dates.size(); ++i) {
+    if (dates[i - 1].addDays(1) == dates[i]) {
+      running++;
+      longest = qMax(longest, running);
+    } else {
+      running = 1;
+    }
+  }
+  return longest;
+}
+// end of streaks

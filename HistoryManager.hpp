@@ -12,6 +12,7 @@ class HistoryManager : public QObject {
   Q_PROPERTY(double bestWpm READ bestWpm NOTIFY historyChanged)
   Q_PROPERTY(int testsToday READ testsToday NOTIFY historyChanged)
   Q_PROPERTY(int currentStreak READ currentStreak NOTIFY historyChanged)
+  Q_PROPERTY(int longestStreak READ longestStreak NOTIFY historyChanged)
 
 public:
   explicit HistoryManager(QObject *parent = nullptr);
@@ -26,6 +27,7 @@ public:
   double bestWpm() const;
   int testsToday() const;
   int currentStreak() const;
+  int longestStreak() const;
 
 signals:
   void historyChanged();
