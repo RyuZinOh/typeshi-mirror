@@ -21,8 +21,11 @@ public:
   Q_INVOKABLE void recordResult(double wpm, double rawWpm, double accuracy,
                                 double consistency, int durationSeconds,
                                 int correctCount, int incorrectCount,
-                                int extraCount, int missedCount);
+                                int extraCount, int missedCount,
+                                const QString &mode, bool punctuationEnabled);
   Q_INVOKABLE QVariantList dailySummary() const;
+  Q_INVOKABLE double bestWpmFor(const QString &mode, int durationSeconds = 0,
+                                int punctuationEnabled = -1) const;
 
   double bestWpm() const;
   int testsToday() const;

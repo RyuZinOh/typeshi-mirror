@@ -23,8 +23,8 @@ class TypingEngine : public QObject {
   Q_PROPERTY(bool started READ started NOTIFY startedChanged)
   Q_PROPERTY(bool finished READ finished NOTIFY finishedChanged)
   Q_PROPERTY(int elapsedMs READ elapsedMs NOTIFY elapsedMsChanged)
-  Q_PROPERTY(int testDurationSeconds READ testDurationSeconds NOTIFY
-                 testDurationChanged)
+  // Q_PROPERTY(int testDurationSeconds READ testDurationSeconds NOTIFY
+  // testDurationChanged)
   Q_PROPERTY(int testDurationSeconds READ testDurationSeconds WRITE
                  setTestDurationSeconds NOTIFY testDurationChanged)
 
@@ -106,6 +106,10 @@ public:
   Q_INVOKABLE void setLinesVisible(int count);
   // end of configuration
 
+  // mode
+  Q_INVOKABLE void startQuoteTest(const QString &quoteText);
+  // end of mode
+
   Q_INVOKABLE bool wasErrorAt(int index) const;
 
 signals:
@@ -181,6 +185,10 @@ private:
   QVector<QVariantMap> m_history;
   int m_lastHistorySecond = -1;
 
+  // quote
+  bool m_quoteMode = false;
+  // end of quote
+
   QStringList m_wordPool;
   QString m_lastWord;
   static constexpr int kBufferAheadChars = 400;
@@ -188,6 +196,7 @@ private:
 
   QString randomWord() const;
   void ensureBuffer();
+  void resetState();
 
   void ensureCapacity(int len);
   int previousWordStart(int before) const;

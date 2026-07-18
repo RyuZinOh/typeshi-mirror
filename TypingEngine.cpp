@@ -8,7 +8,7 @@ const QChar TypingEngine::kExtraPlaceholder(0x2063);
 TypingEngine::TypingEngine(QObject *parent) : QObject(parent) {
   m_tickTimer.setInterval(100);
   connect(&m_tickTimer, &QTimer::timeout, this, [this]() {
-    if (m_started && !m_finished &&
+    if (m_started && !m_finished && !m_quoteMode &&
         elapsedMs() >= m_testDurationSeconds * 1000) {
       finish();
       return;
@@ -26,6 +26,14 @@ TypingEngine::TypingEngine(QObject *parent) : QObject(parent) {
         emit historyChanged();
       }
       // end of history sampling
+
+      // quotes completion
+      if (m_quoteMode && m_typedText.length() >= m_targetText.length()) {
+        finish();
+        return;
+      }
+      // end of quotes completion
+
       emit elapsedMsChanged();
     }
   });
@@ -45,38 +53,72 @@ void TypingEngine::setPunctuationEnabled(bool enabled) {
   emit punctuationEnabledChanged();
 }
 
+void TypingEngine::startQuoteTest(const QString &quoteText) {
+  resetState();
+  m_quoteMode = true;
+  m_targetText = quoteText.trimmed();
+  m_isExtra.assign(m_targetText.length(), false);
+
+  emit targetTextChanged();
+  emit typedTextChanged();
+  emit startedChanged();
+  emit finishedChanged();
+  emit historyChanged();
+  emit elapsedMsChanged();
+  emit statsChanged();
+  rewrapLines();
+}
+
+// void TypingEngine::startTest(const QStringList &wordPool) {
+//   m_started = false;
+//   m_finished = false;
+//   m_quoteMode = false;
+//   m_frozenElapsedMs = 0;
+//   m_tickTimer.stop();
+//
+//   m_wordPool = wordPool;
+//   // m_targetText = wordPool.join(' ');
+//   m_lastWord.clear();
+//   m_targetText.clear();
+//   m_typedText.clear();
+//   m_isExtra.clear();
+//   m_lockedIndex = 0;
+//   m_wordExtraCount = 0;
+//   m_wordWidths.clear();
+//   m_windowStart = 0;
+//   m_history.clear();
+//   m_lastHistorySecond = -1;
+//
+//   // stats reset too
+//   m_permanentError.clear();
+//   m_originalMistype.clear();
+//   m_countedIndicies.clear();
+//   m_correctCount = 0;
+//   m_incorrectCount = 0;
+//   m_extraCount = 0;
+//   m_missedCount = 0;
+//   m_permanentMistakeCount = 0;
+//   m_wpmCorrectKetstrokes = 0;
+//   m_totalAttemptedKeystrokes = 0;
+//
+//   m_captilizeNext = true;
+//
+//   ensureBuffer();
+//   m_isExtra.assign(m_targetText.length(), false);
+//
+//   emit targetTextChanged();
+//   emit typedTextChanged();
+//   emit startedChanged();
+//   emit finishedChanged();
+//   emit historyChanged();
+//   emit elapsedMsChanged();
+//   emit statsChanged();
+//   rewrapLines();
+// }
 void TypingEngine::startTest(const QStringList &wordPool) {
-  m_started = false;
-  m_finished = false;
-  m_frozenElapsedMs = 0;
-  m_tickTimer.stop();
-
+  resetState();
+  m_quoteMode = false;
   m_wordPool = wordPool;
-  // m_targetText = wordPool.join(' ');
-  m_lastWord.clear();
-  m_targetText.clear();
-  m_typedText.clear();
-  m_isExtra.clear();
-  m_lockedIndex = 0;
-  m_wordExtraCount = 0;
-  m_wordWidths.clear();
-  m_windowStart = 0;
-  m_history.clear();
-  m_lastHistorySecond = -1;
-
-  // stats reset too
-  m_permanentError.clear();
-  m_originalMistype.clear();
-  m_countedIndicies.clear();
-  m_correctCount = 0;
-  m_incorrectCount = 0;
-  m_extraCount = 0;
-  m_missedCount = 0;
-  m_permanentMistakeCount = 0;
-  m_wpmCorrectKetstrokes = 0;
-  m_totalAttemptedKeystrokes = 0;
-
-  m_captilizeNext = true;
 
   ensureBuffer();
   m_isExtra.assign(m_targetText.length(), false);
@@ -89,6 +131,37 @@ void TypingEngine::startTest(const QStringList &wordPool) {
   emit elapsedMsChanged();
   emit statsChanged();
   rewrapLines();
+}
+
+void TypingEngine::resetState() {
+  m_started = false;
+  m_finished = false;
+  m_frozenElapsedMs = 0;
+  m_tickTimer.stop();
+
+  m_lastWord.clear();
+  m_targetText.clear();
+  m_typedText.clear();
+  m_isExtra.clear();
+  m_lockedIndex = 0;
+  m_wordExtraCount = 0;
+  m_wordWidths.clear();
+  m_windowStart = 0;
+  m_history.clear();
+  m_lastHistorySecond = -1;
+
+  m_permanentError.clear();
+  m_originalMistype.clear();
+  m_countedIndicies.clear();
+  m_correctCount = 0;
+  m_incorrectCount = 0;
+  m_extraCount = 0;
+  m_missedCount = 0;
+  m_permanentMistakeCount = 0;
+  m_wpmCorrectKetstrokes = 0;
+  m_totalAttemptedKeystrokes = 0;
+
+  m_captilizeNext = true;
 }
 
 int TypingEngine::elapsedMs() const {
@@ -634,6 +707,9 @@ QString TypingEngine::applyPunctuation(const QString &word) {
 }
 
 void TypingEngine::ensureBuffer() {
+  if (m_quoteMode) {
+    return;
+  }
   bool grew = false;
   while (m_targetText.length() - m_typedText.length() < kBufferAheadChars) {
     for (int i = 0; i < kWordsPerChunk; ++i) {

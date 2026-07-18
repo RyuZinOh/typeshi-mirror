@@ -7,9 +7,22 @@ Item {
     anchors.fill: parent
 
     readonly property int sidePadding: 160
-    readonly property bool isNewBest: TypingEngine.wpm > 0 && Math.abs(TypingEngine.wpm - History.bestWpm) < 0.01
+    property string resultMode: "english"
+    property int resultDuration: 0
+    property bool resultPunctuation: false
+    readonly property bool isNewBest: TypingEngine.wpm > 0 && TypingEngine.wpm >= History.bestWpmFor(aftermath.resultMode, aftermath.resultDuration, aftermath.resultPunctuation ? 1 : 0)
 
     signal restartRequested
+    readonly property string modeLabel: {
+        if (aftermath.resultMode === "quote") {
+            return "quote";
+        }
+        let label = "english " + aftermath.resultDuration + "s";
+        if (aftermath.resultPunctuation) {
+            label += " - punctuation";
+        }
+        return label;
+    }
 
     property int reviewLength: {
         const minLen = Math.min(TypingEngine.typedText.length, TypingEngine.targetText.length);
@@ -103,6 +116,13 @@ Item {
                         font.pixelSize: 64
                         font.bold: true
                         color: Theme.primaryColor
+                    }
+
+                    Text {
+                        text: aftermath.modeLabel
+                        font.pixelSize: 13
+                        color: Theme.onSurfaceVariant
+                        topPadding: 4
                     }
                 }
             }

@@ -14,6 +14,7 @@ Window {
     readonly property int linesVisible: 3
     readonly property int passageFontSize: 36
     readonly property int sidePadding: 160
+    property bool quoteModeActive: false
 
     Component.onCompleted: {
         TypingEngine.startTest(Config.words);
@@ -68,9 +69,12 @@ Window {
         anchors.margins: 20
         font.pixelSize: 16
         color: Theme.onSurfaceVariant
-        text: "best wpm: " + History.bestWpm.toFixed(1) + "\ntests today: " + History.testsToday + "\nstreak: " + History.currentStreak + "\nlongest streak: " + History.longestStreak
+        text: {
+            History.testsToday;
+            History.currentStreak;
+            return "best wpm: " + History.bestWpm.toFixed(1) + "\n" + "best 15s: " + History.bestWpmFor("english", 15, 0).toFixed(1) + "\n" + "best 15s (punct): " + History.bestWpmFor("english", 15, 1).toFixed(1) + "\n" + "best 30s: " + History.bestWpmFor("english", 30, 0).toFixed(1) + "\n" + "best 30s (punct): " + History.bestWpmFor("english", 30, 1).toFixed(1) + "\n" + "best 60s: " + History.bestWpmFor("english", 60, 0).toFixed(1) + "\n" + "best 60s (punct): " + History.bestWpmFor("english", 60, 1).toFixed(1) + "\n" + "best 120s: " + History.bestWpmFor("english", 120, 0).toFixed(1) + "\n" + "best 120s (punct): " + History.bestWpmFor("english", 120, 1).toFixed(1) + "\n" + "best quote: " + History.bestWpmFor("quote", 0).toFixed(1) + "\n" + "tests today: " + History.testsToday + "\n" + "streak: " + History.currentStreak + "\n" + "longest streak: " + History.longestStreak;
+        }
     }
-
     Item {
         id: inputCatcher
         anchors.fill: parent
@@ -127,6 +131,7 @@ Window {
                     color: Theme.surfaceContainer
                     border.color: Theme.outlineVariant
                     border.width: 1
+                    visible: !appWindow.quoteModeActive
 
                     Item {
                         id: durationInner
@@ -218,6 +223,7 @@ Window {
                     color: TypingEngine.punctuationEnabled ? Theme.primaryColor : Theme.surfaceContainer
                     border.color: Theme.outlineVariant
                     border.width: 1
+                    visible: !appWindow.quoteModeActive
 
                     Behavior on radius {
                         NumberAnimation {
@@ -261,6 +267,62 @@ Window {
                         cursorShape: Qt.PointingHandCursor
                         onClicked: {
                             TypingEngine.setPunctuationEnabled(!TypingEngine.punctuationEnabled);
+                            appWindow.restartTest();
+                        }
+                    }
+                }
+
+                Rectangle {
+                    id: quoteContainer
+                    width: quoteLabel.width + 32
+                    height: durationContainer.height
+                    radius: appWindow.quoteModeActive ? height / 2 : 20
+                    color: appWindow.quoteModeActive ? Theme.primaryColor : Theme.surfaceContainer
+                    border.color: Theme.outlineVariant
+                    border.width: 1
+
+                    Behavior on radius {
+                        NumberAnimation {
+                            duration: 200
+                            easing.type: Easing.OutCubic
+                        }
+                    }
+                    Behavior on color {
+                        ColorAnimation {
+                            duration: 150
+                        }
+                    }
+
+                    Text {
+                        id: quoteLabel
+                        anchors.centerIn: parent
+                        text: "quote"
+                        font.pixelSize: 13
+                        font.bold: appWindow.quoteModeActive
+                        color: {
+                            if (appWindow.quoteModeActive) {
+                                return Theme.onPrimary;
+                            }
+                            if (quoteArea.containsMouse) {
+                                return Theme.onSurface;
+                            }
+                            return Theme.onSurfaceVariant;
+                        }
+
+                        Behavior on color {
+                            ColorAnimation {
+                                duration: 150
+                            }
+                        }
+                    }
+
+                    MouseArea {
+                        id: quoteArea
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: {
+                            appWindow.quoteModeActive = !appWindow.quoteModeActive;
                             appWindow.restartTest();
                         }
                     }
@@ -510,11 +572,14 @@ Window {
         active: TypingEngine.finished
         opacity: TypingEngine.finished ? 1 : 0
         scale: TypingEngine.finished ? 1 : 0
-
         onActiveChanged: {
             if (active) {
-                const oldBest = History.bestWpm;
-                History.recordResult(TypingEngine.wpm, TypingEngine.rawWpm, TypingEngine.accuracy, TypingEngine.consistency, Math.round(TypingEngine.elapsedMs / 1000), TypingEngine.correctCount, TypingEngine.incorrectCount, TypingEngine.extraCount, TypingEngine.missedCount);
+                const mode = appWindow.quoteModeActive ? "quote" : "english";
+                const dur = appWindow.quoteModeActive ? 0 : TypingEngine.testDurationSeconds;
+                const punct = appWindow.quoteModeActive ? false : TypingEngine.punctuationEnabled;
+                const oldBest = History.bestWpmFor(mode, dur, punct ? 1 : 0);
+
+                History.recordResult(TypingEngine.wpm, TypingEngine.rawWpm, TypingEngine.accuracy, TypingEngine.consistency, Math.round(TypingEngine.elapsedMs / 1000), TypingEngine.correctCount, TypingEngine.incorrectCount, TypingEngine.extraCount, TypingEngine.missedCount, mode, punct);
 
                 if (TypingEngine.wpm > 0 && TypingEngine.wpm > oldBest) {
                     confetti.tryBurst();
@@ -535,12 +600,20 @@ Window {
             }
         }
         sourceComponent: Aftermath {
+            resultMode: appWindow.quoteModeActive ? "quote" : "english"
+            resultDuration: appWindow.quoteModeActive ? 0 : TypingEngine.testDurationSeconds
+            resultPunctuation: appWindow.quoteModeActive ? false : TypingEngine.punctuationEnabled
             onRestartRequested: appWindow.restartTest()
         }
     }
 
     function restartTest() {
-        TypingEngine.startTest(Config.words);
+        if (appWindow.quoteModeActive) {
+            const q = Quotes.randomQuote();
+            TypingEngine.startQuoteTest(q.text);
+        } else {
+            TypingEngine.startTest(Config.words);
+        }
         confetti.hasBurst = false;
         inputCatcher.forceActiveFocus();
     }
