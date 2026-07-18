@@ -28,6 +28,9 @@ class TypingEngine : public QObject {
   Q_PROPERTY(int testDurationSeconds READ testDurationSeconds WRITE
                  setTestDurationSeconds NOTIFY testDurationChanged)
 
+  Q_PROPERTY(bool punctuationEnabled READ punctuationEnabled WRITE
+                 setPunctuationEnabled NOTIFY punctuationEnabledChanged)
+
   // properties for counter
   Q_PROPERTY(int correctCount READ correctCount NOTIFY statsChanged)
   Q_PROPERTY(int incorrectCount READ incorrectCount NOTIFY statsChanged)
@@ -66,7 +69,11 @@ public:
   bool started() const;
   bool finished() const;
   int elapsedMs() const;
+
+  // configuration
   int testDurationSeconds() const;
+  bool punctuationEnabled() const;
+  // end of configuration
 
   // stats getters
   int correctCount() const;
@@ -91,10 +98,13 @@ public:
   Q_INVOKABLE int characterStateAt(int index) const;
   Q_INVOKABLE QString characterAt(int index) const;
 
+  // configuration
   Q_INVOKABLE void setTestDurationSeconds(int seconds);
+  Q_INVOKABLE void setPunctuationEnabled(bool enabled);
   Q_INVOKABLE void setViewportWidth(qreal width);
   Q_INVOKABLE void setWordWidth(int wordStart, int wordEnd, qreal width);
   Q_INVOKABLE void setLinesVisible(int count);
+  // end of configuration
 
   Q_INVOKABLE bool wasErrorAt(int index) const;
 
@@ -106,7 +116,11 @@ signals:
   void startedChanged();
   void finishedChanged();
   void elapsedMsChanged();
+
+  // configuration
   void testDurationChanged();
+  void punctuationEnabledChanged();
+  // end of configuration
 
   // stats signal
   void statsChanged();
@@ -159,6 +173,11 @@ private:
   int m_totalAttemptedKeystrokes = 0;
   // end of stats related
 
+  // configuration
+  bool m_punctuationEnabled = false;
+  bool m_captilizeNext = true;
+  // end of configuration
+
   QVector<QVariantMap> m_history;
   int m_lastHistorySecond = -1;
 
@@ -179,6 +198,10 @@ private:
   qreal wordWidthFor(int start, int end) const;
   void rewrapLines();
   void updateLineState();
+
+  // configuration helper
+  QString applyPunctuation(const QString &word);
+  //  end configuration helper
 
   // stats related methods
   void scoreChar(int index, bool correct, QChar typedCh, bool isExtraChar,

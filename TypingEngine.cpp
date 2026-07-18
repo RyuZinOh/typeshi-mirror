@@ -31,10 +31,19 @@ TypingEngine::TypingEngine(QObject *parent) : QObject(parent) {
   });
 }
 
+bool TypingEngine::punctuationEnabled() const { return m_punctuationEnabled; }
 bool TypingEngine::started() const { return m_started; }
 bool TypingEngine::finished() const { return m_finished; }
 QString TypingEngine::targetText() const { return m_targetText; }
 QString TypingEngine::typedText() const { return m_typedText; }
+
+void TypingEngine::setPunctuationEnabled(bool enabled) {
+  if (enabled == m_punctuationEnabled) {
+    return;
+  }
+  m_punctuationEnabled = enabled;
+  emit punctuationEnabledChanged();
+}
 
 void TypingEngine::startTest(const QStringList &wordPool) {
   m_started = false;
@@ -66,6 +75,8 @@ void TypingEngine::startTest(const QStringList &wordPool) {
   m_permanentMistakeCount = 0;
   m_wpmCorrectKetstrokes = 0;
   m_totalAttemptedKeystrokes = 0;
+
+  m_captilizeNext = true;
 
   ensureBuffer();
   m_isExtra.assign(m_targetText.length(), false);
@@ -593,6 +604,35 @@ QString TypingEngine::randomWord() const {
   return word;
 }
 
+QString TypingEngine::applyPunctuation(const QString &word) {
+  if (!m_punctuationEnabled || word.isEmpty()) {
+    return word;
+  }
+  QString result = word;
+  auto *rng = QRandomGenerator64::global();
+  if (m_captilizeNext) {
+    result[0] = result[0].toUpper();
+    m_captilizeNext = false;
+  }
+  const int roll = rng->bounded(100);
+  if (roll < 6) {
+    result += '.';
+  } else if (roll < 9) {
+    result += '?';
+    m_captilizeNext = true;
+  } else if (roll < 11) {
+    result += '!';
+    m_captilizeNext = true;
+  } else if (roll < 20) {
+    result += ',';
+  } else if (roll < 23) {
+    result += ';';
+  } else if (roll < 26) {
+    result += ':';
+  }
+  return result;
+}
+
 void TypingEngine::ensureBuffer() {
   bool grew = false;
   while (m_targetText.length() - m_typedText.length() < kBufferAheadChars) {
@@ -601,8 +641,11 @@ void TypingEngine::ensureBuffer() {
         m_targetText.append(' ');
       }
       QString word = randomWord();
-      m_targetText.append(word);
+      QString displayWord = applyPunctuation(word);
+      m_targetText.append(displayWord);
       m_lastWord = word;
+      // m_targetText.append(word);
+      // m_lastWord = word;
     }
     grew = true;
   }

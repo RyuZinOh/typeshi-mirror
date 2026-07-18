@@ -104,17 +104,12 @@ Window {
             }
             height: viewport.height + 80
 
-            Rectangle {
-                id: durationContainer
+            Row {
+                id: modeRow
                 anchors.horizontalCenter: parent.horizontalCenter
                 anchors.bottom: viewport.top
                 anchors.bottomMargin: 20
-                width: durationInner.width + 24
-                height: durationInner.height + 24
-                radius: 20
-                color: Theme.surfaceContainer
-                border.color: Theme.outlineVariant
-                border.width: 1
+                spacing: 12
 
                 opacity: TypingEngine.started ? 0 : 1
                 enabled: !TypingEngine.started
@@ -124,83 +119,149 @@ Window {
                     }
                 }
 
-                Item {
-                    id: durationInner
-                    anchors.centerIn: parent
-                    width: durationRow.width
-                    height: durationRow.height
+                Rectangle {
+                    id: durationContainer
+                    width: durationInner.width + 10
+                    height: durationInner.height + 10
+                    radius: 20
+                    color: Theme.surfaceContainer
+                    border.color: Theme.outlineVariant
+                    border.width: 1
 
-                    property var options: [15, 30, 60, 120]
-                    property int selectedIndex: {
-                        const i = durationInner.options.indexOf(TypingEngine.testDurationSeconds);
-                        return i >= 0 ? i : 2;
+                    Item {
+                        id: durationInner
+                        anchors.centerIn: parent
+                        width: durationRow.width
+                        height: durationRow.height
+
+                        property var options: [15, 30, 60, 120]
+                        property int selectedIndex: {
+                            const i = durationInner.options.indexOf(TypingEngine.testDurationSeconds);
+                            return i >= 0 ? i : 2;
+                        }
+                        property int cellWidth: 60
+                        property int cellHeight: 48
+                        property int cellSpacing: 6
+
+                        ShapeCanvas {
+                            id: selectionShape
+                            width: durationInner.cellHeight
+                            height: durationInner.cellHeight
+                            color: Theme.primaryColor
+                            roundedPolygon: GetMShapes.get(22)
+                            x: durationInner.selectedIndex * (durationInner.cellWidth + durationInner.cellSpacing) + (durationInner.cellWidth - width) / 2
+                            y: 0
+                            z: 0
+
+                            Behavior on x {
+                                NumberAnimation {
+                                    duration: 260
+                                    easing.type: Easing.OutBack
+                                }
+                            }
+                        }
+
+                        Row {
+                            id: durationRow
+                            spacing: durationInner.cellSpacing
+                            z: 1
+
+                            Repeater {
+                                model: durationInner.options
+
+                                delegate: Item {
+                                    id: durationCell
+                                    required property int index
+                                    required property int modelData
+                                    width: durationInner.cellWidth
+                                    height: durationInner.cellHeight
+
+                                    property bool isSelected: durationInner.selectedIndex === durationCell.index
+
+                                    Text {
+                                        anchors.fill: parent
+                                        horizontalAlignment: Text.AlignHCenter
+                                        verticalAlignment: Text.AlignVCenter
+                                        text: durationCell.modelData + "s"
+                                        font.pixelSize: 13
+                                        font.bold: durationCell.isSelected
+                                        color: durationCell.isSelected ? Theme.onPrimary : (durationArea.containsMouse ? Theme.onSurface : Theme.onSurfaceVariant)
+
+                                        Behavior on color {
+                                            ColorAnimation {
+                                                duration: 150
+                                            }
+                                        }
+                                    }
+
+                                    MouseArea {
+                                        id: durationArea
+                                        anchors.fill: parent
+                                        hoverEnabled: true
+                                        cursorShape: Qt.PointingHandCursor
+                                        onClicked: {
+                                            TypingEngine.setTestDurationSeconds(durationCell.modelData);
+                                            appWindow.restartTest();
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
-                    property int cellWidth: 60
-                    property int cellHeight: 48
-                    property int cellSpacing: 6
+                }
 
-                    ShapeCanvas {
-                        id: selectionShape
-                        width: durationInner.cellHeight
-                        height: durationInner.cellHeight
-                        color: Theme.primaryColor
-                        roundedPolygon: GetMShapes.get(22)
-                        x: durationInner.selectedIndex * (durationInner.cellWidth + durationInner.cellSpacing) + (durationInner.cellWidth - width) / 2
-                        y: 0
-                        z: 0
+                Rectangle {
+                    id: punctuationContainer
+                    width: punctuationLabel.width + 32
+                    height: durationContainer.height
+                    radius: TypingEngine.punctuationEnabled ? height / 2 : 20
+                    color: TypingEngine.punctuationEnabled ? Theme.primaryColor : Theme.surfaceContainer
+                    border.color: Theme.outlineVariant
+                    border.width: 1
 
-                        Behavior on x {
-                            NumberAnimation {
-                                duration: 260
-                                easing.type: Easing.OutBack
+                    Behavior on radius {
+                        NumberAnimation {
+                            duration: 200
+                            easing.type: Easing.OutCubic
+                        }
+                    }
+                    Behavior on color {
+                        ColorAnimation {
+                            duration: 150
+                        }
+                    }
+
+                    Text {
+                        id: punctuationLabel
+                        anchors.centerIn: parent
+                        text: "punctuation"
+                        font.pixelSize: 13
+                        font.bold: TypingEngine.punctuationEnabled
+                        color: {
+                            if (TypingEngine.punctuationEnabled) {
+                                return Theme.onPrimary;
+                            }
+                            if (punctuationArea.containsMouse) {
+                                return Theme.onSurface;
+                            }
+                            return Theme.onSurfaceVariant;
+                        }
+
+                        Behavior on color {
+                            ColorAnimation {
+                                duration: 150
                             }
                         }
                     }
 
-                    Row {
-                        id: durationRow
-                        spacing: durationInner.cellSpacing
-                        z: 1
-
-                        Repeater {
-                            model: durationInner.options
-
-                            delegate: Item {
-                                id: durationCell
-                                required property int index
-                                required property int modelData
-                                width: durationInner.cellWidth
-                                height: durationInner.cellHeight
-
-                                property bool isSelected: durationInner.selectedIndex === durationCell.index
-
-                                Text {
-                                    anchors.fill: parent
-                                    horizontalAlignment: Text.AlignHCenter
-                                    verticalAlignment: Text.AlignVCenter
-                                    text: durationCell.modelData + "s"
-                                    font.pixelSize: 13
-                                    font.bold: durationCell.isSelected
-                                    color: durationCell.isSelected ? Theme.onPrimary : (durationArea.containsMouse ? Theme.onSurface : Theme.onSurfaceVariant)
-
-                                    Behavior on color {
-                                        ColorAnimation {
-                                            duration: 150
-                                        }
-                                    }
-                                }
-
-                                MouseArea {
-                                    id: durationArea
-                                    anchors.fill: parent
-                                    hoverEnabled: true
-                                    cursorShape: Qt.PointingHandCursor
-                                    onClicked: {
-                                        TypingEngine.setTestDurationSeconds(durationCell.modelData);
-                                        appWindow.restartTest();
-                                    }
-                                }
-                            }
+                    MouseArea {
+                        id: punctuationArea
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: {
+                            TypingEngine.setPunctuationEnabled(!TypingEngine.punctuationEnabled);
+                            appWindow.restartTest();
                         }
                     }
                 }
