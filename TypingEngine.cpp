@@ -463,7 +463,7 @@ bool TypingEngine::unlockPreviousWord() {
   // if (!wordHasError(wordStart, m_lockedIndex)) {
   //   return false;
   // }
-  
+
   m_lockedIndex = wordStart;
   m_wordExtraCount = 0;
   emit statsChanged();
@@ -610,4 +610,12 @@ void TypingEngine::ensureBuffer() {
     ensureCapacity(m_targetText.length());
     emit targetTextChanged();
   }
+}
+
+void TypingEngine::setTestDurationSeconds(int seconds) {
+  if (seconds <= 0 || seconds == m_testDurationSeconds) {
+    return;
+  }
+  m_testDurationSeconds = seconds;
+  emit testDurationChanged();
 }

@@ -25,6 +25,8 @@ class TypingEngine : public QObject {
   Q_PROPERTY(int elapsedMs READ elapsedMs NOTIFY elapsedMsChanged)
   Q_PROPERTY(int testDurationSeconds READ testDurationSeconds NOTIFY
                  testDurationChanged)
+  Q_PROPERTY(int testDurationSeconds READ testDurationSeconds WRITE
+                 setTestDurationSeconds NOTIFY testDurationChanged)
 
   // properties for counter
   Q_PROPERTY(int correctCount READ correctCount NOTIFY statsChanged)
@@ -89,6 +91,7 @@ public:
   Q_INVOKABLE int characterStateAt(int index) const;
   Q_INVOKABLE QString characterAt(int index) const;
 
+  Q_INVOKABLE void setTestDurationSeconds(int seconds);
   Q_INVOKABLE void setViewportWidth(qreal width);
   Q_INVOKABLE void setWordWidth(int wordStart, int wordEnd, qreal width);
   Q_INVOKABLE void setLinesVisible(int count);
