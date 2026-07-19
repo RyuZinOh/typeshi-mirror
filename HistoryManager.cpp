@@ -49,6 +49,7 @@ void HistoryManager::ensureSchema() {
   accuracy real not null,
   consistency real not null,
   duration_seconds integer not null,
+  word_count integer not null default 0,
   correct_count integer not null,
   incorrect_count integer not null,
   extra_count integer not null,
@@ -67,8 +68,8 @@ void HistoryManager::recordResult(double wpm, double rawWpm, double accuracy,
                                   double consistency, int durationSeconds,
                                   int correctCount, int incorrectCount,
                                   int extraCount, int missedCount,
-                                  const QString &mode,
-                                  bool punctuationEnabled) {
+                                  const QString &mode, bool punctuationEnabled,
+                                  int wordCount) {
   if (!m_db.isOpen()) {
     qWarning() << "HistoryManager: db not open, can't record result";
     return;
@@ -77,7 +78,7 @@ void HistoryManager::recordResult(double wpm, double rawWpm, double accuracy,
   const QDateTime now = QDateTime::currentDateTime();
   QSqlQuery q(m_db);
   q.prepare(R"(
-  insert into results (timestamp, date, wpm, raw_wpm, accuracy, consistency, duration_seconds, correct_count, incorrect_count, extra_count, missed_count, mode, punctuation_enabled) values (?,?,?,?,?,?,?,?,?,?,?,?,?)
+  insert into results (timestamp, date, wpm, raw_wpm, accuracy, consistency, duration_seconds,word_count,correct_count, incorrect_count, extra_count, missed_count, mode, punctuation_enabled) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?)
   )");
   q.addBindValue(now.toSecsSinceEpoch());
   q.addBindValue(now.toString("yyyy-MM-dd"));
@@ -86,6 +87,7 @@ void HistoryManager::recordResult(double wpm, double rawWpm, double accuracy,
   q.addBindValue(accuracy);
   q.addBindValue(consistency);
   q.addBindValue(durationSeconds);
+  q.addBindValue(wordCount);
   q.addBindValue(correctCount);
   q.addBindValue(incorrectCount);
   q.addBindValue(extraCount);
@@ -109,7 +111,7 @@ double HistoryManager::bestWpm() const {
 }
 
 double HistoryManager::bestWpmFor(const QString &mode, int durationSeconds,
-                                  int punctuationEnabled) const {
+                                  int punctuationEnabled, int wordCount) const {
   if (!m_db.isOpen()) {
     return 0.0;
   }
@@ -126,6 +128,9 @@ double HistoryManager::bestWpmFor(const QString &mode, int durationSeconds,
   if (punctuationEnabled >= 0) {
     sql += " and punctuation_enabled = ?";
   }
+  if (wordCount > 0) {
+    sql += " and word_count = ?";
+  }
 
   q.prepare(sql);
   if (!mode.isEmpty()) {
@@ -137,10 +142,19 @@ double HistoryManager::bestWpmFor(const QString &mode, int durationSeconds,
   if (punctuationEnabled >= 0) {
     q.addBindValue(punctuationEnabled);
   }
+  if (wordCount > 0) {
+    q.addBindValue(wordCount);
+  }
 
   q.exec();
   return q.next() ? q.value(0).toDouble() : 0.0;
 }
+
+double HistoryManager::bestWpmForWords(int wordCount,
+                                       int punctuationEnabled) const {
+  return bestWpmFor("words", 0, punctuationEnabled, wordCount);
+}
+
 int HistoryManager::testsToday() const {
   if (!m_db.isOpen()) {
     return 0;

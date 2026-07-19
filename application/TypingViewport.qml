@@ -1,0 +1,208 @@
+pragma ComponentBehavior: Bound
+import QtQuick
+import typeShitter
+
+Item {
+    id: root
+
+    property int passageFontSize: 36
+    property int linesVisible: 3
+    property bool dimmed: false
+
+    width: parent.width
+    height: fm.height * 1.3 * root.linesVisible
+    clip: true
+    opacity: root.dimmed ? 0.35 : 1
+    Behavior on opacity {
+        NumberAnimation {
+            duration: 150
+        }
+    }
+
+    FontMetrics {
+        id: fm
+        font.pixelSize: root.passageFontSize
+    }
+
+    //caret stuffs
+    property bool caretReady: TypingEngine.lines.length > 0
+    property int caretLineIndex: TypingEngine.currentLineIndex
+
+    property real caretX: {
+        const lines = TypingEngine.lines;
+        const li = TypingEngine.currentLineIndex;
+        if (li < 0 || li >= lines.length) {
+            return 0;
+        }
+
+        const line = lines[li];
+        const cursor = TypingEngine.typedText.length;
+        const end = Math.min(cursor, line.end);
+        if (end <= line.start) {
+            return 0;
+        }
+
+        const target = TypingEngine.targetText;
+        const typed = TypingEngine.typedText;
+        let width = 0;
+        for (let i = line.start; i < end; i++) {
+            let ch = (i < typed.length) ? typed.charAt(i) : target.charAt(i);
+            if (ch === "\u2064") {
+                ch = target.charAt(i);
+            }
+            width += fm.advanceWidth(ch === " " ? "\u00A0" : ch);
+        }
+        return width;
+    }
+
+    property real caretY: (TypingEngine.currentLineIndex - TypingEngine.windowStart) * root.lineHeight
+
+    property real caretW: {
+        const cursor = TypingEngine.typedText.length;
+        const target = TypingEngine.targetText;
+        if (cursor >= target.length) {
+            return fm.averageCharacterWidth;
+        }
+        return fm.advanceWidth(target.charAt(cursor));
+    }
+
+    property bool suppressCaretMoveAnim: false
+    onCaretLineIndexChanged: {
+        root.suppressCaretMoveAnim = true;
+        Qt.callLater(function () {
+            root.suppressCaretMoveAnim = false;
+        });
+    }
+    //end of caret stuff
+
+    property real lineHeight: fm.height * 1.3
+
+    function measureNewWords() {
+        const target = TypingEngine.targetText;
+        const typed = TypingEngine.typedText;
+        const words = TypingEngine.wordBoundaries;
+
+        for (let i = 0; i < words.length; i++) {
+            const w = words[i];
+            let chunkWidth = 0;
+            for (let c = w.start; c < w.end; c++) {
+                let ch = (c < typed.length) ? typed.charAt(c) : target.charAt(c);
+                if (ch === "\u2064") {
+                    ch = target.charAt(c);
+                }
+                chunkWidth += fm.advanceWidth(ch === " " ? "\u00A0" : ch);
+            }
+            // const chunkWidth = fm.advanceWidth(target.substring(w.start, w.end));
+            // const chunkWidth = fm.advanceWidth(chunkText);
+            TypingEngine.setWordWidth(w.start, w.end, chunkWidth);
+        }
+        TypingEngine.setViewportWidth(root.width);
+    }
+    Connections {
+        target: TypingEngine
+        function onTargetTextChanged() {
+            root.measureNewWords();
+        }
+        function onTypedTextChanged() {
+            root.measureNewWords();
+        }
+    }
+    onWidthChanged: TypingEngine.setViewportWidth(root.width)
+    Component.onCompleted: root.measureNewWords()
+
+    Column {
+        id: linesColumn
+        width: root.width
+        y: -TypingEngine.windowStart * root.lineHeight
+        Behavior on y {
+            NumberAnimation {
+                duration: 150
+                easing.type: Easing.InOutQuad
+            }
+        }
+        Repeater {
+            model: Math.min(TypingEngine.lines.length, TypingEngine.windowStart + root.linesVisible + 2)
+            delegate: Row {
+                id: lineFlow
+                required property int index
+
+                property var modelData: lineFlow.index < TypingEngine.lines.length ? TypingEngine.lines[lineFlow.index] : null
+                width: root.width
+                height: root.lineHeight
+                spacing: 0
+                visible: lineFlow.modelData !== null
+
+                Repeater {
+                    model: lineFlow.modelData ? lineFlow.modelData.end - lineFlow.modelData.start : 0
+                    delegate: Text {
+                        id: charDelegate
+                        required property int index
+
+                        property int globalIndex: lineFlow.modelData.start + charDelegate.index
+
+                        property int charState: {
+                            TypingEngine.typedText.length;
+                            return TypingEngine.characterStateAt(charDelegate.globalIndex);
+                        }
+                        property string displayCh: {
+                            TypingEngine.typedText.length;
+                            if ((charState === TypingEngine.Extra || charState === TypingEngine.Incorrect) && charDelegate.globalIndex < TypingEngine.typedText.length) {
+                                const typedAt = TypingEngine.typedText.charAt(charDelegate.globalIndex);
+                                if (typedAt === "\u2064") {
+                                    return TypingEngine.characterAt(charDelegate.globalIndex);
+                                }
+                                return typedAt;
+                            }
+                            return TypingEngine.characterAt(charDelegate.globalIndex);
+                        }
+                        text: displayCh === " " ? "\u00A0" : displayCh
+                        font.pixelSize: root.passageFontSize
+                        color: {
+                            if (charState === TypingEngine.Correct) {
+                                return Theme.primaryColor;
+                            }
+                            if (charState === TypingEngine.Incorrect) {
+                                return Theme.errorColor;
+                            }
+                            if (charState === TypingEngine.Current) {
+                                return Theme.onSurface;
+                            }
+                            return Theme.onSurfaceVariant;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    Caret {
+        id: caret
+        visible: root.caretReady
+        x: root.caretX
+        y: root.caretY + root.lineHeight - height - 10
+        width: root.caretW
+        height: 3
+        color: Theme.onSurface
+        z: 10
+
+        Behavior on x {
+            enabled: !root.suppressCaretMoveAnim
+            NumberAnimation {
+                duration: 110
+                easing.type: Easing.OutCubic
+            }
+        }
+        Behavior on y {
+            enabled: !root.suppressCaretMoveAnim
+            NumberAnimation {
+                duration: 110
+                easing.type: Easing.OutCubic
+            }
+        }
+        Behavior on width {
+            NumberAnimation {
+                duration: 110
+                easing.type: Easing.OutCubic
+            }
+        }
+    }
+}

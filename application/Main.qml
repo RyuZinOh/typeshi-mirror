@@ -14,7 +14,7 @@ Window {
     readonly property int linesVisible: 3
     readonly property int passageFontSize: 36
     readonly property int sidePadding: 160
-    property bool quoteModeActive: false
+    property string testMode: "time"
 
     Component.onCompleted: {
         TypingEngine.startTest(Config.words);
@@ -25,11 +25,6 @@ Window {
         // for (let i = 0; i < summary.length; i++) {
         //     console.log(summary[i].date, "-", summary[i].tests, "test, best: ", summary[i].bestWpm);
         // }
-    }
-
-    FontMetrics {
-        id: fm
-        font.pixelSize: appWindow.passageFontSize
     }
 
     ConfettiRenderer {
@@ -63,18 +58,13 @@ Window {
         }
     }
 
-    Text {
+    Records {
+        id: records
         anchors.top: parent.top
         anchors.left: parent.left
         anchors.margins: 20
-        font.pixelSize: 16
-        color: Theme.onSurfaceVariant
-        text: {
-            History.testsToday;
-            History.currentStreak;
-            return "best wpm: " + History.bestWpm.toFixed(1) + "\n" + "best 15s: " + History.bestWpmFor("english", 15, 0).toFixed(1) + "\n" + "best 15s (punct): " + History.bestWpmFor("english", 15, 1).toFixed(1) + "\n" + "best 30s: " + History.bestWpmFor("english", 30, 0).toFixed(1) + "\n" + "best 30s (punct): " + History.bestWpmFor("english", 30, 1).toFixed(1) + "\n" + "best 60s: " + History.bestWpmFor("english", 60, 0).toFixed(1) + "\n" + "best 60s (punct): " + History.bestWpmFor("english", 60, 1).toFixed(1) + "\n" + "best 120s: " + History.bestWpmFor("english", 120, 0).toFixed(1) + "\n" + "best 120s (punct): " + History.bestWpmFor("english", 120, 1).toFixed(1) + "\n" + "best quote: " + History.bestWpmFor("quote", 0).toFixed(1) + "\n" + "tests today: " + History.testsToday + "\n" + "streak: " + History.currentStreak + "\n" + "longest streak: " + History.longestStreak;
-        }
     }
+
     Item {
         id: inputCatcher
         anchors.fill: parent
@@ -123,455 +113,78 @@ Window {
                     }
                 }
 
-                Rectangle {
-                    id: durationContainer
-                    width: durationInner.width + 10
-                    height: durationInner.height + 10
-                    radius: 20
-                    color: Theme.surfaceContainer
-                    border.color: Theme.outlineVariant
-                    border.width: 1
-                    visible: !appWindow.quoteModeActive
-
-                    Item {
-                        id: durationInner
-                        anchors.centerIn: parent
-                        width: durationRow.width
-                        height: durationRow.height
-
-                        property var options: [15, 30, 60, 120]
-                        property int selectedIndex: {
-                            const i = durationInner.options.indexOf(TypingEngine.testDurationSeconds);
-                            return i >= 0 ? i : 2;
-                        }
-                        property int cellWidth: 60
-                        property int cellHeight: 48
-                        property int cellSpacing: 6
-
-                        ShapeCanvas {
-                            id: selectionShape
-                            width: durationInner.cellHeight
-                            height: durationInner.cellHeight
-                            color: Theme.primaryColor
-                            roundedPolygon: GetMShapes.get(22)
-                            x: durationInner.selectedIndex * (durationInner.cellWidth + durationInner.cellSpacing) + (durationInner.cellWidth - width) / 2
-                            y: 0
-                            z: 0
-
-                            Behavior on x {
-                                NumberAnimation {
-                                    duration: 260
-                                    easing.type: Easing.OutBack
-                                }
-                            }
-                        }
-
-                        Row {
-                            id: durationRow
-                            spacing: durationInner.cellSpacing
-                            z: 1
-
-                            Repeater {
-                                model: durationInner.options
-
-                                delegate: Item {
-                                    id: durationCell
-                                    required property int index
-                                    required property int modelData
-                                    width: durationInner.cellWidth
-                                    height: durationInner.cellHeight
-
-                                    property bool isSelected: durationInner.selectedIndex === durationCell.index
-
-                                    Text {
-                                        anchors.fill: parent
-                                        horizontalAlignment: Text.AlignHCenter
-                                        verticalAlignment: Text.AlignVCenter
-                                        text: durationCell.modelData + "s"
-                                        font.pixelSize: 13
-                                        font.bold: durationCell.isSelected
-                                        color: durationCell.isSelected ? Theme.onPrimary : (durationArea.containsMouse ? Theme.onSurface : Theme.onSurfaceVariant)
-
-                                        Behavior on color {
-                                            ColorAnimation {
-                                                duration: 150
-                                            }
-                                        }
-                                    }
-
-                                    MouseArea {
-                                        id: durationArea
-                                        anchors.fill: parent
-                                        hoverEnabled: true
-                                        cursorShape: Qt.PointingHandCursor
-                                        onClicked: {
-                                            TypingEngine.setTestDurationSeconds(durationCell.modelData);
-                                            appWindow.restartTest();
-                                        }
-                                    }
-                                }
-                            }
-                        }
+                SegmentedControl {
+                    id: durationControl
+                    visible: appWindow.testMode === "time"
+                    options: [15, 30, 60, 120]
+                    selectedValue: TypingEngine.testDurationSeconds
+                    suffix: "s"
+                    onSelected: value => {
+                        TypingEngine.setTestDurationSeconds(value);
+                        appWindow.restartTest();
                     }
                 }
 
-                Rectangle {
-                    id: punctuationContainer
-                    width: punctuationLabel.width + 32
-                    height: durationContainer.height
-                    radius: TypingEngine.punctuationEnabled ? height / 2 : 20
-                    color: TypingEngine.punctuationEnabled ? Theme.primaryColor : Theme.surfaceContainer
-                    border.color: Theme.outlineVariant
-                    border.width: 1
-                    visible: !appWindow.quoteModeActive
-
-                    Behavior on radius {
-                        NumberAnimation {
-                            duration: 200
-                            easing.type: Easing.OutCubic
-                        }
-                    }
-                    Behavior on color {
-                        ColorAnimation {
-                            duration: 150
-                        }
-                    }
-
-                    Text {
-                        id: punctuationLabel
-                        anchors.centerIn: parent
-                        text: "punctuation"
-                        font.pixelSize: 13
-                        font.bold: TypingEngine.punctuationEnabled
-                        color: {
-                            if (TypingEngine.punctuationEnabled) {
-                                return Theme.onPrimary;
-                            }
-                            if (punctuationArea.containsMouse) {
-                                return Theme.onSurface;
-                            }
-                            return Theme.onSurfaceVariant;
-                        }
-
-                        Behavior on color {
-                            ColorAnimation {
-                                duration: 150
-                            }
-                        }
-                    }
-
-                    MouseArea {
-                        id: punctuationArea
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: {
-                            TypingEngine.setPunctuationEnabled(!TypingEngine.punctuationEnabled);
-                            appWindow.restartTest();
-                        }
+                SegmentedControl {
+                    id: wordCountControl
+                    visible: appWindow.testMode === "words"
+                    options: [10, 25, 50, 100]
+                    selectedValue: TypingEngine.testWordCount
+                    onSelected: value => {
+                        TypingEngine.setTestWordCount(value);
+                        appWindow.restartTest();
                     }
                 }
 
-                Rectangle {
-                    id: quoteContainer
-                    width: quoteLabel.width + 32
-                    height: durationContainer.height
-                    radius: appWindow.quoteModeActive ? height / 2 : 20
-                    color: appWindow.quoteModeActive ? Theme.primaryColor : Theme.surfaceContainer
-                    border.color: Theme.outlineVariant
-                    border.width: 1
-
-                    Behavior on radius {
-                        NumberAnimation {
-                            duration: 200
-                            easing.type: Easing.OutCubic
-                        }
+                ToggleChip {
+                    id: wordsChip
+                    label: "words"
+                    active: appWindow.testMode === "words"
+                    onToggled: {
+                        appWindow.testMode = appWindow.testMode === "words" ? "time" : "words";
+                        appWindow.restartTest();
                     }
-                    Behavior on color {
-                        ColorAnimation {
-                            duration: 150
-                        }
+                }
+
+                ToggleChip {
+                    id: punctuationChip
+                    label: "punctuation"
+                    visible: appWindow.testMode !== "quote"
+                    active: TypingEngine.punctuationEnabled
+                    onToggled: {
+                        TypingEngine.setPunctuationEnabled(!TypingEngine.punctuationEnabled);
+                        appWindow.restartTest();
                     }
+                }
 
-                    Text {
-                        id: quoteLabel
-                        anchors.centerIn: parent
-                        text: "quote"
-                        font.pixelSize: 13
-                        font.bold: appWindow.quoteModeActive
-                        color: {
-                            if (appWindow.quoteModeActive) {
-                                return Theme.onPrimary;
-                            }
-                            if (quoteArea.containsMouse) {
-                                return Theme.onSurface;
-                            }
-                            return Theme.onSurfaceVariant;
-                        }
-
-                        Behavior on color {
-                            ColorAnimation {
-                                duration: 150
-                            }
-                        }
-                    }
-
-                    MouseArea {
-                        id: quoteArea
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: {
-                            appWindow.quoteModeActive = !appWindow.quoteModeActive;
-                            appWindow.restartTest();
-                        }
+                ToggleChip {
+                    id: quoteChip
+                    label: "quote"
+                    active: appWindow.testMode === "quote"
+                    onToggled: {
+                        appWindow.testMode = appWindow.testMode === "quote" ? "time" : "quote";
+                        appWindow.restartTest();
                     }
                 }
             }
 
-            Item {
+            TypingViewport {
                 id: viewport
                 anchors.top: parent.top
                 anchors.topMargin: 60
-                width: parent.width
-                opacity: refreshButton.activeFocus ? 0.35 : 1
-                Behavior on opacity {
-                    NumberAnimation {
-                        duration: 150
-                    }
-                }
-
-                //caret stuffs
-                property bool caretReady: TypingEngine.lines.length > 0
-                property int caretLineIndex: TypingEngine.currentLineIndex
-
-                property real caretX: {
-                    const lines = TypingEngine.lines;
-                    const li = TypingEngine.currentLineIndex;
-                    if (li < 0 || li >= lines.length) {
-                        return 0;
-                    }
-
-                    const line = lines[li];
-                    const cursor = TypingEngine.typedText.length;
-                    const end = Math.min(cursor, line.end);
-                    if (end <= line.start) {
-                        return 0;
-                    }
-
-                    const target = TypingEngine.targetText;
-                    const typed = TypingEngine.typedText;
-                    let width = 0;
-                    for (let i = line.start; i < end; i++) {
-                        let ch = (i < typed.length) ? typed.charAt(i) : target.charAt(i);
-                        if (ch === "\u2064") {
-                            ch = target.charAt(i);
-                        }
-                        width += fm.advanceWidth(ch === " " ? "\u00A0" : ch);
-                    }
-                    return width;
-                }
-
-                property real caretY: (TypingEngine.currentLineIndex - TypingEngine.windowStart) * viewport.lineHeight
-
-                property real caretW: {
-                    const cursor = TypingEngine.typedText.length;
-                    const target = TypingEngine.targetText;
-                    if (cursor >= target.length) {
-                        return fm.averageCharacterWidth;
-                    }
-                    return fm.advanceWidth(target.charAt(cursor));
-                }
-
-                property bool suppressCaretMoveAnim: false
-                onCaretLineIndexChanged: {
-                    viewport.suppressCaretMoveAnim = true;
-                    Qt.callLater(function () {
-                        viewport.suppressCaretMoveAnim = false;
-                    });
-                }
-                //end of caret stuff
-
-                clip: true
-                height: fm.height * 1.3 * appWindow.linesVisible
-                property real lineHeight: fm.height * 1.3
-
-                function measureNewWords() {
-                    const target = TypingEngine.targetText;
-                    const typed = TypingEngine.typedText;
-                    const words = TypingEngine.wordBoundaries;
-
-                    for (let i = 0; i < words.length; i++) {
-                        const w = words[i];
-                        let chunkWidth = 0;
-                        for (let c = w.start; c < w.end; c++) {
-                            let ch = (c < typed.length) ? typed.charAt(c) : target.charAt(c);
-                            if (ch === "\u2064") {
-                                ch = target.charAt(c);
-                            }
-                            chunkWidth += fm.advanceWidth(ch === " " ? "\u00A0" : ch);
-                        }
-                        // const chunkWidth = fm.advanceWidth(target.substring(w.start, w.end));
-                        // const chunkWidth = fm.advanceWidth(chunkText);
-                        TypingEngine.setWordWidth(w.start, w.end, chunkWidth);
-                    }
-                    TypingEngine.setViewportWidth(viewport.width);
-                }
-                Connections {
-                    target: TypingEngine
-                    function onTargetTextChanged() {
-                        viewport.measureNewWords();
-                    }
-                    function onTypedTextChanged() {
-                        viewport.measureNewWords();
-                    }
-                }
-                onWidthChanged: TypingEngine.setViewportWidth(viewport.width)
-                Component.onCompleted: viewport.measureNewWords()
-
-                Column {
-                    id: linesColumn
-                    width: viewport.width
-                    y: -TypingEngine.windowStart * viewport.lineHeight
-                    Behavior on y {
-                        NumberAnimation {
-                            duration: 150
-                            easing.type: Easing.InOutQuad
-                        }
-                    }
-                    Repeater {
-                        model: Math.min(TypingEngine.lines.length, TypingEngine.windowStart + appWindow.linesVisible + 2)
-                        delegate: Row {
-                            id: lineFlow
-                            required property int index
-
-                            property var modelData: lineFlow.index < TypingEngine.lines.length ? TypingEngine.lines[lineFlow.index] : null
-                            width: viewport.width
-                            height: viewport.lineHeight
-                            spacing: 0
-                            visible: lineFlow.modelData !== null
-
-                            Repeater {
-                                model: lineFlow.modelData ? lineFlow.modelData.end - lineFlow.modelData.start : 0
-                                delegate: Text {
-                                    id: charDelegate
-                                    required property int index
-
-                                    property int globalIndex: lineFlow.modelData.start + charDelegate.index
-
-                                    property int charState: {
-                                        TypingEngine.typedText.length;
-                                        return TypingEngine.characterStateAt(charDelegate.globalIndex);
-                                    }
-                                    property string displayCh: {
-                                        TypingEngine.typedText.length;
-                                        if ((charState === TypingEngine.Extra || charState === TypingEngine.Incorrect) && charDelegate.globalIndex < TypingEngine.typedText.length) {
-                                            const typedAt = TypingEngine.typedText.charAt(charDelegate.globalIndex);
-                                            if (typedAt === "\u2064") {
-                                                return TypingEngine.characterAt(charDelegate.globalIndex);
-                                            }
-                                            return typedAt;
-                                        }
-                                        return TypingEngine.characterAt(charDelegate.globalIndex);
-                                    }
-                                    text: displayCh === " " ? "\u00A0" : displayCh
-                                    font.pixelSize: appWindow.passageFontSize
-                                    color: {
-                                        if (charState === TypingEngine.Correct) {
-                                            return Theme.primaryColor;
-                                        }
-                                        if (charState === TypingEngine.Incorrect) {
-                                            return Theme.errorColor;
-                                        }
-                                        if (charState === TypingEngine.Current) {
-                                            return Theme.onSurface;
-                                        }
-                                        return Theme.onSurfaceVariant;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-                Caret {
-                    id: caret
-                    visible: viewport.caretReady
-                    x: viewport.caretX
-                    y: viewport.caretY + viewport.lineHeight - height - 10
-                    width: viewport.caretW
-                    height: 3
-                    color: Theme.onSurface
-                    z: 10
-
-                    Behavior on x {
-                        enabled: !viewport.suppressCaretMoveAnim
-                        NumberAnimation {
-                            duration: 110
-                            easing.type: Easing.OutCubic
-                        }
-                    }
-                    Behavior on y {
-                        enabled: !viewport.suppressCaretMoveAnim
-                        NumberAnimation {
-                            duration: 110
-                            easing.type: Easing.OutCubic
-                        }
-                    }
-                    Behavior on width {
-                        NumberAnimation {
-                            duration: 110
-                            easing.type: Easing.OutCubic
-                        }
-                    }
-                }
+                passageFontSize: appWindow.passageFontSize
+                linesVisible: appWindow.linesVisible
+                dimmed: refreshButton.activeFocus
             }
 
-            Item {
+            RefreshButton {
                 id: refreshButton
                 anchors.top: viewport.bottom
                 anchors.topMargin: 20
                 anchors.horizontalCenter: parent.horizontalCenter
-                width: 40
-                height: 40
-
-                opacity: (!TypingEngine.started || refreshButton.activeFocus) ? 1 : 0
-                Behavior on opacity {
-                    NumberAnimation {
-                        duration: 200
-                    }
-                }
-                Icon {
-                    id: refreshIcon
-                    anchors.centerIn: parent
-                    property int turns: 0
-                    rotation: turns * 360
-                    source: "assets/icons/refresh.svg"
-                    iconSize: 28
-                    color: refreshButton.activeFocus ? Theme.primaryColor : (refreshArea.containsMouse ? Theme.primaryColor : Theme.onSurfaceVariant)
-
-                    Behavior on color {
-                        ColorAnimation {
-                            duration: 150
-                        }
-                    }
-                    Behavior on rotation {
-                        NumberAnimation {
-                            duration: 1200
-                            easing.type: Easing.OutCubic
-                        }
-                    }
-                }
-                MouseArea {
-                    id: refreshArea
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: appWindow.restartTest()
-                }
-                Keys.onReturnPressed: appWindow.restartTest()
-                Keys.onEnterPressed: appWindow.restartTest()
-
-                KeyNavigation.tab: inputCatcher
+                dimmedUnlessFocused: !TypingEngine.started
+                tabTarget: inputCatcher
+                onActivated: appWindow.restartTest()
             }
         }
     }
@@ -584,12 +197,22 @@ Window {
         scale: TypingEngine.finished ? 1 : 0
         onActiveChanged: {
             if (active) {
-                const mode = appWindow.quoteModeActive ? "quote" : "english";
-                const dur = appWindow.quoteModeActive ? 0 : TypingEngine.testDurationSeconds;
-                const punct = appWindow.quoteModeActive ? false : TypingEngine.punctuationEnabled;
-                const oldBest = History.bestWpmFor(mode, dur, punct ? 1 : 0);
+                let mode = "english";
+                let dur = TypingEngine.testDurationSeconds;
+                let punct = TypingEngine.punctuationEnabled;
+                let words = 0;
+                if (appWindow.testMode === "quote") {
+                    mode = "quote";
+                    dur = 0;
+                    punct = false;
+                } else if (appWindow.testMode === "words") {
+                    mode = "words";
+                    dur = 0;
+                    words = TypingEngine.testWordCount;
+                }
+                const oldBest = appWindow.testMode === "words" ? History.bestWpmForWords(words, punct ? 1 : 0) : History.bestWpmFor(mode, dur, punct ? 1 : 0);
 
-                History.recordResult(TypingEngine.wpm, TypingEngine.rawWpm, TypingEngine.accuracy, TypingEngine.consistency, Math.round(TypingEngine.elapsedMs / 1000), TypingEngine.correctCount, TypingEngine.incorrectCount, TypingEngine.extraCount, TypingEngine.missedCount, mode, punct);
+                History.recordResult(TypingEngine.wpm, TypingEngine.rawWpm, TypingEngine.accuracy, TypingEngine.consistency, Math.round(TypingEngine.elapsedMs / 1000), TypingEngine.correctCount, TypingEngine.incorrectCount, TypingEngine.extraCount, TypingEngine.missedCount, mode, punct, words);
 
                 if (TypingEngine.wpm > 0 && TypingEngine.wpm > oldBest) {
                     confetti.tryBurst();
@@ -610,19 +233,19 @@ Window {
             }
         }
         sourceComponent: Aftermath {
-            resultMode: appWindow.quoteModeActive ? "quote" : "english"
-            resultDuration: appWindow.quoteModeActive ? 0 : TypingEngine.testDurationSeconds
-            resultPunctuation: appWindow.quoteModeActive ? false : TypingEngine.punctuationEnabled
+            resultMode: appWindow.testMode === "quote" ? "quote" : (appWindow.testMode === "words" ? "words" : "english")
+            resultDuration: appWindow.testMode === "quote" ? 0 : (appWindow.testMode === "words" ? TypingEngine.testWordCount : TypingEngine.testDurationSeconds)
+            resultPunctuation: appWindow.testMode === "quote" ? false : TypingEngine.punctuationEnabled
             onRestartRequested: appWindow.restartTest()
         }
     }
 
     function restartTest() {
-        refreshIcon.turns++;
-
-        if (appWindow.quoteModeActive) {
+        if (appWindow.testMode === "quote") {
             const q = Quotes.randomQuote();
             TypingEngine.startQuoteTest(q.text);
+        } else if (appWindow.testMode === "words") {
+            TypingEngine.startWordCountTest(Config.words, TypingEngine.testWordCount);
         } else {
             TypingEngine.startTest(Config.words);
         }

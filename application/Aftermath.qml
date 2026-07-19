@@ -10,12 +10,19 @@ Item {
     property string resultMode: "english"
     property int resultDuration: 0
     property bool resultPunctuation: false
-    readonly property bool isNewBest: TypingEngine.wpm > 0 && TypingEngine.wpm >= History.bestWpmFor(aftermath.resultMode, aftermath.resultDuration, aftermath.resultPunctuation ? 1 : 0)
+    readonly property bool isNewBest: TypingEngine.wpm > 0 && TypingEngine.wpm >= (aftermath.resultMode === "words" ? History.bestWpmForWords(aftermath.resultDuration, aftermath.resultPunctuation ? 1 : 0) : History.bestWpmFor(aftermath.resultMode, aftermath.resultDuration, aftermath.resultPunctuation ? 1 : 0))
 
     signal restartRequested
     readonly property string modeLabel: {
         if (aftermath.resultMode === "quote") {
             return "quote";
+        }
+        if (aftermath.resultMode === "words") {
+            let label = "english " + aftermath.resultDuration + " words";
+            if (aftermath.resultPunctuation) {
+                label += " - punctuation";
+            }
+            return label;
         }
         let label = "english " + aftermath.resultDuration + "s";
         if (aftermath.resultPunctuation) {
@@ -132,180 +139,11 @@ Item {
                 width: parent.width - 220 - 60
                 spacing: 12
 
-                Item {
-                    id: graphArea
+                PerformanceGraph {
                     width: parent.width
                     height: 200
-
-                    property var history: TypingEngine.wpmHistory
-                    property real maxVal: {
-                        let m = 10;
-                        for (let i = 0; i < graphArea.history.length; i++) {
-                            m = Math.max(m, graphArea.history[i].wpm, graphArea.history[i].rawWpm);
-                        }
-                        return m * 1.15;
-                    }
-                    property int totalSeconds: TypingEngine.testDurationSeconds
-
-                    Column {
-                        id: legend
-                        anchors.top: parent.top
-                        anchors.right: parent.right
-                        spacing: 6
-
-                        Row {
-                            spacing: 8
-                            anchors.right: parent.right
-
-                            Rectangle {
-                                width: 14
-                                height: 3
-                                radius: 1.5
-                                color: Theme.primaryColor
-                                anchors.verticalCenter: parent.verticalCenter
-                            }
-
-                            Text {
-                                text: "wpm"
-                                color: Theme.onSurfaceVariant
-                                font.pixelSize: 12
-                            }
-                        }
-
-                        Row {
-                            spacing: 8
-                            anchors.right: parent.right
-
-                            Rectangle {
-                                width: 14
-                                height: 3
-                                radius: 1.5
-                                color: Theme.onSurfaceVariant
-                                anchors.verticalCenter: parent.verticalCenter
-                            }
-
-                            Text {
-                                text: "raw wpm"
-                                color: Theme.onSurfaceVariant
-                                font.pixelSize: 12
-                            }
-                        }
-                    }
-
-                    Item {
-                        id: plotArea
-                        anchors.top: parent.top
-                        anchors.topMargin: 8
-                        anchors.left: parent.left
-                        anchors.leftMargin: 40
-                        anchors.right: parent.right
-                        anchors.bottom: xAxisLabels.top
-                        anchors.bottomMargin: 6
-
-                        Repeater {
-                            model: 5
-
-                            delegate: Text {
-                                required property int index
-                                text: Math.round((index / 4) * graphArea.maxVal).toString()
-                                font.pixelSize: 11
-                                color: Theme.onSurfaceVariant
-                                x: -width - 8
-                                y: plotArea.height - (index / 4) * plotArea.height - height / 2
-                            }
-                        }
-
-                        Canvas {
-                            id: graphCanvas
-                            anchors.fill: parent
-
-                            property color rawColor: Theme.onSurfaceVariant
-                            property color wpmColor: Theme.primaryColor
-                            property color gridColor: Theme.outlineVariant
-
-                            onPaint: {
-                                const ctx = getContext("2d");
-                                ctx.clearRect(0, 0, width, height);
-
-                                const hist = graphArea.history;
-                                ctx.strokeStyle = graphCanvas.gridColor;
-                                ctx.lineWidth = 1;
-                                ctx.globalAlpha = 0.35;
-                                for (let g = 0; g <= 4; g++) {
-                                    const gy = height - (g / 4) * height;
-                                    ctx.beginPath();
-                                    ctx.moveTo(0, gy);
-                                    ctx.lineTo(width, gy);
-                                    ctx.stroke();
-                                }
-                                ctx.globalAlpha = 1.0;
-
-                                if (hist.length < 2) {
-                                    return;
-                                }
-
-                                const maxTime = Math.max(graphArea.totalSeconds, hist[hist.length - 1].time);
-                                const maxVal = graphArea.maxVal;
-
-                                function drawLine(key, color) {
-                                    ctx.beginPath();
-                                    ctx.strokeStyle = color;
-                                    ctx.lineWidth = 2;
-                                    for (let i = 0; i < hist.length; i++) {
-                                        const px = (hist[i].time / maxTime) * width;
-                                        const py = height - (hist[i][key] / maxVal) * height;
-                                        if (i === 0) {
-                                            ctx.moveTo(px, py);
-                                        } else {
-                                            ctx.lineTo(px, py);
-                                        }
-                                    }
-                                    ctx.stroke();
-
-                                    for (let i = 0; i < hist.length; i++) {
-                                        const px = (hist[i].time / maxTime) * width;
-                                        const py = height - (hist[i][key] / maxVal) * height;
-                                        ctx.beginPath();
-                                        ctx.fillStyle = color;
-                                        ctx.arc(px, py, 3, 0, Math.PI * 2);
-                                        ctx.fill();
-                                    }
-                                }
-
-                                drawLine("rawWpm", graphCanvas.rawColor);
-                                drawLine("wpm", graphCanvas.wpmColor);
-                            }
-
-                            Connections {
-                                target: graphArea
-                                function onHistoryChanged() {
-                                    graphCanvas.requestPaint();
-                                }
-                            }
-                        }
-                    }
-
-                    Row {
-                        id: xAxisLabels
-                        anchors.bottom: parent.bottom
-                        anchors.left: plotArea.left
-                        anchors.right: plotArea.right
-                        height: 16
-
-                        Repeater {
-                            model: 5
-
-                            delegate: Text {
-                                required property int index
-                                property int totalSeconds: graphArea.totalSeconds
-                                text: Math.round((index / 4) * totalSeconds).toString()
-                                font.pixelSize: 11
-                                color: Theme.onSurfaceVariant
-                                width: xAxisLabels.width / 5
-                                horizontalAlignment: index === 0 ? Text.AlignLeft : (index === 4 ? Text.AlignRight : Text.AlignHCenter)
-                            }
-                        }
-                    }
+                    history: TypingEngine.wpmHistory
+                    totalSeconds: TypingEngine.testDurationSeconds
                 }
 
                 Item {
@@ -440,35 +278,12 @@ Item {
             width: parent.width
             height: 28
 
-            Icon {
-                id: restartIcon
-                anchors.horizontalCenter: parent.horizontalCenter
-                anchors.verticalCenter: parent.verticalCenter
-                source: "assets/icons/refresh.svg"
-                iconSize: 26
-                color: restartArea.containsMouse ? Theme.primaryColor : Theme.onSurfaceVariant
-                rotation: restartArea.containsMouse ? 180 : 0
-
-                Behavior on color {
-                    ColorAnimation {
-                        duration: 150
-                    }
-                }
-                Behavior on rotation {
-                    NumberAnimation {
-                        duration: 300
-                        easing.type: Easing.OutCubic
-                    }
-                }
-            }
-            MouseArea {
-                id: restartArea
+            RefreshButton {
                 anchors.centerIn: parent
-                width: 28
-                height: 28
-                hoverEnabled: true
-                cursorShape: Qt.PointingHandCursor
-                onClicked: aftermath.restartRequested()
+                alwaysVisible: true
+                hoverRotates: true
+                iconSize: 26
+                onActivated: aftermath.restartRequested()
             }
         }
     }

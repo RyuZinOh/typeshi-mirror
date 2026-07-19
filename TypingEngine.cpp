@@ -8,7 +8,7 @@ const QChar TypingEngine::kExtraPlaceholder(0x2063);
 TypingEngine::TypingEngine(QObject *parent) : QObject(parent) {
   m_tickTimer.setInterval(100);
   connect(&m_tickTimer, &QTimer::timeout, this, [this]() {
-    if (m_started && !m_finished && !m_quoteMode &&
+    if (m_started && !m_finished && !m_quoteMode && !m_wordCountMode &&
         elapsedMs() >= m_testDurationSeconds * 1000) {
       finish();
       return;
@@ -27,12 +27,13 @@ TypingEngine::TypingEngine(QObject *parent) : QObject(parent) {
       }
       // end of history sampling
 
-      // quotes completion
-      if (m_quoteMode && m_typedText.length() >= m_targetText.length()) {
+      // quotes completion / wordCount mode
+      if ((m_quoteMode || m_wordCountMode) &&
+          m_typedText.length() >= m_targetText.length()) {
         finish();
         return;
       }
-      // end of quotes completion
+      // end of quotes completion /wordCount mode
 
       emit elapsedMsChanged();
     }
@@ -44,6 +45,15 @@ bool TypingEngine::started() const { return m_started; }
 bool TypingEngine::finished() const { return m_finished; }
 QString TypingEngine::targetText() const { return m_targetText; }
 QString TypingEngine::typedText() const { return m_typedText; }
+int TypingEngine::testWordCount() const { return m_testWordCount; }
+
+void TypingEngine::setTestWordCount(int count) {
+  if (count <= 0 || count == m_testWordCount) {
+    return;
+  }
+  m_testWordCount = count;
+  emit testWordCountChanged();
+}
 
 void TypingEngine::setPunctuationEnabled(bool enabled) {
   if (enabled == m_punctuationEnabled) {
@@ -69,6 +79,33 @@ void TypingEngine::startQuoteTest(const QString &quoteText) {
   rewrapLines();
 }
 
+void TypingEngine::startWordCountTest(const QStringList &wordPool,
+                                      int wordCount) {
+  resetState();
+  m_quoteMode = false;
+  m_wordCountMode = true;
+  m_wordPool = wordPool;
+  m_testWordCount = wordCount > 0 ? wordCount : m_testWordCount;
+
+  for (int i = 0; i < m_testWordCount; ++i) {
+    if (!m_targetText.isEmpty()) {
+      m_targetText.append(' ');
+    }
+    QString word = randomWord();
+    m_targetText.append(applyPunctuation(word));
+    m_lastWord = word;
+  }
+  m_isExtra.assign(m_targetText.length(), false);
+
+  emit targetTextChanged();
+  emit typedTextChanged();
+  emit startedChanged();
+  emit finishedChanged();
+  emit historyChanged();
+  emit elapsedMsChanged();
+  emit statsChanged();
+  rewrapLines();
+}
 // void TypingEngine::startTest(const QStringList &wordPool) {
 //   m_started = false;
 //   m_finished = false;
@@ -138,6 +175,7 @@ void TypingEngine::resetState() {
   m_finished = false;
   m_frozenElapsedMs = 0;
   m_tickTimer.stop();
+  m_wordCountMode = false;
 
   m_lastWord.clear();
   m_targetText.clear();
@@ -707,7 +745,7 @@ QString TypingEngine::applyPunctuation(const QString &word) {
 }
 
 void TypingEngine::ensureBuffer() {
-  if (m_quoteMode) {
+  if (m_quoteMode || m_wordCountMode) {
     return;
   }
   bool grew = false;

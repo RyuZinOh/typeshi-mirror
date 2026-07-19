@@ -23,13 +23,13 @@ class TypingEngine : public QObject {
   Q_PROPERTY(bool started READ started NOTIFY startedChanged)
   Q_PROPERTY(bool finished READ finished NOTIFY finishedChanged)
   Q_PROPERTY(int elapsedMs READ elapsedMs NOTIFY elapsedMsChanged)
-  // Q_PROPERTY(int testDurationSeconds READ testDurationSeconds NOTIFY
-  // testDurationChanged)
   Q_PROPERTY(int testDurationSeconds READ testDurationSeconds WRITE
                  setTestDurationSeconds NOTIFY testDurationChanged)
 
   Q_PROPERTY(bool punctuationEnabled READ punctuationEnabled WRITE
                  setPunctuationEnabled NOTIFY punctuationEnabledChanged)
+  Q_PROPERTY(int testWordCount READ testWordCount WRITE setTestWordCount NOTIFY
+                 testWordCountChanged)
 
   // properties for counter
   Q_PROPERTY(int correctCount READ correctCount NOTIFY statsChanged)
@@ -73,6 +73,8 @@ public:
   // configuration
   int testDurationSeconds() const;
   bool punctuationEnabled() const;
+
+  int testWordCount() const;
   // end of configuration
 
   // stats getters
@@ -104,10 +106,14 @@ public:
   Q_INVOKABLE void setViewportWidth(qreal width);
   Q_INVOKABLE void setWordWidth(int wordStart, int wordEnd, qreal width);
   Q_INVOKABLE void setLinesVisible(int count);
+
+  Q_INVOKABLE void setTestWordCount(int count);
   // end of configuration
 
   // mode
   Q_INVOKABLE void startQuoteTest(const QString &quoteText);
+  Q_INVOKABLE void startWordCountTest(const QStringList &wordPool,
+                                      int wordCount);
   // end of mode
 
   Q_INVOKABLE bool wasErrorAt(int index) const;
@@ -124,6 +130,7 @@ signals:
   // configuration
   void testDurationChanged();
   void punctuationEnabledChanged();
+  void testWordCountChanged();
   // end of configuration
 
   // stats signal
@@ -145,6 +152,10 @@ private:
   bool m_finished = false;
   int m_testDurationSeconds = 60;
   int m_frozenElapsedMs = 0;
+
+  bool m_wordCountMode = false;
+  int m_testWordCount = 25;
+
   QElapsedTimer m_elapsedTimer;
   QTimer m_tickTimer;
 
