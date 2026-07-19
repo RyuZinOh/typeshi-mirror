@@ -13,6 +13,11 @@ Item {
     readonly property bool isNewBest: TypingEngine.wpm > 0 && TypingEngine.wpm >= (aftermath.resultMode === "words" ? History.bestWpmForWords(aftermath.resultDuration, aftermath.resultPunctuation ? 1 : 0) : History.bestWpmFor(aftermath.resultMode, aftermath.resultDuration, aftermath.resultPunctuation ? 1 : 0))
 
     signal restartRequested
+
+    Component.onCompleted: Qt.callLater(function () {
+        restartButtonRef.forceActiveFocus();
+    })
+
     readonly property string modeLabel: {
         if (aftermath.resultMode === "quote") {
             return "quote";
@@ -279,6 +284,7 @@ Item {
             height: 28
 
             RefreshButton {
+                id: restartButtonRef
                 anchors.centerIn: parent
                 alwaysVisible: true
                 hoverRotates: true

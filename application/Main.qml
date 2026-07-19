@@ -119,6 +119,7 @@ Window {
                     options: [15, 30, 60, 120]
                     selectedValue: TypingEngine.testDurationSeconds
                     suffix: "s"
+                    cellHeight: 36
                     onSelected: value => {
                         TypingEngine.setTestDurationSeconds(value);
                         appWindow.restartTest();
@@ -130,6 +131,7 @@ Window {
                     visible: appWindow.testMode === "words"
                     options: [10, 25, 50, 100]
                     selectedValue: TypingEngine.testWordCount
+                    cellHeight: 36
                     onSelected: value => {
                         TypingEngine.setTestWordCount(value);
                         appWindow.restartTest();
@@ -182,7 +184,7 @@ Window {
                 anchors.top: viewport.bottom
                 anchors.topMargin: 20
                 anchors.horizontalCenter: parent.horizontalCenter
-                dimmedUnlessFocused: !TypingEngine.started
+                dimmedUnlessFocused: TypingEngine.started
                 tabTarget: inputCatcher
                 onActivated: appWindow.restartTest()
             }

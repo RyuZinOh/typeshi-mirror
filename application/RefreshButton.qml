@@ -15,7 +15,8 @@ Item {
 
     width: iconSize + 12
     height: iconSize + 12
-    activeFocusOnTab: !root.alwaysVisible
+    activeFocusOnTab: true
+    focus: true
 
     opacity: (root.alwaysVisible || !root.dimmedUnlessFocused || root.activeFocus) ? 1 : 0
     Behavior on opacity {
@@ -26,11 +27,13 @@ Item {
 
     KeyNavigation.tab: root.tabTarget
 
+    property bool keyRotatePulse: false
+
     Icon {
         id: refreshIcon
         anchors.centerIn: parent
         property int turns: 0
-        rotation: root.hoverRotates ? (refreshArea.containsMouse ? 180 : 0) : turns * 360
+        rotation: root.hoverRotates ? ((refreshArea.containsMouse || root.keyRotatePulse) ? 180 : 0) : turns * 360
         source: "assets/icons/refresh.svg"
         iconSize: root.iconSize
         color: (root.activeFocus || refreshArea.containsMouse) ? Theme.primaryColor : Theme.onSurfaceVariant
@@ -59,16 +62,22 @@ Item {
             root.activated();
         }
     }
-    Keys.onReturnPressed: {
-        if (!root.hoverRotates) {
+    Keys.onReturnPressed: root.triggerViaKeyboard()
+    Keys.onEnterPressed: root.triggerViaKeyboard()
+
+    function triggerViaKeyboard() {
+        if (root.hoverRotates) {
+            root.keyRotatePulse = true;
+            keyPulseDelayTimer.restart();
+        } else {
             refreshIcon.turns++;
+            root.activated();
         }
-        root.activated();
     }
-    Keys.onEnterPressed: {
-        if (!root.hoverRotates) {
-            refreshIcon.turns++;
-        }
-        root.activated();
+
+    Timer {
+        id: keyPulseDelayTimer
+        interval: 220
+        onTriggered: root.activated()
     }
 }
