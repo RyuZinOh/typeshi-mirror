@@ -105,6 +105,8 @@ Window {
                 anchors.bottomMargin: 20
                 spacing: 12
 
+                readonly property int controlCellHeight: 36
+
                 opacity: TypingEngine.started ? 0 : 1
                 enabled: !TypingEngine.started
                 Behavior on opacity {
@@ -114,26 +116,18 @@ Window {
                 }
 
                 SegmentedControl {
-                    id: durationControl
-                    visible: appWindow.testMode === "time"
-                    options: [15, 30, 60, 120]
-                    selectedValue: TypingEngine.testDurationSeconds
-                    suffix: "s"
-                    cellHeight: 36
+                    id: primaryControl
+                    enabled: appWindow.testMode === "time" || appWindow.testMode === "words"
+                    options: appWindow.testMode === "words" ? [10, 25, 50, 100] : [15, 30, 60, 120]
+                    selectedValue: appWindow.testMode === "words" ? TypingEngine.testWordCount : TypingEngine.testDurationSeconds
+                    suffix: appWindow.testMode === "words" ? "" : "s"
+                    cellHeight: modeRow.controlCellHeight
                     onSelected: value => {
-                        TypingEngine.setTestDurationSeconds(value);
-                        appWindow.restartTest();
-                    }
-                }
-
-                SegmentedControl {
-                    id: wordCountControl
-                    visible: appWindow.testMode === "words"
-                    options: [10, 25, 50, 100]
-                    selectedValue: TypingEngine.testWordCount
-                    cellHeight: 36
-                    onSelected: value => {
-                        TypingEngine.setTestWordCount(value);
+                        if (appWindow.testMode === "words") {
+                            TypingEngine.setTestWordCount(value);
+                        } else {
+                            TypingEngine.setTestDurationSeconds(value);
+                        }
                         appWindow.restartTest();
                     }
                 }
@@ -141,6 +135,8 @@ Window {
                 ToggleChip {
                     id: wordsChip
                     label: "words"
+                    chipHeight: modeRow.controlCellHeight + 10
+                    enabled: appWindow.testMode !== "quote"
                     active: appWindow.testMode === "words"
                     onToggled: {
                         appWindow.testMode = appWindow.testMode === "words" ? "time" : "words";
@@ -151,7 +147,8 @@ Window {
                 ToggleChip {
                     id: punctuationChip
                     label: "punctuation"
-                    visible: appWindow.testMode !== "quote"
+                    chipHeight: modeRow.controlCellHeight + 10
+                    enabled: appWindow.testMode !== "quote"
                     active: TypingEngine.punctuationEnabled
                     onToggled: {
                         TypingEngine.setPunctuationEnabled(!TypingEngine.punctuationEnabled);
@@ -162,6 +159,7 @@ Window {
                 ToggleChip {
                     id: quoteChip
                     label: "quote"
+                    chipHeight: modeRow.controlCellHeight + 10
                     active: appWindow.testMode === "quote"
                     onToggled: {
                         appWindow.testMode = appWindow.testMode === "quote" ? "time" : "quote";
@@ -169,7 +167,6 @@ Window {
                     }
                 }
             }
-
             TypingViewport {
                 id: viewport
                 anchors.top: parent.top

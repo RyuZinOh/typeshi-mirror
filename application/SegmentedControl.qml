@@ -16,10 +16,17 @@ Rectangle {
 
     width: inner.width + 10
     height: inner.height + 10
-    radius: 20
+    radius: 10
     color: Theme.surfaceContainer
     border.color: Theme.outlineVariant
     border.width: 1
+    opacity: root.enabled ? 1 : 0.4
+
+    Behavior on opacity {
+        NumberAnimation {
+            duration: 150
+        }
+    }
 
     Item {
         id: inner
@@ -37,7 +44,7 @@ Rectangle {
             width: root.cellHeight
             height: root.cellHeight
             color: Theme.primaryColor
-            roundedPolygon: GetMShapes.get(22)
+            roundedPolygon: GetMShapes.get(21)
             x: inner.selectedIndex * (root.cellWidth + root.cellSpacing) + (root.cellWidth - width) / 2
             y: 0
             z: 0
@@ -86,8 +93,9 @@ Rectangle {
                     MouseArea {
                         id: cellArea
                         anchors.fill: parent
+                        enabled: root.enabled
                         hoverEnabled: true
-                        cursorShape: Qt.PointingHandCursor
+                        cursorShape: root.enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
                         onClicked: root.selected(cell.modelData)
                     }
                 }

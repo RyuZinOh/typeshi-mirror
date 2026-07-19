@@ -9,7 +9,7 @@ Item {
     property int totalSeconds: 0
 
     width: 400
-    height: 200
+    height: 220
 
     property real maxVal: {
         let m = 10;
@@ -17,6 +17,35 @@ Item {
             m = Math.max(m, root.history[i].wpm, root.history[i].rawWpm);
         }
         return m * 1.15;
+    }
+
+    property real effectiveMaxTime: {
+        if (root.history.length === 0) {
+            return root.totalSeconds > 0 ? root.totalSeconds : 1;
+        }
+        const lastRecorded = root.history[root.history.length - 1].time;
+        if (root.totalSeconds > 0 && lastRecorded <= root.totalSeconds) {
+            return root.totalSeconds;
+        }
+        return lastRecorded;
+    }
+
+    property var plotHistory: {
+        const hist = root.history;
+        if (hist.length === 0 || hist[0].time === 0) {
+            return hist;
+        }
+        const zeroPoint = {
+            time: 0,
+            wpm: 0,
+            rawWpm: 0,
+            hasError: false
+        };
+        const out = [zeroPoint];
+        for (let i = 0; i < hist.length; i++) {
+            out.push(hist[i]);
+        }
+        return out;
     }
 
     Column {
@@ -71,6 +100,7 @@ Item {
         anchors.left: parent.left
         anchors.leftMargin: 40
         anchors.right: parent.right
+        anchors.rightMargin: 10
         anchors.bottom: xAxisLabels.top
         anchors.bottomMargin: 6
 
@@ -99,7 +129,7 @@ Item {
                 const ctx = getContext("2d");
                 ctx.clearRect(0, 0, width, height);
 
-                const hist = root.history;
+                const hist = root.plotHistory;
                 ctx.strokeStyle = graphCanvas.gridColor;
                 ctx.lineWidth = 1;
                 ctx.globalAlpha = 0.35;
@@ -116,7 +146,7 @@ Item {
                     return;
                 }
 
-                const maxTime = Math.max(root.totalSeconds, hist[hist.length - 1].time);
+                const maxTime = root.effectiveMaxTime;
                 const maxVal = root.maxVal;
 
                 function drawLine(key, color) {
@@ -155,6 +185,30 @@ Item {
                 }
             }
         }
+
+        Item {
+            id: errorStrip
+            anchors.bottom: parent.bottom
+            anchors.bottomMargin: 8
+            anchors.left: parent.left
+            anchors.right: parent.right
+            height: 16
+
+            Repeater {
+                model: root.plotHistory
+
+                delegate: Text {
+                    required property var modelData
+                    visible: modelData.hasError === true
+                    text: "\uf467"
+                    font.family: "Symbols Nerd Font"
+                    font.pixelSize: 13
+                    color: Theme.errorColor
+                    x: Math.max(0, Math.min((modelData.time / root.effectiveMaxTime) * errorStrip.width - width / 2, errorStrip.width - width))
+                    anchors.verticalCenter: parent.verticalCenter
+                }
+            }
+        }
     }
 
     Row {
@@ -169,8 +223,8 @@ Item {
 
             delegate: Text {
                 required property int index
-                property int totalSeconds: root.totalSeconds
-                text: Math.round((index / 4) * totalSeconds).toString()
+                property real maxTime: root.effectiveMaxTime
+                text: Math.round((index / 4) * maxTime).toString()
                 font.pixelSize: 11
                 color: Theme.onSurfaceVariant
                 width: xAxisLabels.width / 5

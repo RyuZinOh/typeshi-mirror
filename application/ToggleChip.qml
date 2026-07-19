@@ -7,15 +7,17 @@ Rectangle {
 
     property string label: ""
     property bool active: false
+    property int chipHeight: 48
 
     signal toggled
 
     width: labelText.width + 32
-    height: 48
-    radius: root.active ? height / 2 : 20
+    height: root.chipHeight
+    radius: root.active ? height / 2 : 10
     color: root.active ? Theme.primaryColor : Theme.surfaceContainer
     border.color: Theme.outlineVariant
     border.width: 1
+    opacity: root.enabled ? 1 : 0.4
 
     Behavior on radius {
         NumberAnimation {
@@ -25,6 +27,11 @@ Rectangle {
     }
     Behavior on color {
         ColorAnimation {
+            duration: 150
+        }
+    }
+    Behavior on opacity {
+        NumberAnimation {
             duration: 150
         }
     }
@@ -55,8 +62,9 @@ Rectangle {
     MouseArea {
         id: chipArea
         anchors.fill: parent
+        enabled: root.enabled
         hoverEnabled: true
-        cursorShape: Qt.PointingHandCursor
+        cursorShape: root.enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
         onClicked: root.toggled()
     }
 }

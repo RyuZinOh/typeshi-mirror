@@ -195,6 +195,7 @@ private:
 
   QVector<QVariantMap> m_history;
   int m_lastHistorySecond = -1;
+  int m_lastSampledMistakeCount = 0;
 
   // quote
   bool m_quoteMode = false;

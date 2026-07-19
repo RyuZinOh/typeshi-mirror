@@ -148,7 +148,7 @@ Item {
                     width: parent.width
                     height: 200
                     history: TypingEngine.wpmHistory
-                    totalSeconds: TypingEngine.testDurationSeconds
+                    totalSeconds: aftermath.resultMode === "english" ? TypingEngine.testDurationSeconds : 0
                 }
 
                 Item {

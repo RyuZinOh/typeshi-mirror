@@ -22,6 +22,8 @@ TypingEngine::TypingEngine(QObject *parent) : QObject(parent) {
         point["time"] = sec;
         point["wpm"] = wpm();
         point["rawWpm"] = rawWpm();
+        point["hasError"] = m_permanentMistakeCount > m_lastSampledMistakeCount;
+        m_lastSampledMistakeCount = m_permanentMistakeCount;
         m_history.append(point);
         emit historyChanged();
       }
@@ -198,6 +200,7 @@ void TypingEngine::resetState() {
   m_permanentMistakeCount = 0;
   m_wpmCorrectKetstrokes = 0;
   m_totalAttemptedKeystrokes = 0;
+  m_lastSampledMistakeCount = 0;
 
   m_captilizeNext = true;
 }
