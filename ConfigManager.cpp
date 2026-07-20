@@ -35,7 +35,15 @@ QString ConfigManager::stateDir() const {
   }
   return QDir::homePath() + "/.local/state/typeShi";
 }
-
+QVariantMap ConfigManager::previewColors(const QString &themeName,
+                                         const QString &variant) const {
+  QVariantMap out;
+  const QString path =
+      QStringLiteral(":/qt/qml/typeShitter/application/assets/themes/%1/%2.ini")
+          .arg(themeName, variant);
+  parseSection(path, "theme", out);
+  return out;
+}
 QString ConfigManager::statePath() const { return stateDir() + "/state.ini"; }
 
 void ConfigManager::parseSection(const QString &path, const QString &section,

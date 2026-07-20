@@ -34,6 +34,8 @@ public:
   Q_INVOKABLE void reload();
   Q_INVOKABLE QColor themeColor(const QString &key) const;
   Q_INVOKABLE QStringList availableThemes() const;
+  Q_INVOKABLE QVariantMap previewColors(const QString &themeName,
+                                        const QString &variant) const;
   Q_INVOKABLE void setTheme(const QString &themeName, const QString &variant);
   Q_INVOKABLE void setCustomTheme(bool enabled);
   Q_INVOKABLE void saveTestDefaults(const QString &mode, int duration,
