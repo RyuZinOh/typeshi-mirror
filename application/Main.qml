@@ -66,6 +66,36 @@ Window {
     }
 
     Item {
+        id: themeTrigger
+        anchors.bottom: parent.bottom
+        anchors.right: parent.right
+        anchors.margins: 20
+        width: 28
+        height: 28
+
+        Icon {
+            anchors.centerIn: parent
+            source: "assets/icons/palette.svg"
+            iconSize: 20
+            color: themeTriggerArea.containsMouse ? Theme.primaryColor : Theme.onSurfaceVariant
+
+            Behavior on color {
+                ColorAnimation {
+                    duration: 150
+                }
+            }
+        }
+
+        MouseArea {
+            id: themeTriggerArea
+            anchors.fill: parent
+            hoverEnabled: true
+            cursorShape: Qt.PointingHandCursor
+            onClicked: themePicker.open()
+        }
+    }
+
+    Item {
         id: inputCatcher
         anchors.fill: parent
         focus: true
@@ -237,6 +267,10 @@ Window {
             resultPunctuation: appWindow.testMode === "quote" ? false : TypingEngine.punctuationEnabled
             onRestartRequested: appWindow.restartTest()
         }
+    }
+
+    ThemePicker {
+        id: themePicker
     }
 
     function restartTest() {
