@@ -126,12 +126,16 @@ void ConfigManager::loadWords() {
 
 void ConfigManager::load() {
   m_theme.clear();
-  QVariantMap general;
+  m_general.clear();
 
-  parseSection(statePath(), "general", general);
+  parseSection(statePath(), "general", m_general);
 
-  m_currentTheme = general.value("theme", "midnight_purple").toString();
-  m_currentVariant = general.value("variant", "dark").toString();
+  m_currentTheme = m_general.value("theme", "midnight_purple").toString();
+  m_currentVariant = m_general.value("variant", "dark").toString();
+  m_lastMode = m_general.value("lastMode", "time").toString();
+  m_lastDuration = m_general.value("lastDuration", "60").toInt();
+  m_lastWordCount = m_general.value("lastWordCount", "25").toInt();
+  m_lastPunctuation = m_general.value("lastPunctuation", "0").toString() == "1";
 
   if (m_currentTheme.compare("custom", Qt::CaseInsensitive) == 0) {
     parseSection(configPath(), "theme", m_theme);
@@ -160,8 +164,7 @@ void ConfigManager::load() {
 
 void ConfigManager::reload() { load(); }
 
-void ConfigManager::writeState(const QString &themeName,
-                               const QString &variant) {
+void ConfigManager::writeGeneral() {
   QDir().mkpath(stateDir());
   QFile file(statePath());
 
@@ -172,9 +175,8 @@ void ConfigManager::writeState(const QString &themeName,
   }
   QTextStream stream(&file);
   stream << "[general]\n";
-  stream << "theme=" << themeName << "\n";
-  if (!variant.isEmpty()) {
-    stream << "variant=" << variant << "\n";
+  for (auto it = m_general.constBegin(); it != m_general.constEnd(); ++it) {
+    stream << it.key() << "=" << it.value().toString() << "\n";
   }
   file.close();
 
@@ -185,22 +187,40 @@ void ConfigManager::writeState(const QString &themeName,
 }
 
 void ConfigManager::setTheme(const QString &themeName, const QString &variant) {
-  writeState(themeName, variant.isEmpty() ? m_currentVariant : variant);
+  m_general["theme"] = themeName;
+  m_general["variant"] = variant.isEmpty() ? m_currentVariant : variant;
+  writeGeneral();
 }
 
 void ConfigManager::setCustomTheme(bool enabled) {
   if (enabled) {
-    writeState("custom", QString());
+    m_general["theme"] = "custom";
   } else {
-    writeState(m_currentTheme == "custom" ? "midnight_purple" : m_currentTheme,
-               m_currentVariant.isEmpty() ? "dark" : m_currentVariant);
+    m_general["theme"] =
+        m_currentTheme == "custom" ? "midnight_purple" : m_currentTheme;
+    m_general["variant"] =
+        m_currentVariant.isEmpty() ? "dark" : m_currentVariant;
   }
+  writeGeneral();
+}
+
+void ConfigManager::saveTestDefaults(const QString &mode, int duration,
+                                     int wordCount, bool punctuation) {
+  m_general["lastMode"] = mode;
+  m_general["lastDuration"] = duration;
+  m_general["lastWordCount"] = wordCount;
+  m_general["lastPunctuation"] = punctuation ? "1" : "0";
+  writeGeneral();
 }
 
 QVariantMap ConfigManager::theme() const { return m_theme; }
 QStringList ConfigManager::words() const { return m_words; }
 QString ConfigManager::currentTheme() const { return m_currentTheme; }
 QString ConfigManager::currentVariant() const { return m_currentVariant; }
+QString ConfigManager::lastMode() const { return m_lastMode; }
+int ConfigManager::lastDuration() const { return m_lastDuration; }
+int ConfigManager::lastWordCount() const { return m_lastWordCount; }
+bool ConfigManager::lastPunctuation() const { return m_lastPunctuation; }
 
 QStringList ConfigManager::availableThemes() const {
   QDir dir(QStringLiteral(":/qt/qml/typeShitter/application/assets/"

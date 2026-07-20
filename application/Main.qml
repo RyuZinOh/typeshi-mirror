@@ -17,7 +17,12 @@ Window {
     property string testMode: "time"
 
     Component.onCompleted: {
-        TypingEngine.startTest(Config.words);
+        appWindow.testMode = Config.lastMode;
+        TypingEngine.setTestDurationSeconds(Config.lastDuration);
+        TypingEngine.setTestWordCount(Config.lastWordCount);
+        TypingEngine.setPunctuationEnabled(Config.lastPunctuation);
+        appWindow.restartTest();
+        // TypingEngine.startTest(Config.words);
         inputCatcher.forceActiveFocus();
         console.log(History);
         // History.recordResult(85.5, 90.2, 96.0, 88.0, 30, 40, 2, 1, 0);
@@ -144,7 +149,6 @@ Window {
                         duration: 150
                     }
                 }
-
                 SegmentedControl {
                     id: primaryControl
                     enabled: appWindow.testMode === "time" || appWindow.testMode === "words"
@@ -158,6 +162,7 @@ Window {
                         } else {
                             TypingEngine.setTestDurationSeconds(value);
                         }
+                        Config.saveTestDefaults(appWindow.testMode, TypingEngine.testDurationSeconds, TypingEngine.testWordCount, TypingEngine.punctuationEnabled);
                         appWindow.restartTest();
                     }
                 }
@@ -170,6 +175,7 @@ Window {
                     active: appWindow.testMode === "words"
                     onToggled: {
                         appWindow.testMode = appWindow.testMode === "words" ? "time" : "words";
+                        Config.saveTestDefaults(appWindow.testMode, TypingEngine.testDurationSeconds, TypingEngine.testWordCount, TypingEngine.punctuationEnabled);
                         appWindow.restartTest();
                     }
                 }
@@ -182,6 +188,7 @@ Window {
                     active: TypingEngine.punctuationEnabled
                     onToggled: {
                         TypingEngine.setPunctuationEnabled(!TypingEngine.punctuationEnabled);
+                        Config.saveTestDefaults(appWindow.testMode, TypingEngine.testDurationSeconds, TypingEngine.testWordCount, TypingEngine.punctuationEnabled);
                         appWindow.restartTest();
                     }
                 }
@@ -193,6 +200,7 @@ Window {
                     active: appWindow.testMode === "quote"
                     onToggled: {
                         appWindow.testMode = appWindow.testMode === "quote" ? "time" : "quote";
+                        Config.saveTestDefaults(appWindow.testMode, TypingEngine.testDurationSeconds, TypingEngine.testWordCount, TypingEngine.punctuationEnabled);
                         appWindow.restartTest();
                     }
                 }
