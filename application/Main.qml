@@ -111,6 +111,9 @@ Window {
         KeyNavigation.tab: refreshButton
 
         Keys.onPressed: event => {
+            if (themePicker.visible) {
+                return;
+            }
             if (event.key === Qt.Key_Backspace) {
                 TypingEngine.deleteBackward(event.modifiers & Qt.ControlModifier);
                 event.accepted = true;
@@ -219,6 +222,7 @@ Window {
                 anchors.top: viewport.bottom
                 anchors.topMargin: 20
                 anchors.horizontalCenter: parent.horizontalCenter
+                enabled: !themePicker.visible
                 dimmedUnlessFocused: TypingEngine.started
                 tabTarget: inputCatcher
                 onActivated: appWindow.restartTest()
