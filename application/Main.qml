@@ -15,6 +15,7 @@ Window {
     readonly property int passageFontSize: 36
     readonly property int sidePadding: 160
     property string testMode: "time"
+    property bool crtEnabled: false
 
     Component.onCompleted: {
         appWindow.testMode = Config.lastMode;
@@ -32,257 +33,299 @@ Window {
         // }
     }
 
-    ConfettiRenderer {
-        id: confetti
-        anchors.fill: parent
-        z: 100
-
-        property bool hasBurst: false
-
-        function tryBurst() {
-            if (confetti.hasBurst || confetti.width <= 0 || confetti.height <= 0) {
-                return;
-            }
-            confetti.hasBurst = true;
-            confetti.spawnBurst([Theme.primaryColor, Theme.secondaryColor, Theme.tertiaryColor]);
-        }
-    }
-
-    Text {
-        anchors {
-            top: parent.top
-            right: parent.right
-            margins: 20
-        }
-        font.pixelSize: 20
-        color: Theme.onSurfaceVariant
-        text: {
-            TypingEngine.elapsedMs;
-            TypingEngine.wpm;
-            return "wpm " + TypingEngine.wpm.toFixed(0) + "\nraw " + TypingEngine.rawWpm.toFixed(0) + "\naccuracy " + TypingEngine.accuracy.toFixed(0) + "\nconsistency " + TypingEngine.consistency.toFixed(0) + " %";
-        }
-    }
-
-    Records {
-        id: records
-        anchors.top: parent.top
-        anchors.left: parent.left
-        anchors.margins: 20
-    }
-
     Item {
-        id: themeTrigger
-        anchors.bottom: parent.bottom
-        anchors.right: parent.right
-        anchors.margins: 20
-        width: 28
-        height: 28
+        id: sceneLayer
+        anchors.fill: parent
 
-        Icon {
-            anchors.centerIn: parent
-            source: "assets/icons/palette.svg"
-            iconSize: 20
-            color: themeTriggerArea.containsMouse ? Theme.primaryColor : Theme.onSurfaceVariant
+        layer.enabled: appWindow.crtEnabled
+        layer.smooth: true
+        layer.effect: ShaderEffect {
+            property variant source
+            property vector2d resolution: Qt.vector2d(width, height)
+            property real scanlineIntensity: 1.1
+            property real vignetteStrength: 0.18
+            property real glowThreshold: 0.1
+            property real glowIntensity: 1.0
 
-            Behavior on color {
-                ColorAnimation {
-                    duration: 150
+            vertexShader: "assets/shaders/crt.vert.qsb"
+            fragmentShader: "assets/shaders/crt.frag.qsb"
+        }
+
+        Item {
+            id: sceneRoot
+            anchors.fill: parent
+
+            ConfettiRenderer {
+                id: confetti
+                anchors.fill: parent
+                z: 100
+
+                property bool hasBurst: false
+
+                function tryBurst() {
+                    if (confetti.hasBurst || confetti.width <= 0 || confetti.height <= 0) {
+                        return;
+                    }
+                    confetti.hasBurst = true;
+                    confetti.spawnBurst([Theme.primaryColor, Theme.secondaryColor, Theme.tertiaryColor]);
                 }
             }
-        }
 
-        MouseArea {
-            id: themeTriggerArea
-            anchors.fill: parent
-            hoverEnabled: true
-            cursorShape: Qt.PointingHandCursor
-            onClicked: themePicker.open()
-        }
-    }
-
-    Item {
-        id: inputCatcher
-        anchors.fill: parent
-        focus: true
-        activeFocusOnTab: true
-        enabled: !TypingEngine.finished
-        visible: !TypingEngine.finished
-
-        KeyNavigation.tab: refreshButton
-
-        Keys.onPressed: event => {
-            if (themePicker.visible) {
-                return;
+            Text {
+                anchors {
+                    top: parent.top
+                    right: parent.right
+                    margins: 20
+                }
+                font.pixelSize: 20
+                color: Theme.onSurfaceVariant
+                text: {
+                    TypingEngine.elapsedMs;
+                    TypingEngine.wpm;
+                    return "wpm " + TypingEngine.wpm.toFixed(0) + "\nraw " + TypingEngine.rawWpm.toFixed(0) + "\naccuracy " + TypingEngine.accuracy.toFixed(0) + "\nconsistency " + TypingEngine.consistency.toFixed(0) + " %";
+                }
             }
-            if (event.key === Qt.Key_Backspace) {
-                TypingEngine.deleteBackward(event.modifiers & Qt.ControlModifier);
-                event.accepted = true;
-                return;
+
+            Records {
+                id: records
+                anchors.top: parent.top
+                anchors.left: parent.left
+                anchors.margins: 20
             }
-            if (event.text.length > 0 && event.text.charCodeAt(0) >= 32) {
-                TypingEngine.typeCharacter(event.text);
-                event.accepted = true;
+
+            Item {
+                id: inputCatcher
+                anchors.fill: parent
+                focus: true
+                activeFocusOnTab: true
+                enabled: !TypingEngine.finished
+                visible: !TypingEngine.finished
+
+                KeyNavigation.tab: refreshButton
+
+                Keys.onPressed: event => {
+                    if (themePicker.visible) {
+                        return;
+                    }
+                    if (event.key === Qt.Key_Backspace) {
+                        TypingEngine.deleteBackward(event.modifiers & Qt.ControlModifier);
+                        event.accepted = true;
+                        return;
+                    }
+                    if (event.text.length > 0 && event.text.charCodeAt(0) >= 32) {
+                        TypingEngine.typeCharacter(event.text);
+                        event.accepted = true;
+                    }
+                }
+
+                Item {
+                    id: testColumn
+                    anchors {
+                        left: parent.left
+                        right: parent.right
+                        verticalCenter: parent.verticalCenter
+                        leftMargin: appWindow.sidePadding
+                        rightMargin: appWindow.sidePadding
+                    }
+                    height: viewport.height + 80
+
+                    Row {
+                        id: modeRow
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        anchors.bottom: viewport.top
+                        anchors.bottomMargin: 20
+                        spacing: 12
+
+                        readonly property int controlCellHeight: 36
+
+                        opacity: TypingEngine.started ? 0 : 1
+                        enabled: !TypingEngine.started
+                        Behavior on opacity {
+                            NumberAnimation {
+                                duration: 150
+                            }
+                        }
+                        SegmentedControl {
+                            id: primaryControl
+                            enabled: appWindow.testMode === "time" || appWindow.testMode === "words"
+                            options: appWindow.testMode === "words" ? [10, 25, 50, 100] : [15, 30, 60, 120]
+                            selectedValue: appWindow.testMode === "words" ? TypingEngine.testWordCount : TypingEngine.testDurationSeconds
+                            suffix: appWindow.testMode === "words" ? "" : "s"
+                            cellHeight: modeRow.controlCellHeight
+                            onSelected: value => {
+                                if (appWindow.testMode === "words") {
+                                    TypingEngine.setTestWordCount(value);
+                                } else {
+                                    TypingEngine.setTestDurationSeconds(value);
+                                }
+                                Config.saveTestDefaults(appWindow.testMode, TypingEngine.testDurationSeconds, TypingEngine.testWordCount, TypingEngine.punctuationEnabled);
+                                appWindow.restartTest();
+                            }
+                        }
+
+                        ToggleChip {
+                            id: wordsChip
+                            label: "words"
+                            chipHeight: modeRow.controlCellHeight + 10
+                            enabled: appWindow.testMode !== "quote"
+                            active: appWindow.testMode === "words"
+                            onToggled: {
+                                appWindow.testMode = appWindow.testMode === "words" ? "time" : "words";
+                                Config.saveTestDefaults(appWindow.testMode, TypingEngine.testDurationSeconds, TypingEngine.testWordCount, TypingEngine.punctuationEnabled);
+                                appWindow.restartTest();
+                            }
+                        }
+
+                        ToggleChip {
+                            id: punctuationChip
+                            label: "punctuation"
+                            chipHeight: modeRow.controlCellHeight + 10
+                            enabled: appWindow.testMode !== "quote"
+                            active: TypingEngine.punctuationEnabled
+                            onToggled: {
+                                TypingEngine.setPunctuationEnabled(!TypingEngine.punctuationEnabled);
+                                Config.saveTestDefaults(appWindow.testMode, TypingEngine.testDurationSeconds, TypingEngine.testWordCount, TypingEngine.punctuationEnabled);
+                                appWindow.restartTest();
+                            }
+                        }
+
+                        ToggleChip {
+                            id: quoteChip
+                            label: "quote"
+                            chipHeight: modeRow.controlCellHeight + 10
+                            active: appWindow.testMode === "quote"
+                            onToggled: {
+                                appWindow.testMode = appWindow.testMode === "quote" ? "time" : "quote";
+                                Config.saveTestDefaults(appWindow.testMode, TypingEngine.testDurationSeconds, TypingEngine.testWordCount, TypingEngine.punctuationEnabled);
+                                appWindow.restartTest();
+                            }
+                        }
+                    }
+                    TypingViewport {
+                        id: viewport
+                        anchors.top: parent.top
+                        anchors.topMargin: 60
+                        passageFontSize: appWindow.passageFontSize
+                        linesVisible: appWindow.linesVisible
+                        dimmed: refreshButton.activeFocus
+                    }
+
+                    RefreshButton {
+                        id: refreshButton
+                        anchors.top: viewport.bottom
+                        anchors.topMargin: 20
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        enabled: !themePicker.visible
+                        dimmedUnlessFocused: TypingEngine.started
+                        tabTarget: inputCatcher
+                        onActivated: appWindow.restartTest()
+                    }
+                }
+            }
+
+            Loader {
+                id: aftermathLoader
+                anchors.fill: parent
+                active: TypingEngine.finished
+                opacity: TypingEngine.finished ? 1 : 0
+                scale: TypingEngine.finished ? 1 : 0
+                onActiveChanged: {
+                    if (active) {
+                        let mode = "english";
+                        let dur = TypingEngine.testDurationSeconds;
+                        let punct = TypingEngine.punctuationEnabled;
+                        let words = 0;
+                        if (appWindow.testMode === "quote") {
+                            mode = "quote";
+                            dur = 0;
+                            punct = false;
+                        } else if (appWindow.testMode === "words") {
+                            mode = "words";
+                            dur = 0;
+                            words = TypingEngine.testWordCount;
+                        }
+                        const oldBest = appWindow.testMode === "words" ? History.bestWpmForWords(words, punct ? 1 : 0) : History.bestWpmFor(mode, dur, punct ? 1 : 0);
+
+                        History.recordResult(TypingEngine.wpm, TypingEngine.rawWpm, TypingEngine.accuracy, TypingEngine.consistency, Math.round(TypingEngine.elapsedMs / 1000), TypingEngine.correctCount, TypingEngine.incorrectCount, TypingEngine.extraCount, TypingEngine.missedCount, mode, punct, words);
+
+                        if (TypingEngine.wpm > 0 && TypingEngine.wpm > oldBest) {
+                            confetti.tryBurst();
+                        }
+                    }
+                }
+
+                Behavior on opacity {
+                    NumberAnimation {
+                        duration: 150
+                        easing.type: Easing.InOutQuad
+                    }
+                }
+                Behavior on scale {
+                    NumberAnimation {
+                        duration: 150
+                        easing.type: Easing.InOutQuad
+                    }
+                }
+                sourceComponent: Aftermath {
+                    resultMode: appWindow.testMode === "quote" ? "quote" : (appWindow.testMode === "words" ? "words" : "english")
+                    resultDuration: appWindow.testMode === "quote" ? 0 : (appWindow.testMode === "words" ? TypingEngine.testWordCount : TypingEngine.testDurationSeconds)
+                    resultPunctuation: appWindow.testMode === "quote" ? false : TypingEngine.punctuationEnabled
+                    onRestartRequested: appWindow.restartTest()
+                }
             }
         }
 
         Item {
-            id: testColumn
-            anchors {
-                left: parent.left
-                right: parent.right
-                verticalCenter: parent.verticalCenter
-                leftMargin: appWindow.sidePadding
-                rightMargin: appWindow.sidePadding
-            }
-            height: viewport.height + 80
+            id: uiOverlay
+            anchors.fill: parent
+            z: 400
 
-            Row {
-                id: modeRow
-                anchors.horizontalCenter: parent.horizontalCenter
-                anchors.bottom: viewport.top
-                anchors.bottomMargin: 20
-                spacing: 12
+            Item {
+                id: themeTrigger
+                anchors.bottom: parent.bottom
+                anchors.right: parent.right
+                anchors.margins: 20
+                width: 28
+                height: 28
 
-                readonly property int controlCellHeight: 36
+                Icon {
+                    anchors.centerIn: parent
+                    source: "assets/icons/palette.svg"
+                    iconSize: 20
+                    color: themeTriggerArea.containsMouse ? Theme.primaryColor : Theme.onSurfaceVariant
 
-                opacity: TypingEngine.started ? 0 : 1
-                enabled: !TypingEngine.started
-                Behavior on opacity {
-                    NumberAnimation {
-                        duration: 150
-                    }
-                }
-                SegmentedControl {
-                    id: primaryControl
-                    enabled: appWindow.testMode === "time" || appWindow.testMode === "words"
-                    options: appWindow.testMode === "words" ? [10, 25, 50, 100] : [15, 30, 60, 120]
-                    selectedValue: appWindow.testMode === "words" ? TypingEngine.testWordCount : TypingEngine.testDurationSeconds
-                    suffix: appWindow.testMode === "words" ? "" : "s"
-                    cellHeight: modeRow.controlCellHeight
-                    onSelected: value => {
-                        if (appWindow.testMode === "words") {
-                            TypingEngine.setTestWordCount(value);
-                        } else {
-                            TypingEngine.setTestDurationSeconds(value);
+                    Behavior on color {
+                        ColorAnimation {
+                            duration: 150
                         }
-                        Config.saveTestDefaults(appWindow.testMode, TypingEngine.testDurationSeconds, TypingEngine.testWordCount, TypingEngine.punctuationEnabled);
-                        appWindow.restartTest();
                     }
                 }
 
-                ToggleChip {
-                    id: wordsChip
-                    label: "words"
-                    chipHeight: modeRow.controlCellHeight + 10
-                    enabled: appWindow.testMode !== "quote"
-                    active: appWindow.testMode === "words"
-                    onToggled: {
-                        appWindow.testMode = appWindow.testMode === "words" ? "time" : "words";
-                        Config.saveTestDefaults(appWindow.testMode, TypingEngine.testDurationSeconds, TypingEngine.testWordCount, TypingEngine.punctuationEnabled);
-                        appWindow.restartTest();
-                    }
-                }
-
-                ToggleChip {
-                    id: punctuationChip
-                    label: "punctuation"
-                    chipHeight: modeRow.controlCellHeight + 10
-                    enabled: appWindow.testMode !== "quote"
-                    active: TypingEngine.punctuationEnabled
-                    onToggled: {
-                        TypingEngine.setPunctuationEnabled(!TypingEngine.punctuationEnabled);
-                        Config.saveTestDefaults(appWindow.testMode, TypingEngine.testDurationSeconds, TypingEngine.testWordCount, TypingEngine.punctuationEnabled);
-                        appWindow.restartTest();
-                    }
-                }
-
-                ToggleChip {
-                    id: quoteChip
-                    label: "quote"
-                    chipHeight: modeRow.controlCellHeight + 10
-                    active: appWindow.testMode === "quote"
-                    onToggled: {
-                        appWindow.testMode = appWindow.testMode === "quote" ? "time" : "quote";
-                        Config.saveTestDefaults(appWindow.testMode, TypingEngine.testDurationSeconds, TypingEngine.testWordCount, TypingEngine.punctuationEnabled);
-                        appWindow.restartTest();
-                    }
+                MouseArea {
+                    id: themeTriggerArea
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: themePicker.open()
                 }
             }
-            TypingViewport {
-                id: viewport
-                anchors.top: parent.top
-                anchors.topMargin: 60
-                passageFontSize: appWindow.passageFontSize
-                linesVisible: appWindow.linesVisible
-                dimmed: refreshButton.activeFocus
-            }
 
-            RefreshButton {
-                id: refreshButton
-                anchors.top: viewport.bottom
-                anchors.topMargin: 20
-                anchors.horizontalCenter: parent.horizontalCenter
-                enabled: !themePicker.visible
-                dimmedUnlessFocused: TypingEngine.started
-                tabTarget: inputCatcher
-                onActivated: appWindow.restartTest()
-            }
-        }
-    }
-
-    Loader {
-        id: aftermathLoader
-        anchors.fill: parent
-        active: TypingEngine.finished
-        opacity: TypingEngine.finished ? 1 : 0
-        scale: TypingEngine.finished ? 1 : 0
-        onActiveChanged: {
-            if (active) {
-                let mode = "english";
-                let dur = TypingEngine.testDurationSeconds;
-                let punct = TypingEngine.punctuationEnabled;
-                let words = 0;
-                if (appWindow.testMode === "quote") {
-                    mode = "quote";
-                    dur = 0;
-                    punct = false;
-                } else if (appWindow.testMode === "words") {
-                    mode = "words";
-                    dur = 0;
-                    words = TypingEngine.testWordCount;
-                }
-                const oldBest = appWindow.testMode === "words" ? History.bestWpmForWords(words, punct ? 1 : 0) : History.bestWpmFor(mode, dur, punct ? 1 : 0);
-
-                History.recordResult(TypingEngine.wpm, TypingEngine.rawWpm, TypingEngine.accuracy, TypingEngine.consistency, Math.round(TypingEngine.elapsedMs / 1000), TypingEngine.correctCount, TypingEngine.incorrectCount, TypingEngine.extraCount, TypingEngine.missedCount, mode, punct, words);
-
-                if (TypingEngine.wpm > 0 && TypingEngine.wpm > oldBest) {
-                    confetti.tryBurst();
+            ToggleChip {
+                id: crtTrigger
+                anchors.bottom: parent.bottom
+                anchors.left: parent.left
+                anchors.margins: 20
+                label: "CRT mode"
+                active: appWindow.crtEnabled
+                onToggled: {
+                    appWindow.crtEnabled = !appWindow.crtEnabled;
                 }
             }
-        }
 
-        Behavior on opacity {
-            NumberAnimation {
-                duration: 150
-                easing.type: Easing.InOutQuad
+            ThemePicker {
+                id: themePicker
             }
         }
-        Behavior on scale {
-            NumberAnimation {
-                duration: 150
-                easing.type: Easing.InOutQuad
-            }
-        }
-        sourceComponent: Aftermath {
-            resultMode: appWindow.testMode === "quote" ? "quote" : (appWindow.testMode === "words" ? "words" : "english")
-            resultDuration: appWindow.testMode === "quote" ? 0 : (appWindow.testMode === "words" ? TypingEngine.testWordCount : TypingEngine.testDurationSeconds)
-            resultPunctuation: appWindow.testMode === "quote" ? false : TypingEngine.punctuationEnabled
-            onRestartRequested: appWindow.restartTest()
-        }
-    }
-
-    ThemePicker {
-        id: themePicker
     }
 
     function restartTest() {

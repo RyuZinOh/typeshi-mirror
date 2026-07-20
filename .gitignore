@@ -4,3 +4,5 @@ compile_commands.json
 application/.qmlls.ini
 package-bin.sh
 *.gz
+samples
+/shaders/
