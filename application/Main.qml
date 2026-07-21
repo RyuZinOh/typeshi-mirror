@@ -26,6 +26,8 @@ Window {
         // TypingEngine.startTest(Config.words);
         inputCatcher.forceActiveFocus();
         console.log(History);
+        // Multiplayer.connectToServer("wss://typeshi-relay.onrender.com/ws");
+        Multiplayer.connectToServer("ws://localhost:8080/ws");
         // History.recordResult(85.5, 90.2, 96.0, 88.0, 30, 40, 2, 1, 0);
         // const summary = History.dailySummary();
         // for (let i = 0; i < summary.length; i++) {
