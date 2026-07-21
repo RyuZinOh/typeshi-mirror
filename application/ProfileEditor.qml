@@ -10,12 +10,16 @@ Item {
     anchors.fill: parent
     z: 200
 
+    property string pendingAvatarUrl: ""
+
     function open() {
         root.visible = true;
+        root.pendingAvatarUrl = "";
         nameField.text = Config.username;
     }
     function close() {
         root.visible = false;
+        root.pendingAvatarUrl = "";
     }
 
     Rectangle {
@@ -51,13 +55,15 @@ Item {
             spacing: 18
 
             Avatar {
+                id: previewAvatar
                 anchors.horizontalCenter: parent.horizontalCenter
                 size: 88
+                avatarPath: root.pendingAvatarUrl !== "" ? root.pendingAvatarUrl : Config.avatarPath
 
                 MouseArea {
                     anchors.fill: parent
                     cursorShape: Qt.PointingHandCursor
-                    onClicked: avatarDialog.open()
+                    onClicked: avatarDialogLoader.active = true
                 }
             }
 
@@ -84,7 +90,6 @@ Item {
                     font.pixelSize: 15
                     color: Theme.onSurface
                     maximumLength: 24
-                    onEditingFinished: Config.setUsername(nameField.text)
                 }
             }
 
@@ -93,21 +98,40 @@ Item {
                 label: "done"
                 active: true
                 onToggled: {
-                    Config.setUsername(nameField.text);
+                    if (nameField.text.trim ? nameField.text.trim() : nameField.text) {
+                        Config.setUsername(nameField.text);
+                    }
+                    if (root.pendingAvatarUrl !== "") {
+                        Config.importAvatar(root.pendingAvatarUrl);
+                    }
                     root.close();
                 }
             }
         }
     }
+
     Keys.onEscapePressed: root.close()
-    FileDialog {
-        id: avatarDialog
-        title: "choose a profile picture"
-        nameFilters: ["Images (*.png *.jpg *.jpeg *.webp)"]
-        currentFolder: {
-            const pics = StandardPaths.writableLocation(StandardPaths.PicturesLocation);
-            return pics.toString() !== "" ? pics : StandardPaths.writableLocation(StandardPaths.HomeLocation);
+
+    Loader {
+        id: avatarDialogLoader
+        active: false
+        sourceComponent: FileDialog {
+            title: "choose a profile picture"
+            nameFilters: ["Images (*.png *.jpg *.jpeg *.webp)"]
+
+            Component.onCompleted: {
+                const pics = StandardPaths.writableLocation(StandardPaths.PicturesLocation);
+                currentFolder = pics.toString() !== "" ? pics : StandardPaths.writableLocation(StandardPaths.HomeLocation);
+                open();
+            }
+
+            onAccepted: {
+                root.pendingAvatarUrl = selectedFile;
+                avatarDialogLoader.active = false;
+            }
+            onRejected: {
+                avatarDialogLoader.active = false;
+            }
         }
-        onAccepted: Config.importAvatar(avatarDialog.selectedFile)
     }
 }

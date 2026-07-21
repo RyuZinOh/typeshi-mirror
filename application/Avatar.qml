@@ -28,7 +28,13 @@ Item {
         borderColor: hoverArea.containsMouse ? Theme.primaryColor : Theme.outlineVariant
         borderWidth: 2
         color: root.generatedColor
-        imageSource: root.avatarPath !== "" ? "file://" + root.avatarPath : ""
+        imageSource: {
+            if (root.avatarPath === "") {
+                return "";
+            }
+            const p = root.avatarPath.toString();
+            return p.startsWith("file://") ? p : "file://" + p;
+        }
 
         Behavior on borderColor {
             ColorAnimation {

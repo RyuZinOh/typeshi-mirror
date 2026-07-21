@@ -203,11 +203,15 @@ QString ConfigManager::importAvatar(const QString &sourceFileUrl) {
   }
 
   const QString avatarDir = stateDir() + "/avatar";
-  QDir().mkpath(avatarDir);
-  const QString destPath = avatarDir + "/profile." + info.suffix().toLower();
+  // const QString destPath = avatarDir + "/profile." + info.suffix().toLower();
 
   QDir(avatarDir).removeRecursively();
   QDir().mkpath(avatarDir);
+
+  const qint64 stamp = QDateTime::currentMSecsSinceEpoch();
+  const QString destPath =
+      avatarDir +
+      QString("/profile_%1.%2").arg(stamp).arg(info.suffix().toLower());
 
   if (!QFile::copy(sourcePath, destPath)) {
     qWarning() << "ConfigManager: failed to copy avatar to" << destPath;
