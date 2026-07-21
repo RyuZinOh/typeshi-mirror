@@ -18,6 +18,8 @@ class ConfigManager : public QObject {
   Q_PROPERTY(int lastDuration READ lastDuration NOTIFY configChanged)
   Q_PROPERTY(int lastWordCount READ lastWordCount NOTIFY configChanged)
   Q_PROPERTY(bool lastPunctuation READ lastPunctuation NOTIFY configChanged)
+  Q_PROPERTY(QString username READ username NOTIFY configChanged)
+  Q_PROPERTY(QString avatarPath READ avatarPath NOTIFY configChanged)
 
 public:
   explicit ConfigManager(QObject *parent = nullptr);
@@ -30,6 +32,8 @@ public:
   int lastDuration() const;
   int lastWordCount() const;
   bool lastPunctuation() const;
+  QString username() const;
+  QString avatarPath() const;
 
   Q_INVOKABLE void reload();
   Q_INVOKABLE QColor themeColor(const QString &key) const;
@@ -40,6 +44,9 @@ public:
   Q_INVOKABLE void setCustomTheme(bool enabled);
   Q_INVOKABLE void saveTestDefaults(const QString &mode, int duration,
                                     int wordCount, bool punctuation);
+  Q_INVOKABLE void setUsername(const QString &name);
+  Q_INVOKABLE QString importAvatar(const QString &sourceFileUrl);
+  Q_INVOKABLE void clearAvatar();
 
 signals:
   void configChanged();
@@ -49,6 +56,7 @@ private:
   QStringList m_words;
   QFileSystemWatcher m_watcher;
   QVariantMap m_general;
+  QString m_avatarPath;
 
   // defaults
   QString m_currentTheme = "midnight_purple";
@@ -57,6 +65,7 @@ private:
   int m_lastDuration = 60;
   int m_lastWordCount = 25;
   bool m_lastPunctuation = false;
+  QString m_username = "typeShitter";
   // end of defaults
 
   QString configDir() const;

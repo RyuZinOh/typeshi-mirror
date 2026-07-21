@@ -2,6 +2,7 @@
 #include <QDir>
 #include <QFile>
 #include <QTextStream>
+#include <QUrl>
 
 ConfigManager::ConfigManager(QObject *parent) : QObject(parent) {
   load();
@@ -135,7 +136,6 @@ void ConfigManager::loadWords() {
 void ConfigManager::load() {
   m_theme.clear();
   m_general.clear();
-
   parseSection(statePath(), "general", m_general);
 
   m_currentTheme = m_general.value("theme", "midnight_purple").toString();
@@ -144,6 +144,13 @@ void ConfigManager::load() {
   m_lastDuration = m_general.value("lastDuration", "60").toInt();
   m_lastWordCount = m_general.value("lastWordCount", "25").toInt();
   m_lastPunctuation = m_general.value("lastPunctuation", "0").toString() == "1";
+
+  m_username = m_general.value("username", "typeshitter").toString();
+  m_avatarPath = m_general.value("avatarPath", "").toString();
+
+  if (!m_avatarPath.isEmpty() && !QFile::exists(m_avatarPath)) {
+    m_avatarPath.clear();
+  }
 
   if (m_currentTheme.compare("custom", Qt::CaseInsensitive) == 0) {
     parseSection(configPath(), "theme", m_theme);
@@ -169,7 +176,57 @@ void ConfigManager::load() {
 
   emit configChanged();
 }
+void ConfigManager::setUsername(const QString &name) {
+  const QString trimmed = name.trimmed();
+  if (trimmed.isEmpty() || trimmed == m_username) {
+    return;
+  }
+  m_general["username"] = trimmed.left(24);
+  writeGeneral();
+}
 
+QString ConfigManager::importAvatar(const QString &sourceFileUrl) {
+  QUrl url(sourceFileUrl);
+  const QString sourcePath =
+      url.isLocalFile() ? url.toLocalFile() : sourceFileUrl;
+
+  QFileInfo info(sourcePath);
+  if (!info.exists() || !info.isFile()) {
+    qWarning() << "ConfigManager: avatar source doesn't exist:" << sourcePath;
+    return QString();
+  }
+
+  const QStringList allowed = {"png", "jpg", "jpeg", "webp"};
+  if (!allowed.contains(info.suffix().toLower())) {
+    qWarning() << "ConfigManager: unsupported avatar format:" << info.suffix();
+    return QString();
+  }
+
+  const QString avatarDir = stateDir() + "/avatar";
+  QDir().mkpath(avatarDir);
+  const QString destPath = avatarDir + "/profile." + info.suffix().toLower();
+
+  QDir(avatarDir).removeRecursively();
+  QDir().mkpath(avatarDir);
+
+  if (!QFile::copy(sourcePath, destPath)) {
+    qWarning() << "ConfigManager: failed to copy avatar to" << destPath;
+    return QString();
+  }
+
+  m_general["avatarPath"] = destPath;
+  writeGeneral();
+  return destPath;
+}
+
+void ConfigManager::clearAvatar() {
+  if (m_avatarPath.isEmpty()) {
+    return;
+  }
+  QFile::remove(m_avatarPath);
+  m_general["avatarPath"] = "";
+  writeGeneral();
+}
 void ConfigManager::reload() { load(); }
 
 void ConfigManager::writeGeneral() {
@@ -229,6 +286,8 @@ QString ConfigManager::lastMode() const { return m_lastMode; }
 int ConfigManager::lastDuration() const { return m_lastDuration; }
 int ConfigManager::lastWordCount() const { return m_lastWordCount; }
 bool ConfigManager::lastPunctuation() const { return m_lastPunctuation; }
+QString ConfigManager::username() const { return m_username; }
+QString ConfigManager::avatarPath() const { return m_avatarPath; }
 
 QStringList ConfigManager::availableThemes() const {
   QDir dir(QStringLiteral(":/qt/qml/typeShitter/application/assets/"

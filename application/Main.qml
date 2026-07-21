@@ -281,6 +281,48 @@ Window {
             z: 400
 
             Item {
+                id: profileTrigger
+                anchors.bottom: parent.bottom
+                anchors.right: themeTrigger.left
+                anchors.rightMargin: 16
+                anchors.margins: 20
+                width: nameLabel.width + avatarImg.width + 8
+                height: 28
+
+                Row {
+                    anchors.fill: parent
+                    spacing: 8
+
+                    Avatar {
+                        id: avatarImg
+                        anchors.verticalCenter: parent.verticalCenter
+                        size: 48
+                    }
+
+                    Text {
+                        id: nameLabel
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: Config.username
+                        font.pixelSize: 13
+                        color: profileTriggerArea.containsMouse ? Theme.primaryColor : Theme.onSurfaceVariant
+
+                        Behavior on color {
+                            ColorAnimation {
+                                duration: 150
+                            }
+                        }
+                    }
+                }
+
+                MouseArea {
+                    id: profileTriggerArea
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: profileEditor.open()
+                }
+            }
+            Item {
                 id: themeTrigger
                 anchors.bottom: parent.bottom
                 anchors.right: parent.right
@@ -324,6 +366,9 @@ Window {
 
             ThemePicker {
                 id: themePicker
+            }
+            ProfileEditor {
+                id: profileEditor
             }
         }
     }
