@@ -18,6 +18,7 @@ public:
   QString roomCode() const;
 
   Q_INVOKABLE void connectToServer(const QString &url);
+  Q_INVOKABLE void disconnectFromServer();
   Q_INVOKABLE void join(const QString &room, const QString &username);
   Q_INVOKABLE void create(const QString &username);
 
@@ -28,6 +29,7 @@ signals:
   void errorReceived(const QString &message);
   void playerJoined(const QString &username);
   void joinedRoom();
+  void raceStarting(qint64 seed, qint64 startAtMs, int duration);
 
 private:
   QWebSocket m_socket;

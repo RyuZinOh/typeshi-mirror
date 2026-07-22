@@ -708,14 +708,16 @@ QString TypingEngine::randomWord() const {
     return m_wordPool.first();
   }
 
-  QString word;
-  do {
-    int idx = static_cast<int>(
-        QRandomGenerator::global()->bounded(m_wordPool.size()));
-    word = m_wordPool.at(idx);
-  } while (word == m_lastWord); // avoiding repeats
+  const int poolSize = static_cast<int>(m_wordPool.size());
+  const int lastIdx = m_wordPool.indexOf(m_lastWord);
 
-  return word;
+  int roll =
+      m_useSeededRng
+          ? static_cast<int>(m_seededRng.bounded(poolSize - 1))
+          : static_cast<int>(QRandomGenerator::global()->bounded(poolSize - 1));
+  int idx = (lastIdx >= 0 && roll >= lastIdx) ? roll + 1 : roll;
+
+  return m_wordPool.at(idx);
 }
 
 QString TypingEngine::applyPunctuation(const QString &word) {
@@ -779,3 +781,32 @@ void TypingEngine::setTestDurationSeconds(int seconds) {
   m_testDurationSeconds = seconds;
   emit testDurationChanged();
 }
+
+// multiplayer mode
+void TypingEngine::startMultiplayerTest(const QStringList &wordPool,
+                                        qint64 seed, int durationSeconds) {
+  resetState();
+  m_quoteMode = false;
+  m_wordCountMode = false;
+  m_punctuationEnabled = false;
+  m_wordPool = wordPool;
+  m_testDurationSeconds =
+      durationSeconds > 0 ? durationSeconds : m_testDurationSeconds;
+
+  m_seededRng = QRandomGenerator(static_cast<quint32>(seed));
+  m_useSeededRng = true;
+
+  ensureBuffer();
+  m_isExtra.assign(m_targetText.length(), false);
+
+  emit targetTextChanged();
+  emit typedTextChanged();
+  emit startedChanged();
+  emit finishedChanged();
+  emit historyChanged();
+  emit elapsedMsChanged();
+  emit statsChanged();
+  emit testDurationChanged();
+  rewrapLines();
+}
+// end of multiplayer modek

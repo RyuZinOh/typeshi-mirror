@@ -7,18 +7,34 @@ Item {
     height: 48
     property string label: "slide to confirm"
     property string errorText: ""
+    property bool pending: false
 
     signal confirmed
 
+    readonly property var pendingShapeSequence: [8, 27, 16, 33, 30, 12, 24]
+    property int pendingShapeStep: 0
+
     function reset() {
         handle.x = 4;
+        root.pending = false;
+        root.errorText = "";
+        root.pendingShapeStep = 0;
     }
 
     function showError(message) {
         root.errorText = message;
+        root.pending = false;
         handle.x = 4;
         shakeAnim.restart();
         errorClearTimer.restart();
+    }
+
+    Timer {
+        id: pendingShapeTimer
+        interval: 550
+        repeat: true
+        running: root.pending
+        onTriggered: root.pendingShapeStep = (root.pendingShapeStep + 1) % root.pendingShapeSequence.length
     }
 
     Timer {
@@ -29,11 +45,36 @@ Item {
 
     SequentialAnimation {
         id: shakeAnim
-        NumberAnimation { target: track; property: "x"; to: -8; duration: 45 }
-        NumberAnimation { target: track; property: "x"; to: 8; duration: 90 }
-        NumberAnimation { target: track; property: "x"; to: -6; duration: 90 }
-        NumberAnimation { target: track; property: "x"; to: 4; duration: 70 }
-        NumberAnimation { target: track; property: "x"; to: 0; duration: 60 }
+        NumberAnimation {
+            target: track
+            property: "x"
+            to: -8
+            duration: 45
+        }
+        NumberAnimation {
+            target: track
+            property: "x"
+            to: 8
+            duration: 90
+        }
+        NumberAnimation {
+            target: track
+            property: "x"
+            to: -6
+            duration: 90
+        }
+        NumberAnimation {
+            target: track
+            property: "x"
+            to: 4
+            duration: 70
+        }
+        NumberAnimation {
+            target: track
+            property: "x"
+            to: 0
+            duration: 60
+        }
     }
 
     Rectangle {
@@ -46,36 +87,66 @@ Item {
         opacity: root.enabled ? 1 : 0.4
 
         Behavior on color {
-            ColorAnimation { duration: 150 }
+            ColorAnimation {
+                duration: 150
+            }
         }
         Behavior on border.color {
-            ColorAnimation { duration: 150 }
+            ColorAnimation {
+                duration: 150
+            }
         }
 
         Text {
             anchors.centerIn: parent
-            text: root.errorText !== "" ? root.errorText : root.label
+            text: root.errorText !== "" ? root.errorText : (root.pending ? "connecting..." : root.label)
             font.pixelSize: 13
             color: root.errorText !== "" ? Theme.errorColor : Theme.onSurfaceVariant
-            opacity: root.errorText !== "" ? 1 : (1 - (handle.x / (track.width - handle.width)))
+            opacity: (root.errorText !== "" || root.pending) ? 1 : (1 - (handle.x / (track.width - handle.width)))
 
             Behavior on color {
-                ColorAnimation { duration: 150 }
+                ColorAnimation {
+                    duration: 150
+                }
             }
         }
     }
 
-    Rectangle {
+    Item {
         id: handle
         x: 4
         y: 4
         width: root.height - 8
         height: root.height - 8
-        radius: height / 2
-        color: root.errorText !== "" ? Theme.errorColor : Theme.primaryColor
 
-        Behavior on color {
-            ColorAnimation { duration: 150 }
+        readonly property int idleShapeIndex: 8
+
+        ShapeCanvas {
+            id: handleShape
+            anchors.fill: parent
+            color: root.errorText !== "" ? Theme.errorColor : (root.pending ? Theme.secondaryColor : Theme.primaryColor)
+            roundedPolygon: root.pending ? GetMShapes.get(root.pendingShapeSequence[root.pendingShapeStep]) : GetMShapes.get(handle.idleShapeIndex)
+
+            Behavior on color {
+                ColorAnimation {
+                    duration: 150
+                }
+            }
+        }
+
+        SequentialAnimation on opacity {
+            running: root.pending
+            loops: Animation.Infinite
+            NumberAnimation {
+                to: 0.45
+                duration: 500
+                easing.type: Easing.InOutSine
+            }
+            NumberAnimation {
+                to: 1.0
+                duration: 500
+                easing.type: Easing.InOutSine
+            }
         }
 
         Behavior on x {
@@ -89,7 +160,7 @@ Item {
         MouseArea {
             id: handleArea
             anchors.fill: parent
-            enabled: root.enabled
+            enabled: root.enabled && !root.pending
             drag.target: handle
             drag.axis: Drag.XAxis
             drag.minimumX: 4

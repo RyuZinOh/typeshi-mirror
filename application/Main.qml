@@ -27,32 +27,55 @@ Window {
         // TypingEngine.startTest(Config.words);
         inputCatcher.forceActiveFocus();
         console.log(History);
-        // Multiplayer.connectToServer("wss://typeshi-relay.onrender.com/ws");
-        Multiplayer.connectToServer("ws://localhost:8080/ws");
         // History.recordResult(85.5, 90.2, 96.0, 88.0, 30, 40, 2, 1, 0);
         // const summary = History.dailySummary();
         // for (let i = 0; i < summary.length; i++) {
         //     console.log(summary[i].date, "-", summary[i].tests, "test, best: ", summary[i].bestWpm);
         // }
     }
-    // Connections {
-    //     target: Multiplayer
-    //     function onConnectedChanged() {
-    //         if (Multiplayer.connected) {
-    //             Multiplayer.create(Config.username);
-    //         }
-    //     }
-    //     function onRoomCodeChanged() {
-    //         console.log("ROOM CREATED:", Multiplayer.roomCode);
-    //     }
-    //     function onErrorReceived(message) {
-    //         console.log("MULTIPLAYER ERROR:", message);
-    //     }
-    //     function onPlayerJoined(username) {
-    //         console.log("PLAYER JOINED:", username);
-    //     }
-    // }
+    property int countdownSecondsLeft: 0
 
+    property double multiplayerStartAtMs: 0
+    property double multiplayerSeed: 0
+    property int multiplayerDuration: 60
+    property bool racingMultiplayer: false
+
+    function countdownToRaceStart() {
+        const waitMs = appWindow.multiplayerStartAtMs - Date.now();
+        countdownTimer.interval = Math.max(0, waitMs);
+        countdownTimer.start();
+    }
+
+    Timer {
+        id: countdownTimer
+        repeat: false
+        onTriggered: {
+            TypingEngine.startMultiplayerTest(Config.words, appWindow.multiplayerSeed, appWindow.multiplayerDuration);
+            appWindow.racingMultiplayer = true;
+            inputCatcher.forceActiveFocus();
+        }
+    }
+    Timer {
+        id: countdownTickTimer
+        interval: 100
+        repeat: true
+        running: appWindow.multiplayerStartAtMs > 0 && !TypingEngine.started
+        onTriggered: {
+            const remaining = Math.ceil((appWindow.multiplayerStartAtMs - Date.now()) / 1000);
+            appWindow.countdownSecondsLeft = Math.max(0, remaining);
+        }
+    }
+
+    Connections {
+        target: Multiplayer
+        function onRaceStarting(seed, startAtMs, duration) {
+            appWindow.testMode = "multiplayer";
+            appWindow.multiplayerStartAtMs = startAtMs;
+            appWindow.multiplayerSeed = seed;
+            appWindow.multiplayerDuration = duration;
+            appWindow.countdownToRaceStart();
+        }
+    }
     Item {
         id: sceneLayer
         anchors.fill: parent
@@ -221,15 +244,25 @@ Window {
                                 appWindow.restartTest();
                             }
                         }
-
                         ToggleChip {
                             id: multiplayerChip
                             label: "multiplayer"
-                            chipHeight: modeRow.controlCellHeight + 10
+                            chipHeight: modeRow.controlCellHeight
                             active: appWindow.testMode === "multiplayer"
                             onToggled: {
-                                appWindow.testMode = appWindow.testMode === "multiplayer" ? "time" : "multiplayer";
-                                if (appWindow.testMode !== "multiplayer") {
+                                const enteringMultiplayer = appWindow.testMode !== "multiplayer";
+                                appWindow.testMode = enteringMultiplayer ? "multiplayer" : "time";
+
+                                if (enteringMultiplayer) {
+                                    if (!Multiplayer.connected) {
+                                        // Multiplayer.connectToServer("wss://typeshi-relay.onrender.com/ws");
+                                        Multiplayer.connectToServer("ws://localhost:8080/ws");
+                                    }
+                                } else {
+                                    appWindow.racingMultiplayer = false;
+                                    appWindow.multiplayerStartAtMs = 0;
+                                    Multiplayer.disconnectFromServer();
+                                    multiplayerPanel.reset();
                                     Config.saveTestDefaults(appWindow.testMode, TypingEngine.testDurationSeconds, TypingEngine.testWordCount, TypingEngine.punctuationEnabled);
                                     appWindow.restartTest();
                                 }
@@ -243,19 +276,17 @@ Window {
                         passageFontSize: appWindow.passageFontSize
                         linesVisible: appWindow.linesVisible
                         dimmed: refreshButton.activeFocus
-                        visible: appWindow.testMode !== "multiplayer"
+                        visible: appWindow.testMode !== "multiplayer" || appWindow.racingMultiplayer
                     }
 
-                    MultiplayerPanel {
+                   MultiplayerPanel {
                         id: multiplayerPanel
                         anchors.top: parent.top
                         anchors.topMargin: 60
                         anchors.horizontalCenter: parent.horizontalCenter
-                        visible: appWindow.testMode === "multiplayer"
-                        onReadyToPlay: {
-                            appWindow.testMode = "time";
-                            appWindow.restartTest();
-                        }
+                        visible: appWindow.testMode === "multiplayer" && !appWindow.racingMultiplayer
+                        countdownSecondsLeft: appWindow.countdownSecondsLeft
+                        onReadyToPlay: {}
                     }
 
                     RefreshButton {
@@ -263,7 +294,7 @@ Window {
                         anchors.top: viewport.bottom
                         anchors.topMargin: 20
                         anchors.horizontalCenter: parent.horizontalCenter
-                        enabled: !themePicker.visible
+                        enabled: !themePicker.visible && appWindow.testMode !== "multiplayer"
                         dimmedUnlessFocused: TypingEngine.started
                         tabTarget: inputCatcher
                         onActivated: appWindow.restartTest()
@@ -422,6 +453,9 @@ Window {
     }
 
     function restartTest() {
+        if (appWindow.testMode === "multiplayer") {
+            return;
+        }
         if (appWindow.testMode === "quote") {
             const q = Quotes.randomQuote();
             TypingEngine.startQuoteTest(q.text);

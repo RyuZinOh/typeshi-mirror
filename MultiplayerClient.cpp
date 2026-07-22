@@ -41,6 +41,13 @@ MultiplayerClient::MultiplayerClient(QObject *parent) : QObject(parent) {
               emit playerJoined(obj.value("username").toString());
             } else if (type == "joined") {
               emit joinedRoom();
+            } else if (type == "start") {
+              const qint64 seed =
+                  static_cast<qint64>(obj.value("seed").toDouble());
+              const qint64 startAt =
+                  static_cast<qint64>(obj.value("startAt").toDouble());
+              const int duration = obj.value("duration").toInt();
+              emit raceStarting(seed, startAt, duration);
             }
 
             emit messageReceived(message);
@@ -51,8 +58,16 @@ bool MultiplayerClient::connected() const { return m_connected; }
 QString MultiplayerClient::roomCode() const { return m_roomCode; }
 
 void MultiplayerClient::connectToServer(const QString &url) {
+  if (m_connected || m_socket.state() == QAbstractSocket::ConnectingState) {
+    qDebug() << "MultiplayerClient: already connected/connecting, skipping";
+    return;
+  }
+  m_roomCode.clear();
+  emit roomCodeChanged();
   m_socket.open(QUrl(url));
 }
+
+void MultiplayerClient::disconnectFromServer() { m_socket.close(); }
 
 void MultiplayerClient::create(const QString &username) {
   QJsonObject obj;

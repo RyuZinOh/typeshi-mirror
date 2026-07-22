@@ -2,6 +2,7 @@
 #include <QElapsedTimer>
 #include <QHash>
 #include <QObject>
+#include <QRandomGenerator>
 #include <QString>
 #include <QStringList>
 #include <QTimer>
@@ -114,6 +115,8 @@ public:
   Q_INVOKABLE void startQuoteTest(const QString &quoteText);
   Q_INVOKABLE void startWordCountTest(const QStringList &wordPool,
                                       int wordCount);
+  Q_INVOKABLE void startMultiplayerTest(const QStringList &wordPool,
+                                        qint64 seed, int durationSeconds);
   // end of mode
 
   Q_INVOKABLE bool wasErrorAt(int index) const;
@@ -200,6 +203,9 @@ private:
   // quote
   bool m_quoteMode = false;
   // end of quote
+
+  mutable QRandomGenerator m_seededRng{0};
+  bool m_useSeededRng = false;
 
   QStringList m_wordPool;
   QString m_lastWord;
