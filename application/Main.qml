@@ -16,6 +16,7 @@ Window {
     readonly property int sidePadding: 160
     property string testMode: "time"
     property bool crtEnabled: false
+    property bool inLobby: true
 
     Component.onCompleted: {
         appWindow.testMode = Config.lastMode;
@@ -26,22 +27,31 @@ Window {
         // TypingEngine.startTest(Config.words);
         inputCatcher.forceActiveFocus();
         console.log(History);
-        Multiplayer.connectToServer("wss://typeshi-relay.onrender.com/ws");
-        // Multiplayer.connectToServer("ws://localhost:8080/ws");
+        // Multiplayer.connectToServer("wss://typeshi-relay.onrender.com/ws");
+        Multiplayer.connectToServer("ws://localhost:8080/ws");
         // History.recordResult(85.5, 90.2, 96.0, 88.0, 30, 40, 2, 1, 0);
         // const summary = History.dailySummary();
         // for (let i = 0; i < summary.length; i++) {
         //     console.log(summary[i].date, "-", summary[i].tests, "test, best: ", summary[i].bestWpm);
         // }
     }
-    Connections {
-        target: Multiplayer
-        function onConnectedChanged() {
-            if (Multiplayer.connected) {
-                Multiplayer.join("XJ4K", Config.username);
-            }
-        }
-    }
+    // Connections {
+    //     target: Multiplayer
+    //     function onConnectedChanged() {
+    //         if (Multiplayer.connected) {
+    //             Multiplayer.create(Config.username);
+    //         }
+    //     }
+    //     function onRoomCodeChanged() {
+    //         console.log("ROOM CREATED:", Multiplayer.roomCode);
+    //     }
+    //     function onErrorReceived(message) {
+    //         console.log("MULTIPLAYER ERROR:", message);
+    //     }
+    //     function onPlayerJoined(username) {
+    //         console.log("PLAYER JOINED:", username);
+    //     }
+    // }
 
     Item {
         id: sceneLayer
@@ -177,7 +187,7 @@ Window {
                             id: wordsChip
                             label: "words"
                             chipHeight: modeRow.controlCellHeight + 10
-                            enabled: appWindow.testMode !== "quote"
+                            enabled: appWindow.testMode !== "quote" && appWindow.testMode !== "multiplayer"
                             active: appWindow.testMode === "words"
                             onToggled: {
                                 appWindow.testMode = appWindow.testMode === "words" ? "time" : "words";
@@ -190,7 +200,7 @@ Window {
                             id: punctuationChip
                             label: "punctuation"
                             chipHeight: modeRow.controlCellHeight + 10
-                            enabled: appWindow.testMode !== "quote"
+                            enabled: appWindow.testMode !== "quote" && appWindow.testMode !== "multiplayer"
                             active: TypingEngine.punctuationEnabled
                             onToggled: {
                                 TypingEngine.setPunctuationEnabled(!TypingEngine.punctuationEnabled);
@@ -202,12 +212,27 @@ Window {
                         ToggleChip {
                             id: quoteChip
                             label: "quote"
+                            enabled: appWindow.testMode !== "multiplayer"
                             chipHeight: modeRow.controlCellHeight + 10
                             active: appWindow.testMode === "quote"
                             onToggled: {
                                 appWindow.testMode = appWindow.testMode === "quote" ? "time" : "quote";
                                 Config.saveTestDefaults(appWindow.testMode, TypingEngine.testDurationSeconds, TypingEngine.testWordCount, TypingEngine.punctuationEnabled);
                                 appWindow.restartTest();
+                            }
+                        }
+
+                        ToggleChip {
+                            id: multiplayerChip
+                            label: "multiplayer"
+                            chipHeight: modeRow.controlCellHeight + 10
+                            active: appWindow.testMode === "multiplayer"
+                            onToggled: {
+                                appWindow.testMode = appWindow.testMode === "multiplayer" ? "time" : "multiplayer";
+                                if (appWindow.testMode !== "multiplayer") {
+                                    Config.saveTestDefaults(appWindow.testMode, TypingEngine.testDurationSeconds, TypingEngine.testWordCount, TypingEngine.punctuationEnabled);
+                                    appWindow.restartTest();
+                                }
                             }
                         }
                     }
@@ -218,6 +243,19 @@ Window {
                         passageFontSize: appWindow.passageFontSize
                         linesVisible: appWindow.linesVisible
                         dimmed: refreshButton.activeFocus
+                        visible: appWindow.testMode !== "multiplayer"
+                    }
+
+                    MultiplayerPanel {
+                        id: multiplayerPanel
+                        anchors.top: parent.top
+                        anchors.topMargin: 60
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        visible: appWindow.testMode === "multiplayer"
+                        onReadyToPlay: {
+                            appWindow.testMode = "time";
+                            appWindow.restartTest();
+                        }
                     }
 
                     RefreshButton {

@@ -6,3 +6,4 @@ package-bin.sh
 *.gz
 samples
 /shaders/
+test.sh
