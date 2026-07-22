@@ -36,6 +36,10 @@ MultiplayerClient::MultiplayerClient(QObject *parent) : QObject(parent) {
               m_roomCode = obj.value("room").toString();
               emit roomCodeChanged();
             } else if (type == "error") {
+              if (!m_roomCode.isEmpty()) {
+                m_roomCode.clear();
+                emit roomCodeChanged();
+              }
               emit errorReceived(obj.value("message").toString());
             } else if (type == "player_joined") {
               emit playerJoined(obj.value("username").toString());
