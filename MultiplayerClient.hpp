@@ -16,9 +16,11 @@ public:
   bool connected() const;
 
   Q_INVOKABLE void connectToServer(const QString &url);
+  Q_INVOKABLE void join(const QString &room, const QString &username);
 
 signals:
   void connectedChanged();
+  void messageReceived(const QString &raw);
 
 private:
   QWebSocket m_socket;

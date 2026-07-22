@@ -26,13 +26,21 @@ Window {
         // TypingEngine.startTest(Config.words);
         inputCatcher.forceActiveFocus();
         console.log(History);
-        // Multiplayer.connectToServer("wss://typeshi-relay.onrender.com/ws");
-        Multiplayer.connectToServer("ws://localhost:8080/ws");
+        Multiplayer.connectToServer("wss://typeshi-relay.onrender.com/ws");
+        // Multiplayer.connectToServer("ws://localhost:8080/ws");
         // History.recordResult(85.5, 90.2, 96.0, 88.0, 30, 40, 2, 1, 0);
         // const summary = History.dailySummary();
         // for (let i = 0; i < summary.length; i++) {
         //     console.log(summary[i].date, "-", summary[i].tests, "test, best: ", summary[i].bestWpm);
         // }
+    }
+    Connections {
+        target: Multiplayer
+        function onConnectedChanged() {
+            if (Multiplayer.connected) {
+                Multiplayer.join("XJ4K", Config.username);
+            }
+        }
     }
 
     Item {
