@@ -178,6 +178,7 @@ void TypingEngine::resetState() {
   m_frozenElapsedMs = 0;
   m_tickTimer.stop();
   m_wordCountMode = false;
+  m_useSeededRng = false;
 
   m_lastWord.clear();
   m_targetText.clear();

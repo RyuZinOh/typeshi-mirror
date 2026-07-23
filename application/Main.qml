@@ -39,6 +39,21 @@ Window {
     property double multiplayerSeed: 0
     property int multiplayerDuration: 60
     property bool racingMultiplayer: false
+    property string opponentDisconnectedMessage: ""
+
+    Connections {
+        target: Multiplayer
+        function onRaceStarting(seed, startAtMs, duration) {
+            appWindow.testMode = "multiplayer";
+            appWindow.multiplayerStartAtMs = startAtMs;
+            appWindow.multiplayerSeed = seed;
+            appWindow.multiplayerDuration = duration;
+            appWindow.countdownToRaceStart();
+        }
+        function onOpponentLeft(username) {
+            appWindow.opponentDisconnectedMessage = username + " has been disconnected";
+        }
+    }
 
     function countdownToRaceStart() {
         const waitMs = appWindow.multiplayerStartAtMs - Date.now();
@@ -71,6 +86,7 @@ Window {
         appWindow.racingMultiplayer = false;
         appWindow.multiplayerStartAtMs = 0;
         appWindow.countdownSecondsLeft = 0;
+        appWindow.opponentDisconnectedMessage = "";
         Multiplayer.disconnectFromServer();
         multiplayerPanel.reset();
         Config.saveTestDefaults(appWindow.testMode, TypingEngine.testDurationSeconds, TypingEngine.testWordCount, TypingEngine.punctuationEnabled);
@@ -111,6 +127,33 @@ Window {
 
             vertexShader: "assets/shaders/crt.vert.qsb"
             fragmentShader: "assets/shaders/crt.frag.qsb"
+        }
+        Rectangle {
+            id: opponentLeftBanner
+            visible: appWindow.opponentDisconnectedMessage !== "" && appWindow.testMode === "multiplayer"
+            anchors.top: parent.top
+            anchors.horizontalCenter: parent.horizontalCenter
+            anchors.topMargin: 20
+            width: bannerText.width + 32
+            height: 40
+            radius: 10
+            color: Theme.surfaceContainer
+            border.color: Theme.errorColor
+            border.width: 1
+            z: 300
+
+            Row {
+                anchors.centerIn: parent
+                spacing: 10
+
+                Text {
+                    id: bannerText
+                    text: appWindow.opponentDisconnectedMessage + " — press esc to leave"
+                    font.pixelSize: 13
+                    color: Theme.onSurface
+                    anchors.verticalCenter: parent.verticalCenter
+                }
+            }
         }
 
         Item {

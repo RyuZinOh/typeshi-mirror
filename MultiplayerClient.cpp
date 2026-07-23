@@ -52,6 +52,8 @@ MultiplayerClient::MultiplayerClient(QObject *parent) : QObject(parent) {
                   static_cast<qint64>(obj.value("startAt").toDouble());
               const int duration = obj.value("duration").toInt();
               emit raceStarting(seed, startAt, duration);
+            } else if (type == "opponent_left") {
+              emit opponentLeft(obj.value("username").toString());
             }
 
             emit messageReceived(message);
@@ -97,6 +99,7 @@ void MultiplayerClient::join(const QString &room, const QString &username) {
 void MultiplayerClient::notifyRaceStarted() {
   QJsonObject obj;
   obj["type"] = "race_started";
+  QJsonDocument doc(obj);
   m_socket.sendTextMessage(
-      QString::fromUtf8(QJsonDocument(obj).toJson(QJsonDocument::Compact)));
+      QString::fromUtf8(doc.toJson(QJsonDocument::Compact)));
 }
