@@ -47,6 +47,8 @@ class TypingEngine : public QObject {
   Q_PROPERTY(double consistency READ consistency NOTIFY statsChanged)
   Q_PROPERTY(QVariantList wpmHistory READ wpmHistory NOTIFY historyChanged)
   // end of main
+  Q_PROPERTY(int currentWordExtraCount READ currentWordExtraCount NOTIFY
+                 typedTextChanged)
 
 public:
   explicit TypingEngine(QObject *parent = nullptr);
@@ -85,6 +87,7 @@ public:
   int missedCount() const;
   int mistakeCount() const;
   // end of stats getters
+  int currentWordExtraCount() const;
 
   // main getter
   double wpm() const;
@@ -120,6 +123,8 @@ public:
   // end of mode
 
   Q_INVOKABLE bool wasErrorAt(int index) const;
+  Q_INVOKABLE int canonicalCursorIndex() const;
+  Q_INVOKABLE int rawIndexForCanonical(int canonicalIndex) const;
 
 signals:
   void targetTextChanged();

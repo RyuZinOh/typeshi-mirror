@@ -24,15 +24,9 @@ Window {
         TypingEngine.setTestWordCount(Config.lastWordCount);
         TypingEngine.setPunctuationEnabled(Config.lastPunctuation);
         appWindow.restartTest();
-        // TypingEngine.startTest(Config.words);
         inputCatcher.forceActiveFocus();
-        console.log(History);
-        // History.recordResult(85.5, 90.2, 96.0, 88.0, 30, 40, 2, 1, 0);
-        // const summary = History.dailySummary();
-        // for (let i = 0; i < summary.length; i++) {
-        //     console.log(summary[i].date, "-", summary[i].tests, "test, best: ", summary[i].bestWpm);
-        // }
     }
+
     property int countdownSecondsLeft: 0
 
     property double multiplayerStartAtMs: 0
@@ -40,11 +34,23 @@ Window {
     property int multiplayerDuration: 60
     property bool racingMultiplayer: false
     property string opponentDisconnectedMessage: ""
+    property double opponentWpm: 0
+    property int opponentCharIndex: 0
+    property double opponentAccuracy: 0
+    property double opponentConsistency: 0
+    property int opponentWordExtraCount: 0
+    property string opponentUsername: ""
+
+    property bool rematchOfferPending: false
+    property bool rematchRequestSent: false
+    property string rematchDeclinedMessage: ""
+    readonly property bool showCountdownOverlay: appWindow.testMode === "multiplayer" && appWindow.multiplayerStartAtMs > 0 && !appWindow.racingMultiplayer
 
     Connections {
         target: Multiplayer
         function onRaceStarting(seed, startAtMs, duration) {
             appWindow.testMode = "multiplayer";
+            appWindow.racingMultiplayer = false;
             appWindow.multiplayerStartAtMs = startAtMs;
             appWindow.multiplayerSeed = seed;
             appWindow.multiplayerDuration = duration;
@@ -53,6 +59,28 @@ Window {
         function onOpponentLeft(username) {
             appWindow.opponentDisconnectedMessage = username + " has been disconnected";
         }
+        function onOpponentProgress(username, wpm, charIndex, accuracy, consistency, wordExtraCount) {
+            appWindow.opponentUsername = username;
+            appWindow.opponentWpm = wpm;
+            appWindow.opponentCharIndex = charIndex;
+            appWindow.opponentAccuracy = accuracy;
+            appWindow.opponentConsistency = consistency;
+            appWindow.opponentWordExtraCount = wordExtraCount;
+        }
+        function onRematchOffered() {
+            appWindow.rematchOfferPending = true;
+        }
+        function onRematchDeclined() {
+            appWindow.rematchRequestSent = false;
+            appWindow.rematchDeclinedMessage = "opponent declined the rematch";
+            rematchDeclinedTimer.restart();
+        }
+    }
+
+    Timer {
+        id: rematchDeclinedTimer
+        interval: 2500
+        onTriggered: appWindow.rematchDeclinedMessage = ""
     }
 
     function countdownToRaceStart() {
@@ -67,6 +95,8 @@ Window {
         onTriggered: {
             TypingEngine.startMultiplayerTest(Config.words, appWindow.multiplayerSeed, appWindow.multiplayerDuration);
             appWindow.racingMultiplayer = true;
+            appWindow.rematchRequestSent = false;
+            appWindow.rematchOfferPending = false;
             Multiplayer.notifyRaceStarted();
             inputCatcher.forceActiveFocus();
         }
@@ -87,21 +117,51 @@ Window {
         appWindow.multiplayerStartAtMs = 0;
         appWindow.countdownSecondsLeft = 0;
         appWindow.opponentDisconnectedMessage = "";
+        appWindow.opponentWpm = 0;
+        appWindow.opponentCharIndex = 0;
+        appWindow.opponentAccuracy = 0;
+        appWindow.opponentConsistency = 0;
+        appWindow.opponentUsername = "";
+        appWindow.rematchOfferPending = false;
+        appWindow.rematchRequestSent = false;
+        appWindow.rematchDeclinedMessage = "";
         Multiplayer.disconnectFromServer();
         multiplayerPanel.reset();
         Config.saveTestDefaults(appWindow.testMode, TypingEngine.testDurationSeconds, TypingEngine.testWordCount, TypingEngine.punctuationEnabled);
         appWindow.restartTest();
     }
 
-    Connections {
-        target: Multiplayer
-        function onRaceStarting(seed, startAtMs, duration) {
-            appWindow.testMode = "multiplayer";
-            appWindow.multiplayerStartAtMs = startAtMs;
-            appWindow.multiplayerSeed = seed;
-            appWindow.multiplayerDuration = duration;
-            appWindow.countdownToRaceStart();
+    function requestRematch() {
+        if (!Multiplayer.isRoomCreator) {
+            return;
         }
+        appWindow.opponentWpm = 0;
+        appWindow.opponentCharIndex = 0;
+        appWindow.opponentAccuracy = 0;
+        appWindow.opponentConsistency = 0;
+        appWindow.rematchRequestSent = true;
+        Multiplayer.requestRematch();
+    }
+
+    function acceptRematch() {
+        appWindow.opponentWpm = 0;
+        appWindow.opponentCharIndex = 0;
+        appWindow.opponentAccuracy = 0;
+        appWindow.opponentConsistency = 0;
+        appWindow.rematchOfferPending = false;
+        Multiplayer.acceptRematch();
+    }
+
+    function declineRematch() {
+        appWindow.rematchOfferPending = false;
+        Multiplayer.declineRematch();
+    }
+    Timer {
+        id: progressBroadcastTimer
+        interval: 400
+        repeat: true
+        running: appWindow.racingMultiplayer && !TypingEngine.finished
+        onTriggered: Multiplayer.sendProgress(TypingEngine.wpm, TypingEngine.canonicalCursorIndex(), TypingEngine.accuracy, TypingEngine.consistency, TypingEngine.currentWordExtraCount)
     }
     Connections {
         target: TypingEngine
@@ -110,7 +170,13 @@ Window {
                 Multiplayer.notifyRaceStarted();
             }
         }
+        function onFinishedChanged() {
+            if (appWindow.testMode === "multiplayer" && TypingEngine.finished && appWindow.racingMultiplayer) {
+                Multiplayer.sendProgress(TypingEngine.wpm, TypingEngine.canonicalCursorIndex(), TypingEngine.accuracy, TypingEngine.consistency, TypingEngine.currentWordExtraCount);
+            }
+        }
     }
+
     Item {
         id: sceneLayer
         anchors.fill: parent
@@ -203,8 +269,8 @@ Window {
                 anchors.fill: parent
                 focus: true
                 activeFocusOnTab: true
-                enabled: !TypingEngine.finished
-                visible: !TypingEngine.finished
+                enabled: !TypingEngine.finished || appWindow.showCountdownOverlay
+                visible: !TypingEngine.finished || appWindow.showCountdownOverlay
 
                 KeyNavigation.tab: refreshButton
 
@@ -322,8 +388,8 @@ Window {
                                 if (enteringMultiplayer) {
                                     appWindow.testMode = "multiplayer";
                                     if (!Multiplayer.connected) {
-                                        // Multiplayer.connectToServer("wss://typeshi-relay.onrender.com/ws");
-                                        Multiplayer.connectToServer("ws://localhost:8080/ws");
+                                        // Multiplayer.connectToServer("ws://localhost:8080/ws");
+                                        Multiplayer.connectToServer("wss://typeshi-relay.onrender.com/ws");
                                     }
                                 } else {
                                     appWindow.leaveMultiplayer();
@@ -339,6 +405,9 @@ Window {
                         linesVisible: appWindow.linesVisible
                         dimmed: refreshButton.activeFocus
                         visible: appWindow.testMode !== "multiplayer" || appWindow.racingMultiplayer
+                        opponentCharIndex: appWindow.racingMultiplayer ? appWindow.opponentCharIndex : -1
+                        opponentWordExtraCount: appWindow.racingMultiplayer ? appWindow.opponentWordExtraCount : 0
+                        opponentUsername: appWindow.opponentUsername
                     }
 
                     MultiplayerPanel {
@@ -364,12 +433,39 @@ Window {
                 }
             }
 
+            Component {
+                id: soloAftermathComponent
+                Aftermath {
+                    resultMode: appWindow.testMode === "quote" ? "quote" : (appWindow.testMode === "words" ? "words" : "english")
+                    resultDuration: appWindow.testMode === "quote" ? 0 : (appWindow.testMode === "words" ? TypingEngine.testWordCount : TypingEngine.testDurationSeconds)
+                    resultPunctuation: appWindow.testMode === "quote" ? false : TypingEngine.punctuationEnabled
+                    onRestartRequested: appWindow.restartTest()
+                }
+            }
+
+            Component {
+                id: multiplayerAftermathComponent
+                MultiplayerAftermath {
+                    opponentUsername: appWindow.opponentUsername
+                    opponentWpm: appWindow.opponentWpm
+                    opponentAccuracy: appWindow.opponentAccuracy
+                    opponentConsistency: appWindow.opponentConsistency
+                    isRoomCreator: Multiplayer.isRoomCreator
+                    rematchOfferPending: appWindow.rematchOfferPending
+                    rematchRequestSent: appWindow.rematchRequestSent
+                    rematchDeclinedMessage: appWindow.rematchDeclinedMessage
+                    onRestartRequested: appWindow.requestRematch()
+                    onAcceptRequested: appWindow.acceptRematch()
+                    onDeclineRequested: appWindow.declineRematch()
+                }
+            }
+
             Loader {
                 id: aftermathLoader
                 anchors.fill: parent
-                active: TypingEngine.finished
-                opacity: TypingEngine.finished ? 1 : 0
-                scale: TypingEngine.finished ? 1 : 0
+                active: TypingEngine.finished && !appWindow.showCountdownOverlay
+                opacity: (TypingEngine.finished && !appWindow.showCountdownOverlay) ? 1 : 0
+                scale: (TypingEngine.finished && !appWindow.showCountdownOverlay) ? 1 : 0
                 onActiveChanged: {
                     if (active) {
                         let mode = "english";
@@ -385,12 +481,15 @@ Window {
                             dur = 0;
                             words = TypingEngine.testWordCount;
                         }
-                        const oldBest = appWindow.testMode === "words" ? History.bestWpmForWords(words, punct ? 1 : 0) : History.bestWpmFor(mode, dur, punct ? 1 : 0);
 
-                        History.recordResult(TypingEngine.wpm, TypingEngine.rawWpm, TypingEngine.accuracy, TypingEngine.consistency, Math.round(TypingEngine.elapsedMs / 1000), TypingEngine.correctCount, TypingEngine.incorrectCount, TypingEngine.extraCount, TypingEngine.missedCount, mode, punct, words);
+                        if (appWindow.testMode !== "multiplayer") {
+                            const oldBest = appWindow.testMode === "words" ? History.bestWpmForWords(words, punct ? 1 : 0) : History.bestWpmFor(mode, dur, punct ? 1 : 0);
 
-                        if (TypingEngine.wpm > 0 && TypingEngine.wpm > oldBest) {
-                            confetti.tryBurst();
+                            History.recordResult(TypingEngine.wpm, TypingEngine.rawWpm, TypingEngine.accuracy, TypingEngine.consistency, Math.round(TypingEngine.elapsedMs / 1000), TypingEngine.correctCount, TypingEngine.incorrectCount, TypingEngine.extraCount, TypingEngine.missedCount, mode, punct, words);
+
+                            if (TypingEngine.wpm > 0 && TypingEngine.wpm > oldBest) {
+                                confetti.tryBurst();
+                            }
                         }
                     }
                 }
@@ -407,12 +506,7 @@ Window {
                         easing.type: Easing.InOutQuad
                     }
                 }
-                sourceComponent: Aftermath {
-                    resultMode: appWindow.testMode === "quote" ? "quote" : (appWindow.testMode === "words" ? "words" : "english")
-                    resultDuration: appWindow.testMode === "quote" ? 0 : (appWindow.testMode === "words" ? TypingEngine.testWordCount : TypingEngine.testDurationSeconds)
-                    resultPunctuation: appWindow.testMode === "quote" ? false : TypingEngine.punctuationEnabled
-                    onRestartRequested: appWindow.restartTest()
-                }
+                sourceComponent: appWindow.testMode === "multiplayer" ? multiplayerAftermathComponent : soloAftermathComponent
             }
         }
 

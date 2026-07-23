@@ -102,8 +102,8 @@ Item {
                 anchors.horizontalCenter: parent.horizontalCenter
                 onToggled: {
                     root.connectionError = "";
-                    Multiplayer.connectToServer("ws://localhost:8080/ws");
-                    // Multiplayer.connectToServer("wss://typeshi-relay.onrender.com/ws");
+                    // Multiplayer.connectToServer("ws://localhost:8080/ws");
+                    Multiplayer.connectToServer("wss://typeshi-relay.onrender.com/ws");
                 }
             }
         }

@@ -48,6 +48,7 @@ bool TypingEngine::finished() const { return m_finished; }
 QString TypingEngine::targetText() const { return m_targetText; }
 QString TypingEngine::typedText() const { return m_typedText; }
 int TypingEngine::testWordCount() const { return m_testWordCount; }
+int TypingEngine::currentWordExtraCount() const { return m_wordExtraCount; }
 
 void TypingEngine::setTestWordCount(int count) {
   if (count <= 0 || count == m_testWordCount) {
@@ -813,5 +814,33 @@ void TypingEngine::startMultiplayerTest(const QStringList &wordPool,
   emit statsChanged();
   emit testDurationChanged();
   rewrapLines();
+}
+int TypingEngine::canonicalCursorIndex() const {
+  int cursor = m_typedText.length();
+  int extrasBefore = 0;
+  for (int i = 0; i < cursor && i < m_isExtra.size(); ++i) {
+    if (m_isExtra.at(i)) {
+      extrasBefore++;
+    }
+  }
+  return cursor - extrasBefore;
+}
+
+int TypingEngine::rawIndexForCanonical(int canonicalIndex) const {
+  if (canonicalIndex <= 0) {
+    return 0;
+  }
+  int seen = 0;
+  int i = 0;
+  for (; i < m_targetText.length(); ++i) {
+    bool extra = i < m_isExtra.size() && m_isExtra.at(i);
+    if (!extra) {
+      seen++;
+    }
+    if (seen >= canonicalIndex) {
+      return i + 1;
+    }
+  }
+  return m_targetText.length();
 }
 // end of multiplayer modek
