@@ -32,6 +32,7 @@ signals:
   void joinedRoom();
   void raceStarting(qint64 seed, qint64 startAtMs, int duration);
   void opponentLeft(const QString &username);
+  void connectionFailed(const QString &message);
 
 private:
   QWebSocket m_socket;

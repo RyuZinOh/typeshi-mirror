@@ -11,14 +11,15 @@ Item {
 
     signal confirmed
 
-    readonly property var pendingShapeSequence: [8, 27, 16, 33, 30, 12, 24]
-    property int pendingShapeStep: 0
+    readonly property var pendingShapeSequence: [0, 7, 12, 22, 8, 2, 1]
+
+    readonly property real dragProgress: Math.max(0, Math.min(1, (handle.x - 4) / (track.width - handle.width - 4)))
+    readonly property int dragShapeIndex: pendingShapeSequence[Math.floor(dragProgress * (pendingShapeSequence.length - 1))]
 
     function reset() {
         handle.x = 4;
         root.pending = false;
         root.errorText = "";
-        root.pendingShapeStep = 0;
     }
 
     function showError(message) {
@@ -27,14 +28,6 @@ Item {
         handle.x = 4;
         shakeAnim.restart();
         errorClearTimer.restart();
-    }
-
-    Timer {
-        id: pendingShapeTimer
-        interval: 550
-        repeat: true
-        running: root.pending
-        onTriggered: root.pendingShapeStep = (root.pendingShapeStep + 1) % root.pendingShapeSequence.length
     }
 
     Timer {
@@ -119,13 +112,13 @@ Item {
         width: root.height - 8
         height: root.height - 8
 
-        readonly property int idleShapeIndex: 8
+        readonly property int idleShapeIndex: 0
 
         ShapeCanvas {
             id: handleShape
             anchors.fill: parent
             color: root.errorText !== "" ? Theme.errorColor : (root.pending ? Theme.secondaryColor : Theme.primaryColor)
-            roundedPolygon: root.pending ? GetMShapes.get(root.pendingShapeSequence[root.pendingShapeStep]) : GetMShapes.get(handle.idleShapeIndex)
+            roundedPolygon: handleArea.pressed ? GetMShapes.get(root.dragShapeIndex) : GetMShapes.get(handle.idleShapeIndex)
 
             Behavior on color {
                 ColorAnimation {

@@ -15,10 +15,10 @@ MultiplayerClient::MultiplayerClient(QObject *parent) : QObject(parent) {
     qDebug() << "MultiplayerClient: disconnected";
     emit connectedChanged();
   });
-
   connect(&m_socket, &QWebSocket::errorOccurred, this,
           [this](QAbstractSocket::SocketError) {
             qWarning() << "MultiplayerClient: error:" << m_socket.errorString();
+            emit connectionFailed(m_socket.errorString());
           });
 
   connect(&m_socket, &QWebSocket::textMessageReceived, this,

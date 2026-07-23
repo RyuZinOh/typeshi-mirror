@@ -12,12 +12,14 @@ Item {
     property string mode: "choice"
     property string errorText: ""
     property bool opponentJoined: false
-    property int countdownSecondsLeft: 0 
+    property int countdownSecondsLeft: 0
+    property string connectionError: ""
 
     function reset() {
         root.mode = "choice";
         root.errorText = "";
         root.opponentJoined = false;
+        root.connectionError = "";
         slideConfirm.reset();
     }
 
@@ -28,6 +30,11 @@ Item {
                 root.mode = "waiting";
             }
         }
+        function onConnectionFailed(message) {
+            root.connectionError = message;
+            slideConfirm.showError("connection failed");
+        }
+
         function onErrorReceived(message) {
             slideConfirm.showError(message);
         }
@@ -67,8 +74,42 @@ Item {
             }
         }
 
+        Column {
+            visible: root.connectionError !== "" && root.countdownSecondsLeft === 0
+            spacing: 10
+            width: parent.width
+
+            Text {
+                text: "can't reach the server"
+                font.pixelSize: 15
+                font.bold: true
+                color: Theme.errorColor
+                anchors.horizontalCenter: parent.horizontalCenter
+            }
+            Text {
+                text: root.connectionError
+                font.pixelSize: 12
+                color: Theme.onSurfaceVariant
+                anchors.horizontalCenter: parent.horizontalCenter
+                horizontalAlignment: Text.AlignHCenter
+                width: parent.width
+                wrapMode: Text.WordWrap
+            }
+            ToggleChip {
+                label: "retry"
+                active: false
+                chipHeight: 40
+                anchors.horizontalCenter: parent.horizontalCenter
+                onToggled: {
+                    root.connectionError = "";
+                    Multiplayer.connectToServer("ws://localhost:8080/ws");
+                    // Multiplayer.connectToServer("wss://typeshi-relay.onrender.com/ws");
+                }
+            }
+        }
+
         Row {
-            visible: root.mode === "choice" && root.countdownSecondsLeft === 0
+            visible: root.mode === "choice" && root.countdownSecondsLeft === 0 && root.connectionError === ""
             spacing: 12
             anchors.horizontalCenter: parent.horizontalCenter
 
@@ -93,7 +134,7 @@ Item {
         }
 
         Column {
-            visible: root.mode === "joining" && root.countdownSecondsLeft === 0
+            visible: root.mode === "joining" && root.countdownSecondsLeft === 0 && root.connectionError === ""
             spacing: 14
             width: parent.width
 
@@ -134,7 +175,7 @@ Item {
         }
 
         Column {
-            visible: root.mode === "waiting" && root.countdownSecondsLeft === 0
+            visible: root.mode === "waiting" && root.countdownSecondsLeft === 0 && root.connectionError === ""
             spacing: 8
             width: parent.width
 
@@ -162,7 +203,7 @@ Item {
         }
 
         Column {
-            visible: root.mode === "connected" && root.countdownSecondsLeft === 0
+            visible: root.mode === "connected" && root.countdownSecondsLeft === 0 && root.connectionError === ""
             spacing: 8
             width: parent.width
 
