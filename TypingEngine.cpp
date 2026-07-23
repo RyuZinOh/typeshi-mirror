@@ -799,6 +799,10 @@ void TypingEngine::startMultiplayerTest(const QStringList &wordPool,
   ensureBuffer();
   m_isExtra.assign(m_targetText.length(), false);
 
+  m_started = true;
+  m_elapsedTimer.start();
+  m_tickTimer.start();
+
   emit targetTextChanged();
   emit typedTextChanged();
   emit startedChanged();

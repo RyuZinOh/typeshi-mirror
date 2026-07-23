@@ -21,6 +21,7 @@ public:
   Q_INVOKABLE void disconnectFromServer();
   Q_INVOKABLE void join(const QString &room, const QString &username);
   Q_INVOKABLE void create(const QString &username);
+  Q_INVOKABLE void notifyRaceStarted();
 
 signals:
   void connectedChanged();

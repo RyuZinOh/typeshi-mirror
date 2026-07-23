@@ -93,3 +93,10 @@ void MultiplayerClient::join(const QString &room, const QString &username) {
   m_socket.sendTextMessage(
       QString::fromUtf8(doc.toJson(QJsonDocument::Compact)));
 }
+
+void MultiplayerClient::notifyRaceStarted() {
+  QJsonObject obj;
+  obj["type"] = "race_started";
+  m_socket.sendTextMessage(
+      QString::fromUtf8(QJsonDocument(obj).toJson(QJsonDocument::Compact)));
+}

@@ -52,6 +52,7 @@ Window {
         onTriggered: {
             TypingEngine.startMultiplayerTest(Config.words, appWindow.multiplayerSeed, appWindow.multiplayerDuration);
             appWindow.racingMultiplayer = true;
+            Multiplayer.notifyRaceStarted();
             inputCatcher.forceActiveFocus();
         }
     }
@@ -59,11 +60,21 @@ Window {
         id: countdownTickTimer
         interval: 100
         repeat: true
-        running: appWindow.multiplayerStartAtMs > 0 && !TypingEngine.started
+        running: appWindow.multiplayerStartAtMs > 0 && !appWindow.racingMultiplayer
         onTriggered: {
             const remaining = Math.ceil((appWindow.multiplayerStartAtMs - Date.now()) / 1000);
             appWindow.countdownSecondsLeft = Math.max(0, remaining);
         }
+    }
+    function leaveMultiplayer() {
+        appWindow.testMode = "time";
+        appWindow.racingMultiplayer = false;
+        appWindow.multiplayerStartAtMs = 0;
+        appWindow.countdownSecondsLeft = 0;
+        Multiplayer.disconnectFromServer();
+        multiplayerPanel.reset();
+        Config.saveTestDefaults(appWindow.testMode, TypingEngine.testDurationSeconds, TypingEngine.testWordCount, TypingEngine.punctuationEnabled);
+        appWindow.restartTest();
     }
 
     Connections {
@@ -74,6 +85,14 @@ Window {
             appWindow.multiplayerSeed = seed;
             appWindow.multiplayerDuration = duration;
             appWindow.countdownToRaceStart();
+        }
+    }
+    Connections {
+        target: TypingEngine
+        function onStartedChanged() {
+            if (appWindow.testMode === "multiplayer" && TypingEngine.started) {
+                Multiplayer.notifyRaceStarted();
+            }
         }
     }
     Item {
@@ -145,6 +164,12 @@ Window {
                 visible: !TypingEngine.finished
 
                 KeyNavigation.tab: refreshButton
+
+                Keys.onEscapePressed: {
+                    if (appWindow.testMode === "multiplayer") {
+                        appWindow.leaveMultiplayer();
+                    }
+                }
 
                 Keys.onPressed: event => {
                     if (themePicker.visible) {
@@ -247,24 +272,18 @@ Window {
                         ToggleChip {
                             id: multiplayerChip
                             label: "multiplayer"
-                            chipHeight: modeRow.controlCellHeight
+                            chipHeight: modeRow.controlCellHeight + 10
                             active: appWindow.testMode === "multiplayer"
                             onToggled: {
                                 const enteringMultiplayer = appWindow.testMode !== "multiplayer";
-                                appWindow.testMode = enteringMultiplayer ? "multiplayer" : "time";
-
                                 if (enteringMultiplayer) {
+                                    appWindow.testMode = "multiplayer";
                                     if (!Multiplayer.connected) {
                                         // Multiplayer.connectToServer("wss://typeshi-relay.onrender.com/ws");
                                         Multiplayer.connectToServer("ws://localhost:8080/ws");
                                     }
                                 } else {
-                                    appWindow.racingMultiplayer = false;
-                                    appWindow.multiplayerStartAtMs = 0;
-                                    Multiplayer.disconnectFromServer();
-                                    multiplayerPanel.reset();
-                                    Config.saveTestDefaults(appWindow.testMode, TypingEngine.testDurationSeconds, TypingEngine.testWordCount, TypingEngine.punctuationEnabled);
-                                    appWindow.restartTest();
+                                    appWindow.leaveMultiplayer();
                                 }
                             }
                         }
@@ -279,7 +298,7 @@ Window {
                         visible: appWindow.testMode !== "multiplayer" || appWindow.racingMultiplayer
                     }
 
-                   MultiplayerPanel {
+                    MultiplayerPanel {
                         id: multiplayerPanel
                         anchors.top: parent.top
                         anchors.topMargin: 60
