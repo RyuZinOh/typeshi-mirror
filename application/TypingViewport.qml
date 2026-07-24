@@ -192,6 +192,9 @@ Item {
         function onTypedTextChanged() {
             root.measureNewWords();
         }
+        function onWordWidthCacheInvalidated() {
+            root.lastMeasuredCursor = 0;
+        }
     }
     onWidthChanged: TypingEngine.setViewportWidth(root.width)
     Component.onCompleted: root.measureNewWords()

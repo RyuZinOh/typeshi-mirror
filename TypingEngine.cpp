@@ -316,6 +316,7 @@ void TypingEngine::typeCharacter(const QString &ch) {
     ensureCapacity(m_targetText.length());
     m_isExtra.insert(pos, true);
     m_wordExtraCount += 1;
+    invalidateBoundaryCache();
     emit targetTextChanged();
   }
 
@@ -347,6 +348,7 @@ void TypingEngine::deleteBackward(bool wholeWord) {
       if (m_wordExtraCount > 0) {
         m_wordExtraCount -= 1;
       }
+      invalidateBoundaryCache();
       emit targetTextChanged();
     }
     didSomething = true;
@@ -581,6 +583,13 @@ bool TypingEngine::wordHasError(int wordStart, int wordEnd) const {
     }
   }
   return false;
+}
+
+void TypingEngine::invalidateBoundaryCache() {
+  m_cachedWordBoundaries.clear();
+  m_boundaryScanPos = 0;
+  m_wordWidths.clear();
+  emit wordWidthCacheInvalidated();
 }
 
 bool TypingEngine::unlockPreviousWord() {

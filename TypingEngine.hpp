@@ -134,6 +134,7 @@ signals:
   void startedChanged();
   void finishedChanged();
   void elapsedMsChanged();
+  void wordWidthCacheInvalidated();
 
   // configuration
   void testDurationChanged();
@@ -222,6 +223,7 @@ private:
   QString randomWord() const;
   void ensureBuffer();
   void resetState();
+  void invalidateBoundaryCache();
 
   void ensureCapacity(int len);
   int previousWordStart(int before) const;
