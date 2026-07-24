@@ -339,7 +339,17 @@ Window {
                                 appWindow.restartTest();
                             }
                         }
-
+                        ToggleChip {
+                            id: wordList1kChip
+                            label: "1k"
+                            chipHeight: modeRow.controlCellHeight + 10
+                            enabled: appWindow.testMode !== "quote" && appWindow.testMode !== "multiplayer"
+                            active: Config.currentWordList === "english1k"
+                            onToggled: {
+                                Config.setWordList(Config.currentWordList === "english1k" ? "english" : "english1k");
+                                appWindow.restartTest();
+                            }
+                        }
                         ToggleChip {
                             id: wordsChip
                             label: "words"
@@ -483,9 +493,9 @@ Window {
                         }
 
                         if (appWindow.testMode !== "multiplayer") {
-                            const oldBest = appWindow.testMode === "words" ? History.bestWpmForWords(words, punct ? 1 : 0) : History.bestWpmFor(mode, dur, punct ? 1 : 0);
+                            const oldBest = appWindow.testMode === "words" ? History.bestWpmForWords(words, punct ? 1 : 0, Config.currentWordList) : History.bestWpmFor(mode, dur, punct ? 1 : 0, -1, Config.currentWordList);
 
-                            History.recordResult(TypingEngine.wpm, TypingEngine.rawWpm, TypingEngine.accuracy, TypingEngine.consistency, Math.round(TypingEngine.elapsedMs / 1000), TypingEngine.correctCount, TypingEngine.incorrectCount, TypingEngine.extraCount, TypingEngine.missedCount, mode, punct, words);
+                            History.recordResult(TypingEngine.wpm, TypingEngine.rawWpm, TypingEngine.accuracy, TypingEngine.consistency, Math.round(TypingEngine.elapsedMs / 1000), TypingEngine.correctCount, TypingEngine.incorrectCount, TypingEngine.extraCount, TypingEngine.missedCount, mode, punct, words, Config.currentWordList);
 
                             if (TypingEngine.wpm > 0 && TypingEngine.wpm > oldBest) {
                                 confetti.tryBurst();

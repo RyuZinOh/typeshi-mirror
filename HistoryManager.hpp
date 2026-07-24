@@ -24,13 +24,14 @@ public:
                                 int correctCount, int incorrectCount,
                                 int extraCount, int missedCount,
                                 const QString &mode, bool punctuationEnabled,
-                                int wordCount = 0);
+                                int wordCount = 0,
+                                const QString &wordList = "english");
   Q_INVOKABLE QVariantList dailySummary() const;
   Q_INVOKABLE double bestWpmFor(const QString &mode, int durationSeconds = 0,
-                                int punctuationEnabled = -1,
-                                int wordCount = -1) const;
-  Q_INVOKABLE double bestWpmForWords(int wordCount,
-                                     int punctuationEnabled = -1) const;
+                                int punctuationEnabled = -1, int wordCount = -1,
+                                const QString &wordList = "") const;
+  Q_INVOKABLE double bestWpmForWords(int wordCount, int punctuationEnabled = -1,
+                                     const QString &wordList = "") const;
 
   double bestWpm() const;
   int testsToday() const;

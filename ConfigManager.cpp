@@ -119,7 +119,7 @@ void ConfigManager::loadWords() {
     const QString key = line.left(eq).trimmed();
     const QString value = line.mid(eq + 1).trimmed();
 
-    if (currentSection == "english" &&
+    if (currentSection == m_currentWordList.toLower() &&
         key.compare("list", Qt::CaseInsensitive) == 0) {
       const QStringList parts = value.split(',', Qt::SkipEmptyParts);
       for (const QString &part : parts) {
@@ -129,6 +129,12 @@ void ConfigManager::loadWords() {
   }
 
   if (m_words.isEmpty()) {
+    if (m_currentWordList != "english") {
+      qWarning() << "ConfigManager: word list" << m_currentWordList
+                 << "empty/missing, falling back to english";
+      m_currentWordList = "english";
+      loadWords();
+    }
     return;
   }
 }
@@ -144,6 +150,7 @@ void ConfigManager::load() {
   m_lastDuration = m_general.value("lastDuration", "60").toInt();
   m_lastWordCount = m_general.value("lastWordCount", "25").toInt();
   m_lastPunctuation = m_general.value("lastPunctuation", "0").toString() == "1";
+  m_currentWordList = m_general.value("wordList", "english").toString();
 
   m_username = m_general.value("username", "typeshitter").toString();
   m_avatarPath = m_general.value("avatarPath", "").toString();
@@ -280,6 +287,31 @@ void ConfigManager::setCustomTheme(bool enabled) {
   load();
 }
 
+void ConfigManager::setWordList(const QString &name) {
+  if (name == m_currentWordList) {
+    return;
+  }
+  m_general["wordList"] = name;
+  writeGeneral();
+  load();
+}
+
+QStringList ConfigManager::availableWordLists() const {
+  QStringList result;
+  QFile file(
+      QStringLiteral(":/qt/qml/typeShitter/application/assets/config.ini"));
+  if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+    return result;
+  }
+  QTextStream in(&file);
+  while (!in.atEnd()) {
+    const QString line = in.readLine().trimmed();
+    if (line.startsWith('[') && line.endsWith(']')) {
+      result.append(line.mid(1, line.length() - 2).trimmed());
+    }
+  }
+  return result;
+}
 void ConfigManager::saveTestDefaults(const QString &mode, int duration,
                                      int wordCount, bool punctuation) {
   m_general["lastMode"] = mode;
@@ -293,7 +325,8 @@ void ConfigManager::saveTestDefaults(const QString &mode, int duration,
   writeGeneral();
   emit configChanged();
 }
-
+// getters
+QString ConfigManager::currentWordList() const { return m_currentWordList; }
 QVariantMap ConfigManager::theme() const { return m_theme; }
 QStringList ConfigManager::words() const { return m_words; }
 QString ConfigManager::currentTheme() const { return m_currentTheme; }
@@ -304,6 +337,7 @@ int ConfigManager::lastWordCount() const { return m_lastWordCount; }
 bool ConfigManager::lastPunctuation() const { return m_lastPunctuation; }
 QString ConfigManager::username() const { return m_username; }
 QString ConfigManager::avatarPath() const { return m_avatarPath; }
+// end of getters
 
 QStringList ConfigManager::availableThemes() const {
   QDir dir(QStringLiteral(":/qt/qml/typeShitter/application/assets/"

@@ -55,13 +55,35 @@ void HistoryManager::ensureSchema() {
   extra_count integer not null,
   missed_count integer not null,
   mode text not null default 'english',
-  punctuation_enabled integer not null default 0
+  punctuation_enabled integer not null default 0,
+  word_list text not null default 'english'
   )
   )");
   if (!ok) {
     qWarning() << "HistoryManager: failed to create table: "
                << q.lastError().text();
   }
+
+  // migration: add word_list to pre-existing dbs that predate this column
+  bool hasWordList = false;
+  QSqlQuery pragma(m_db);
+  pragma.exec("PRAGMA table_info(results)");
+  while (pragma.next()) {
+    if (pragma.value(1).toString() == "word_list") {
+      hasWordList = true;
+      break;
+    }
+  }
+  if (!hasWordList) {
+    qDebug() << "HistoryManager: migrating db, adding word_list column";
+    QSqlQuery alter(m_db);
+    if (!alter.exec("alter table results add column word_list text not null "
+                    "default 'english'")) {
+      qWarning() << "HistoryManager: migration failed: "
+                 << alter.lastError().text();
+    }
+  }
+
   // indexing
   q.exec("create index if not exists idx_results_date on results(date)");
   q.exec(R"(
@@ -69,6 +91,9 @@ void HistoryManager::ensureSchema() {
   )");
   q.exec(R"(
   create index if not exists idx_results_mode_words_punct on results(mode, word_count, punctuation_enabled)
+  )");
+  q.exec(R"(
+  create index if not exists idx_results_wordlist on results(word_list)
   )");
 }
 
@@ -106,6 +131,30 @@ QVariantMap HistoryManager::statsSummary() const {
   if (q.next()) {
     out["quote"] = q.value(0).toDouble();
   }
+  // word list
+  q.exec(R"(
+select duration_seconds, punctuation_enabled, word_list, max(wpm) from results where mode = 'english'
+group by duration_seconds, punctuation_enabled, word_list
+)");
+  while (q.next()) {
+    const int duration = q.value(0).toInt();
+    const int punct = q.value(1).toInt();
+    const QString wordList = q.value(2).toString();
+    out[QString("english_%1_%2_%3").arg(duration).arg(punct).arg(wordList)] =
+        q.value(3).toDouble();
+  }
+
+  q.exec(R"(
+select word_count, punctuation_enabled, word_list, max(wpm) from results where mode = 'words'
+group by word_count, punctuation_enabled, word_list
+)");
+  while (q.next()) {
+    const int wordCount = q.value(0).toInt();
+    const int punct = q.value(1).toInt();
+    const QString wordList = q.value(2).toString();
+    out[QString("words_%1_%2_%3").arg(wordCount).arg(punct).arg(wordList)] =
+        q.value(3).toDouble();
+  }
   return out;
 }
 
@@ -114,7 +163,7 @@ void HistoryManager::recordResult(double wpm, double rawWpm, double accuracy,
                                   int correctCount, int incorrectCount,
                                   int extraCount, int missedCount,
                                   const QString &mode, bool punctuationEnabled,
-                                  int wordCount) {
+                                  int wordCount, const QString &wordList) {
   if (!m_db.isOpen()) {
     qWarning() << "HistoryManager: db not open, can't record result";
     return;
@@ -123,7 +172,7 @@ void HistoryManager::recordResult(double wpm, double rawWpm, double accuracy,
   const QDateTime now = QDateTime::currentDateTime();
   QSqlQuery q(m_db);
   q.prepare(R"(
-  insert into results (timestamp, date, wpm, raw_wpm, accuracy, consistency, duration_seconds,word_count,correct_count, incorrect_count, extra_count, missed_count, mode, punctuation_enabled) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+  insert into results (timestamp, date, wpm, raw_wpm, accuracy, consistency, duration_seconds,word_count,correct_count, incorrect_count, extra_count, missed_count, mode, punctuation_enabled, word_list) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
   )");
   q.addBindValue(now.toSecsSinceEpoch());
   q.addBindValue(now.toString("yyyy-MM-dd"));
@@ -139,6 +188,7 @@ void HistoryManager::recordResult(double wpm, double rawWpm, double accuracy,
   q.addBindValue(missedCount);
   q.addBindValue(mode);
   q.addBindValue(punctuationEnabled ? 1 : 0);
+  q.addBindValue(wordList);
 
   if (!q.exec()) {
     qWarning() << "HistoryManager: insert failed: " << q.lastError().text();
@@ -154,9 +204,9 @@ double HistoryManager::bestWpm() const {
   q.exec("select max(wpm) from results");
   return q.next() ? q.value(0).toDouble() : 0.0;
 }
-
 double HistoryManager::bestWpmFor(const QString &mode, int durationSeconds,
-                                  int punctuationEnabled, int wordCount) const {
+                                  int punctuationEnabled, int wordCount,
+                                  const QString &wordList) const {
   if (!m_db.isOpen()) {
     return 0.0;
   }
@@ -176,6 +226,9 @@ double HistoryManager::bestWpmFor(const QString &mode, int durationSeconds,
   if (wordCount > 0) {
     sql += " and word_count = ?";
   }
+  if (!wordList.isEmpty()) {
+    sql += " and word_list = ?";
+  }
 
   q.prepare(sql);
   if (!mode.isEmpty()) {
@@ -190,16 +243,18 @@ double HistoryManager::bestWpmFor(const QString &mode, int durationSeconds,
   if (wordCount > 0) {
     q.addBindValue(wordCount);
   }
+  if (!wordList.isEmpty()) {
+    q.addBindValue(wordList);
+  }
 
   q.exec();
   return q.next() ? q.value(0).toDouble() : 0.0;
 }
 
-double HistoryManager::bestWpmForWords(int wordCount,
-                                       int punctuationEnabled) const {
-  return bestWpmFor("words", 0, punctuationEnabled, wordCount);
+double HistoryManager::bestWpmForWords(int wordCount, int punctuationEnabled,
+                                       const QString &wordList) const {
+  return bestWpmFor("words", 0, punctuationEnabled, wordCount, wordList);
 }
-
 int HistoryManager::testsToday() const {
   if (!m_db.isOpen()) {
     return 0;

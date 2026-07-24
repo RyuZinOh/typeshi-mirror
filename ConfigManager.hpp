@@ -20,6 +20,7 @@ class ConfigManager : public QObject {
   Q_PROPERTY(bool lastPunctuation READ lastPunctuation NOTIFY configChanged)
   Q_PROPERTY(QString username READ username NOTIFY configChanged)
   Q_PROPERTY(QString avatarPath READ avatarPath NOTIFY configChanged)
+  Q_PROPERTY(QString currentWordList READ currentWordList NOTIFY configChanged)
 
 public:
   explicit ConfigManager(QObject *parent = nullptr);
@@ -34,6 +35,7 @@ public:
   bool lastPunctuation() const;
   QString username() const;
   QString avatarPath() const;
+  QString currentWordList() const;
 
   Q_INVOKABLE void reload();
   Q_INVOKABLE QColor themeColor(const QString &key) const;
@@ -47,6 +49,8 @@ public:
   Q_INVOKABLE void setUsername(const QString &name);
   Q_INVOKABLE QString importAvatar(const QString &sourceFileUrl);
   Q_INVOKABLE void clearAvatar();
+  Q_INVOKABLE void setWordList(const QString &name);
+  Q_INVOKABLE QStringList availableWordLists() const;
 
 signals:
   void configChanged();
@@ -66,6 +70,7 @@ private:
   int m_lastWordCount = 25;
   bool m_lastPunctuation = false;
   QString m_username = "typeShitter";
+  QString m_currentWordList = "english";
   // end of defaults
 
   QString configDir() const;

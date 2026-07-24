@@ -10,9 +10,8 @@ Item {
     property string resultMode: "english"
     property int resultDuration: 0
     property bool resultPunctuation: false
-    readonly property bool isNewBest: TypingEngine.wpm > 0 && TypingEngine.wpm >= (aftermath.resultMode === "words" ? History.bestWpmForWords(aftermath.resultDuration, aftermath.resultPunctuation ? 1 : 0) : History.bestWpmFor(aftermath.resultMode, aftermath.resultDuration, aftermath.resultPunctuation ? 1 : 0))
-
     signal restartRequested
+    readonly property bool isNewBest: TypingEngine.wpm > 0 && TypingEngine.wpm >= (aftermath.resultMode === "words" ? History.bestWpmForWords(aftermath.resultDuration, aftermath.resultPunctuation ? 1 : 0, Config.currentWordList) : History.bestWpmFor(aftermath.resultMode, aftermath.resultDuration, aftermath.resultPunctuation ? 1 : 0, -1, Config.currentWordList))
 
     Component.onCompleted: Qt.callLater(function () {
         restartButtonRef.forceActiveFocus();
