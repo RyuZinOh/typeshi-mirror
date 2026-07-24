@@ -153,6 +153,8 @@ private:
     int end;
   };
 
+  mutable QVector<QPair<int, int>> m_cachedWordBoundaries;
+  mutable int m_boundaryScanPos = 0;
   QString m_targetText;
   QString m_typedText;
 

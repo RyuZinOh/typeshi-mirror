@@ -12,6 +12,7 @@ Item {
     property int opponentCharIndex: -1
     property string opponentUsername: ""
     property int opponentWordExtraCount: 0
+    property int lastMeasuredCursor: 0
 
     width: parent.width
     height: fm.height * 1.3 * root.linesVisible
@@ -153,7 +154,20 @@ Item {
         const typed = TypingEngine.typedText;
         const words = TypingEngine.wordBoundaries;
 
-        for (let i = 0; i < words.length; i++) {
+        const newCursor = typed.length;
+        const lowCursor = Math.min(root.lastMeasuredCursor, newCursor);
+
+        let lo = 0, hi = words.length;
+        while (lo < hi) {
+            const mid = (lo + hi) >> 1;
+            if (words[mid].end <= lowCursor) {
+                lo = mid + 1;
+            } else {
+                hi = mid;
+            }
+        }
+
+        for (let i = lo; i < words.length; i++) {
             const w = words[i];
             let chunkWidth = 0;
             for (let c = w.start; c < w.end; c++) {
@@ -167,6 +181,7 @@ Item {
             // const chunkWidth = fm.advanceWidth(chunkText);
             TypingEngine.setWordWidth(w.start, w.end, chunkWidth);
         }
+        root.lastMeasuredCursor = newCursor;
         TypingEngine.setViewportWidth(root.width);
     }
     Connections {
@@ -181,8 +196,8 @@ Item {
     onWidthChanged: TypingEngine.setViewportWidth(root.width)
     Component.onCompleted: root.measureNewWords()
 
-    Column {
-        id: linesColumn
+    Item {
+        id: linesContainer
         width: root.width
         y: -TypingEngine.windowStart * root.lineHeight
         Behavior on y {
@@ -191,15 +206,23 @@ Item {
                 easing.type: Easing.InOutQuad
             }
         }
+
+        readonly property int bufferAbove: 2
+        readonly property int bufferBelow: 2
+        readonly property int loIndex: Math.max(0, TypingEngine.windowStart - linesContainer.bufferAbove)
+        readonly property int hiIndex: Math.min(TypingEngine.lines.length, TypingEngine.windowStart + root.linesVisible + linesContainer.bufferBelow)
+
         Repeater {
-            model: Math.min(TypingEngine.lines.length, TypingEngine.windowStart + root.linesVisible + 2)
+            model: Math.max(0, linesContainer.hiIndex - linesContainer.loIndex)
             delegate: Row {
                 id: lineFlow
                 required property int index
 
-                property var modelData: lineFlow.index < TypingEngine.lines.length ? TypingEngine.lines[lineFlow.index] : null
+                readonly property int lineIndex: linesContainer.loIndex + lineFlow.index
+                property var modelData: lineFlow.lineIndex < TypingEngine.lines.length ? TypingEngine.lines[lineFlow.lineIndex] : null
                 width: root.width
                 height: root.lineHeight
+                y: lineFlow.lineIndex * root.lineHeight
                 spacing: 0
                 visible: lineFlow.modelData !== null
 

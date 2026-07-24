@@ -181,6 +181,7 @@ void TypingEngine::resetState() {
   m_wordCountMode = false;
   m_useSeededRng = false;
 
+  m_cachedWordBoundaries.clear();
   m_lastWord.clear();
   m_targetText.clear();
   m_typedText.clear();
@@ -201,6 +202,7 @@ void TypingEngine::resetState() {
   m_missedCount = 0;
   m_permanentMistakeCount = 0;
   m_wpmCorrectKetstrokes = 0;
+  m_boundaryScanPos = 0;
   m_totalAttemptedKeystrokes = 0;
   m_lastSampledMistakeCount = 0;
 
@@ -383,18 +385,33 @@ QString TypingEngine::characterAt(int index) const {
 }
 
 QVariantList TypingEngine::wordBoundaries() const {
-  QVariantList result;
-  int start = 0;
-  int len = m_targetText.length();
-  for (int i = 0; i < len; ++i) {
+  const int len = m_targetText.length();
+
+  if (m_boundaryScanPos > len) {
+    m_cachedWordBoundaries.clear();
+    m_boundaryScanPos = 0;
+  }
+  int start = m_cachedWordBoundaries.isEmpty()
+                  ? 0
+                  : m_cachedWordBoundaries.last().second;
+
+  for (int i = m_boundaryScanPos; i < len; ++i) {
     if (m_targetText.at(i) == ' ') {
-      QVariantMap entry;
-      entry["start"] = start;
-      entry["end"] = i + 1;
-      result.append(entry);
+      m_cachedWordBoundaries.append({start, i + 1});
       start = i + 1;
     }
   }
+  m_boundaryScanPos = len;
+
+  QVariantList result;
+  result.reserve(m_cachedWordBoundaries.size() + 1);
+  for (const auto &wb : m_cachedWordBoundaries) {
+    QVariantMap entry;
+    entry["start"] = wb.first;
+    entry["end"] = wb.second;
+    result.append(entry);
+  }
+
   if (start < len) {
     QVariantMap entry;
     entry["start"] = start;
