@@ -98,7 +98,7 @@ QVariantMap HistoryManager::statsSummary() const {
   while (q.next()) {
     const int wordCount = q.value(0).toInt();
     const int punct = q.value(1).toInt();
-    out[QString("english_%1_%2").arg(wordCount).arg(punct)] =
+    out[QString("words_%1_%2").arg(wordCount).arg(punct)] =
         q.value(2).toDouble();
   }
   // quote mode

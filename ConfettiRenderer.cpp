@@ -141,9 +141,8 @@ QSGNode *ConfettiRenderer::updatePaintNode(QSGNode *oldNode,
       vertexCount += p.sides * 3;
     }
 
-    auto *geometry =
-        new QSGGeometry(QSGGeometry::defaultAttributes_Point2D(), vertexCount);
-    geometry->setDrawingMode(QSGGeometry::DrawTriangles);
+    QSGGeometry *geometry = node->geometry();
+    geometry->allocate(vertexCount);
     auto *vertices = geometry->vertexDataAsPoint2D();
 
     int idx = 0;
@@ -156,8 +155,6 @@ QSGNode *ConfettiRenderer::updatePaintNode(QSGNode *oldNode,
       appendParticle(vertices, idx, p, shrink);
     }
 
-    node->setGeometry(geometry);
-    node->setFlag(QSGNode::OwnsGeometry);
     node->markDirty(QSGNode::DirtyGeometry);
 
     if (!particles.isEmpty()) {
