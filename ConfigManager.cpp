@@ -182,7 +182,9 @@ void ConfigManager::setUsername(const QString &name) {
     return;
   }
   m_general["username"] = trimmed.left(24);
+  m_username = trimmed.left(24);
   writeGeneral();
+  emit configChanged();
 }
 
 QString ConfigManager::importAvatar(const QString &sourceFileUrl) {
@@ -219,7 +221,9 @@ QString ConfigManager::importAvatar(const QString &sourceFileUrl) {
   }
 
   m_general["avatarPath"] = destPath;
+  m_avatarPath = destPath;
   writeGeneral();
+  emit configChanged();
   return destPath;
 }
 
@@ -229,7 +233,9 @@ void ConfigManager::clearAvatar() {
   }
   QFile::remove(m_avatarPath);
   m_general["avatarPath"] = "";
+  m_avatarPath.clear();
   writeGeneral();
+  emit configChanged();
 }
 void ConfigManager::reload() { load(); }
 
@@ -252,13 +258,13 @@ void ConfigManager::writeGeneral() {
   if (!m_watcher.files().contains(statePath())) {
     m_watcher.addPath(statePath());
   }
-  load();
 }
 
 void ConfigManager::setTheme(const QString &themeName, const QString &variant) {
   m_general["theme"] = themeName;
   m_general["variant"] = variant.isEmpty() ? m_currentVariant : variant;
   writeGeneral();
+  load();
 }
 
 void ConfigManager::setCustomTheme(bool enabled) {
@@ -271,6 +277,7 @@ void ConfigManager::setCustomTheme(bool enabled) {
         m_currentVariant.isEmpty() ? "dark" : m_currentVariant;
   }
   writeGeneral();
+  load();
 }
 
 void ConfigManager::saveTestDefaults(const QString &mode, int duration,
@@ -279,7 +286,12 @@ void ConfigManager::saveTestDefaults(const QString &mode, int duration,
   m_general["lastDuration"] = duration;
   m_general["lastWordCount"] = wordCount;
   m_general["lastPunctuation"] = punctuation ? "1" : "0";
+  m_lastMode = mode;
+  m_lastDuration = duration;
+  m_lastWordCount = wordCount;
+  m_lastPunctuation = punctuation;
   writeGeneral();
+  emit configChanged();
 }
 
 QVariantMap ConfigManager::theme() const { return m_theme; }
