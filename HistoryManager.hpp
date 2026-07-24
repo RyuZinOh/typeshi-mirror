@@ -13,6 +13,7 @@ class HistoryManager : public QObject {
   Q_PROPERTY(int testsToday READ testsToday NOTIFY historyChanged)
   Q_PROPERTY(int currentStreak READ currentStreak NOTIFY historyChanged)
   Q_PROPERTY(int longestStreak READ longestStreak NOTIFY historyChanged)
+  Q_PROPERTY(QVariantMap statsSummary READ statsSummary NOTIFY historyChanged)
 
 public:
   explicit HistoryManager(QObject *parent = nullptr);
@@ -35,6 +36,7 @@ public:
   int testsToday() const;
   int currentStreak() const;
   int longestStreak() const;
+  QVariantMap statsSummary() const;
 
 signals:
   void historyChanged();

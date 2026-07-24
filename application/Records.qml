@@ -47,36 +47,22 @@ Row {
             color: Theme.onSurface
         }
         Text {
-            // History.bestWpm read below forces this binding to re-evaluate on historyChanged,
-            // since bestWpmFor() is a plain invokable with no NOTIFY of its own.
-            text: {
-                History.bestWpm;
-                return "15s: " + History.bestWpmFor("english", 15, 0).toFixed(1) + " / " + History.bestWpmFor("english", 15, 1).toFixed(1) + " punct";
-            }
+            text: "15s: " + (History.statsSummary["english_15_0"] || 0).toFixed(1) + " / " + (History.statsSummary["english_15_1"] || 0).toFixed(1) + " punct"
             font.pixelSize: 14
             color: Theme.onSurfaceVariant
         }
         Text {
-            text: {
-                History.bestWpm;
-                return "30s: " + History.bestWpmFor("english", 30, 0).toFixed(1) + " / " + History.bestWpmFor("english", 30, 1).toFixed(1) + " punct";
-            }
+            text: "30s: " + (History.statsSummary["english_30_0"] || 0).toFixed(1) + " / " + (History.statsSummary["english_30_1"] || 0).toFixed(1) + " punct"
             font.pixelSize: 14
             color: Theme.onSurfaceVariant
         }
         Text {
-            text: {
-                History.bestWpm;
-                return "60s: " + History.bestWpmFor("english", 60, 0).toFixed(1) + " / " + History.bestWpmFor("english", 60, 1).toFixed(1) + " punct";
-            }
+            text: "60s: " + (History.statsSummary["english_60_0"] || 0).toFixed(1) + " / " + (History.statsSummary["english_60_1"] || 0).toFixed(1) + " punct"
             font.pixelSize: 14
             color: Theme.onSurfaceVariant
         }
         Text {
-            text: {
-                History.bestWpm;
-                return "120s: " + History.bestWpmFor("english", 120, 0).toFixed(1) + " / " + History.bestWpmFor("english", 120, 1).toFixed(1) + " punct";
-            }
+            text: "120s: " + (History.statsSummary["english_120_0"] || 0).toFixed(1) + " / " + (History.statsSummary["english_120_1"] || 0).toFixed(1) + " punct"
             font.pixelSize: 14
             color: Theme.onSurfaceVariant
         }
@@ -92,34 +78,22 @@ Row {
             color: Theme.onSurface
         }
         Text {
-            text: {
-                History.bestWpm;
-                return "10: " + History.bestWpmForWords(10, 0).toFixed(1) + " / " + History.bestWpmForWords(10, 1).toFixed(1) + " punct";
-            }
+            text: "10: " + (History.statsSummary["words_10_0"] || 0).toFixed(1) + " / " + (History.statsSummary["words_10_1"] || 0).toFixed(1) + " punct"
             font.pixelSize: 14
             color: Theme.onSurfaceVariant
         }
         Text {
-            text: {
-                History.bestWpm;
-                return "25: " + History.bestWpmForWords(25, 0).toFixed(1) + " / " + History.bestWpmForWords(25, 1).toFixed(1) + " punct";
-            }
+            text: "25: " + (History.statsSummary["words_25_0"] || 0).toFixed(1) + " / " + (History.statsSummary["words_25_1"] || 0).toFixed(1) + " punct"
             font.pixelSize: 14
             color: Theme.onSurfaceVariant
         }
         Text {
-            text: {
-                History.bestWpm;
-                return "50: " + History.bestWpmForWords(50, 0).toFixed(1) + " / " + History.bestWpmForWords(50, 1).toFixed(1) + " punct";
-            }
+            text: "50: " + (History.statsSummary["words_50_0"] || 0).toFixed(1) + " / " + (History.statsSummary["words_50_1"] || 0).toFixed(1) + " punct"
             font.pixelSize: 14
             color: Theme.onSurfaceVariant
         }
         Text {
-            text: {
-                History.bestWpm;
-                return "100: " + History.bestWpmForWords(100, 0).toFixed(1) + " / " + History.bestWpmForWords(100, 1).toFixed(1) + " punct";
-            }
+            text: "100: " + (History.statsSummary["words_100_0"] || 0).toFixed(1) + " / " + (History.statsSummary["words_100_1"] || 0).toFixed(1) + " punct"
             font.pixelSize: 14
             color: Theme.onSurfaceVariant
         }
@@ -135,10 +109,7 @@ Row {
             color: Theme.onSurface
         }
         Text {
-            text: {
-                History.bestWpm;
-                return "best: " + History.bestWpmFor("quote", 0).toFixed(1);
-            }
+            text: "best: " + (History.statsSummary["quote"] || 0).toFixed(1)
             font.pixelSize: 14
             color: Theme.onSurfaceVariant
         }

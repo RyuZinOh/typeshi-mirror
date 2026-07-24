@@ -62,6 +62,51 @@ void HistoryManager::ensureSchema() {
     qWarning() << "HistoryManager: failed to create table: "
                << q.lastError().text();
   }
+  // indexing
+  q.exec("create index if not exists idx_results_date on results(date)");
+  q.exec(R"(
+  create index if not exists idx_results_mode_dur_punct on results(mode, duration_seconds, punctuation_enabled)
+  )");
+  q.exec(R"(
+  create index if not exists idx_results_mode_words_punct on results(mode, word_count, punctuation_enabled)
+  )");
+}
+
+QVariantMap HistoryManager::statsSummary() const {
+  QVariantMap out;
+  if (!m_db.isOpen()) {
+    return out;
+  }
+  QSqlQuery q(m_db);
+
+  // time mode
+  q.exec(R"(
+  select duration_seconds, punctuation_enabled, max(wpm) from results where mode = 'english'
+  group by duration_seconds, punctuation_enabled
+  )");
+  while (q.next()) {
+    const int duration = q.value(0).toInt();
+    const int punct = q.value(1).toInt();
+    out[QString("english_%1_%2").arg(duration).arg(punct)] =
+        q.value(2).toDouble();
+  }
+  // word mode
+  q.exec(R"(
+  select word_count, punctuation_enabled, max(wpm) from results where mode = 'words'
+  group by word_count, punctuation_enabled
+  )");
+  while (q.next()) {
+    const int wordCount = q.value(0).toInt();
+    const int punct = q.value(1).toInt();
+    out[QString("english_%1_%2").arg(wordCount).arg(punct)] =
+        q.value(2).toDouble();
+  }
+  // quote mode
+  q.exec("select max(wpm) from results where mode = 'quote'");
+  if (q.next()) {
+    out["quote"] = q.value(0).toDouble();
+  }
+  return out;
 }
 
 void HistoryManager::recordResult(double wpm, double rawWpm, double accuracy,
