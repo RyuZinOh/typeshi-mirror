@@ -1,9 +1,9 @@
 [Desktop Entry]
 Type=Application
 Name=typeShi
-Comment=A typing application
+Comment=A typing speed test application
 Exec=typeshi
-Icon=typeshi
+Icon=np.com.safallama.typeshi
 Terminal=false
 Categories=Game;Education;
 Keywords=typing;wpm;keyboard;practice;speed;

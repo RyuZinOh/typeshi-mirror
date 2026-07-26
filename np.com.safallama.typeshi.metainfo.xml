@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>np.com.safallama.typeshi</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>BSD-2-Clause</project_license>
+  <name>typeShi</name>
+  <summary>A typing application</summary>
+
+  <description>
+    <p>
+      typeShi is a typing application featuring time-based, word-count-based,
+      and quote-based typing tests. It includes custom Material-style themes,
+      detailed performance history and streak tracking, and 1v1 Multiplayer Functionality.
+    </p>
+    <p>Features:</p>
+    <ul>
+      <li>Time, word count, and quote typing modes</li>
+      <li>Optional punctuation and multiple word lists</li>
+      <li>Live WPM, accuracy, and consistency stats</li>
+      <li>Detailed history, streaks, and daily test tracking</li>
+      <li>Custom themes with light/dark variants</li>
+      <li>Real-time multiplayer typing races</li>
+    </ul>
+  </description>
+
+  <launchable type="desktop-id">np.com.safallama.typeshi.desktop</launchable>
+
+  <url type="homepage">https://git.safallama.com.np/safalski/typeShi</url>
+  <url type="bugtracker">https://git.safallama.com.np/safalski/typeShi/issues</url>
+  <url type="vcs-browser">https://git.safallama.com.np/safalski/typeShi</url>
+
+  <content_rating type="oars-1.1"/>
+
+  <releases>
+    <release version="0.1.4" date="2026-07-26">
+      <description>
+        <p>Latest release of typeShi.</p>
+      </description>
+    </release>
+  </releases>
+
+  <developer id="np.com.safallama">
+    <name>Safal Lama</name>
+  </developer>
+
+  <branding>
+    <color type="primary" scheme_preference="light">#a7c080</color>
+    <color type="primary" scheme_preference="dark">#141019</color>
+  </branding>
+</component>

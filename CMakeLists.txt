@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.20)
 project(typeshi)
 
+option(FLATPAK_BUILD "Build for Flatpak packaging" OFF)
+
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_AUTOMOC ON)
 
@@ -79,6 +81,11 @@ qt_import_qml_plugins(typeshi)
 install(TARGETS typeshi
   RUNTIME DESTINATION bin
 )
-
-install(FILES typeshi.desktop DESTINATION share/applications)
-install(FILES application/assets/typeShi.svg DESTINATION share/icons/hicolor/scalable/apps RENAME typeshi.svg)
+if(FLATPAK_BUILD)
+    install(FILES np.com.safallama.typeshi.desktop DESTINATION share/applications)
+    install(FILES application/assets/typeShi.svg DESTINATION share/icons/hicolor/scalable/apps RENAME np.com.safallama.typeshi.svg)
+    install(FILES np.com.safallama.typeshi.metainfo.xml DESTINATION share/metainfo)
+else()
+    install(FILES typeshi.desktop DESTINATION share/applications)
+    install(FILES application/assets/typeShi.svg DESTINATION share/icons/hicolor/scalable/apps RENAME typeshi.svg)
+endif()

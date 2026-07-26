@@ -201,7 +201,6 @@ Item {
                     required property var modelData
                     visible: modelData.hasError === true
                     text: "\uf467"
-                    font.family: "Symbols Nerd Font"
                     font.pixelSize: 13
                     color: Theme.errorColor
                     x: Math.max(0, Math.min((modelData.time / root.effectiveMaxTime) * errorStrip.width - width / 2, errorStrip.width - width))
