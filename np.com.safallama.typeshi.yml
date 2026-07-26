@@ -20,4 +20,4 @@ modules:
       - type: git
         url: https://git.safallama.com.np/safalski/typeShi.git
         tag: v0.1.4
-        commit: 89aee583dd48f7c1b860b708f8d9c5f75f0006ca
+        commit: bd92e2221dd7595ae58b517f89d48d3dbb286c79
