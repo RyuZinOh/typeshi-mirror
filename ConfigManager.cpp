@@ -21,7 +21,14 @@ ConfigManager::ConfigManager(QObject *parent) : QObject(parent) {
           });
 }
 
+// QString ConfigManager::configDir() const {
+//   return QDir::homePath() + "/.config/typeShi";
+// }
 QString ConfigManager::configDir() const {
+  const QString xdgConfig = qEnvironmentVariable("XDG_CONFIG_HOME");
+  if (!xdgConfig.isEmpty()) {
+    return xdgConfig + "/typeShi";
+  }
   return QDir::homePath() + "/.config/typeShi";
 }
 
