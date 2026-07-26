@@ -22,6 +22,12 @@
       <li>Real-time multiplayer typing races</li>
     </ul>
   </description>
+  <screenshots>
+    <screenshot type="default">
+      <image>https://git.safallama.com.np/safalski/typeShi/raw/branch/main/application/assets/preview.jpeg</image>
+      <caption>typeShi preview</caption>
+    </screenshot>
+  </screenshots>
 
   <launchable type="desktop-id">np.com.safallama.typeshi.desktop</launchable>
 
