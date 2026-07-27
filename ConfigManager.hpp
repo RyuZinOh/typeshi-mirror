@@ -52,6 +52,9 @@ public:
   Q_INVOKABLE void setWordList(const QString &name);
   Q_INVOKABLE QStringList availableWordLists() const;
 
+  // custom theme generation
+  Q_INVOKABLE bool generateCustomThemeTemplate(bool overwrite = false);
+
 signals:
   void configChanged();
 

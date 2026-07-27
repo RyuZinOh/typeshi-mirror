@@ -168,6 +168,17 @@ void ConfigManager::load() {
 
   if (m_currentTheme.compare("custom", Qt::CaseInsensitive) == 0) {
     parseSection(configPath(), "theme", m_theme);
+    if (m_theme.isEmpty()) {
+      qWarning() << "custom theme file config.ini is empty, defaulting...";
+      m_general["theme"] = "midnight_purple";
+      m_general["variant"] = "dark";
+      writeGeneral();
+      m_currentTheme = "midnight_purple";
+      m_currentVariant = "dark";
+      parseSection(QStringLiteral(":/qt/qml/typeShitter/application/assets/"
+                                  "themes/midnight_purple/dark.ini"),
+                   "theme", m_theme);
+    }
   } else {
     const QString bundledPath =
         QStringLiteral(
@@ -369,3 +380,76 @@ QColor ConfigManager::themeColor(const QString &key) const {
   }
   return color;
 }
+
+// custom theme generation
+bool ConfigManager::generateCustomThemeTemplate(bool overwrite) {
+  const QString path = configPath();
+
+  if (QFile::exists(path) && !overwrite) {
+    qWarning() << "Custom Theme already exists at" << path
+               << "\n use --force to overwrite";
+    return false;
+  }
+  QDir().mkpath(configDir());
+  QFile file(path);
+  if (!file.open(QIODevice::WriteOnly | QIODevice::Text |
+                 QIODevice::Truncate)) {
+    qWarning() << "Failed to write custom theme at" << path;
+    return false;
+  }
+
+  QTextStream out(&file);
+  out << R"([theme]
+background=#18120c
+surface=#18120c
+surface_bright=#403831
+surface_container=#251e18
+surface_container_low=#211a14
+surface_container_high=#302922
+surface_container_highest=#3b332c
+surface_dim=#18120c
+primary=#ffb86b
+primary_container=#c7812d
+primary_fixed=#ffdcbc
+primary_fixed_dim=#ffb86b
+secondary=#e9bf94
+secondary_container=#5e4120
+secondary_fixed=#ffdcbc
+secondary_fixed_dim=#e9bf94
+tertiary=#c1ce67
+tertiary_container=#8b9837
+tertiary_fixed=#ddeb80
+tertiary_fixed_dim=#c1ce67
+error=#ffb4ab
+error_container=#93000a
+on_background=#eee0d6
+on_surface=#eee0d6
+on_surface_variant=#d7c3b2
+on_primary=#492900
+on_primary_container=#000000
+on_primary_fixed=#2c1700
+on_primary_fixed_variant=#683d00
+on_secondary=#452b0c
+on_secondary_container=#ffd9b6
+on_secondary_fixed=#2c1700
+on_secondary_fixed_variant=#5e4120
+on_tertiary=#2d3400
+on_tertiary_container=#000000
+on_tertiary_fixed=#1a1e00
+on_tertiary_fixed_variant=#434b00
+on_error=#690005
+on_error_container=#ffdad6
+outline=#9f8e7e
+outline_variant=#524437
+inverse_surface=#eee0d6
+inverse_on_surface=#372f28
+inverse_primary=#895100
+scrim=#000000
+shadow=#000000
+)";
+  file.close();
+  qDebug() << "Successfully added custom theme template to " << path;
+  return true;
+}
+
+// end of custom theme generation

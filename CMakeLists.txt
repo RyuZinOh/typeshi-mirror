@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(typeshi)
+project(typeshi VERSION 0.1.5)
 
 option(FLATPAK_BUILD "Build for Flatpak packaging" OFF)
 
@@ -12,6 +12,10 @@ qt_standard_project_setup()
 qt_policy(SET QTP0004 NEW)
 
 qt_add_executable(typeshi)
+
+target_compile_definitions(typeshi PRIVATE
+  TYPESHI_VERSION="${PROJECT_VERSION}"
+)
 
 set_source_files_properties(application/Theme.qml PROPERTIES
     QT_QML_SINGLETON_TYPE TRUE
