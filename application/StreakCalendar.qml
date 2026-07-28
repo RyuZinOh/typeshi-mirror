@@ -294,6 +294,35 @@ Item {
                                 required property int index
                                 spacing: root.cellSpacing
 
+                                opacity: 0
+                                scale: 0.85
+                                transformOrigin: Item.Center
+
+                                Component.onCompleted: revealSeq.start()
+
+                                SequentialAnimation {
+                                    id: revealSeq
+                                    PauseAnimation {
+                                        duration: weekCol.index * 14
+                                    }
+                                    ParallelAnimation {
+                                        NumberAnimation {
+                                            target: weekCol
+                                            property: "opacity"
+                                            to: 1
+                                            duration: 220
+                                            easing.type: Easing.OutCubic
+                                        }
+                                        NumberAnimation {
+                                            target: weekCol
+                                            property: "scale"
+                                            to: 1
+                                            duration: 220
+                                            easing.type: Easing.OutBack
+                                        }
+                                    }
+                                }
+
                                 Repeater {
                                     model: weekCol.modelData
 
