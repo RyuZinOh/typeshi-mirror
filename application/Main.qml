@@ -474,8 +474,6 @@ Window {
                 id: aftermathLoader
                 anchors.fill: parent
                 active: TypingEngine.finished && !appWindow.showCountdownOverlay
-                opacity: (TypingEngine.finished && !appWindow.showCountdownOverlay) ? 1 : 0
-                scale: (TypingEngine.finished && !appWindow.showCountdownOverlay) ? 1 : 0
                 onActiveChanged: {
                     if (active) {
                         let mode = "english";
@@ -501,19 +499,6 @@ Window {
                                 confetti.tryBurst();
                             }
                         }
-                    }
-                }
-
-                Behavior on opacity {
-                    NumberAnimation {
-                        duration: 150
-                        easing.type: Easing.InOutQuad
-                    }
-                }
-                Behavior on scale {
-                    NumberAnimation {
-                        duration: 150
-                        easing.type: Easing.InOutQuad
                     }
                 }
                 sourceComponent: appWindow.testMode === "multiplayer" ? multiplayerAftermathComponent : soloAftermathComponent
