@@ -19,6 +19,14 @@ Rectangle {
     border.width: 1
     opacity: root.enabled ? 1 : 0.4
 
+    scale: chipArea.pressed ? 0.94 : 1.0
+
+    Behavior on scale {
+        NumberAnimation {
+            duration: chipArea.pressed ? 80 : 220
+            easing.type: chipArea.pressed ? Easing.OutQuad : Easing.OutBack
+        }
+    }
     Behavior on radius {
         NumberAnimation {
             duration: 200
