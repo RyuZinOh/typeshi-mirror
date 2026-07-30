@@ -27,6 +27,11 @@ void loadBundledFonts() {
           QFontDatabase::addApplicationFont(familyDir.filePath(file));
       if (id == -1) {
         qWarning() << "failed to Load the fonts: " << familyDir.filePath(file);
+        continue;
+      }
+      const QStringList families = QFontDatabase::applicationFontFamilies(id);
+      if (!families.isEmpty()) {
+        ConfigManager::registerFontFamily(families.first());
       }
     }
   }

@@ -26,6 +26,7 @@ Item {
 
     FontMetrics {
         id: fm
+        font.family: Config.currentFont
         font.pixelSize: root.passageFontSize
     }
 
@@ -196,6 +197,13 @@ Item {
             root.lastMeasuredCursor = 0;
         }
     }
+    Connections {
+        target: Config
+        function onConfigChanged() {
+            root.lastMeasuredCursor = 0;
+            root.measureNewWords();
+        }
+    }
     onWidthChanged: TypingEngine.setViewportWidth(root.width)
     Component.onCompleted: root.measureNewWords()
 
@@ -253,6 +261,7 @@ Item {
                             return TypingEngine.characterAt(charDelegate.globalIndex);
                         }
                         text: displayCh === " " ? "\u00A0" : displayCh
+                        font.family: Config.currentFont
                         font.pixelSize: root.passageFontSize
                         color: {
                             if (charState === TypingEngine.Correct) {

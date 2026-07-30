@@ -146,12 +146,41 @@ void ConfigManager::loadWords() {
   }
 }
 
+// font stuff
+void ConfigManager::setFont(const QString &name) {
+  if (name == m_currentFont) {
+    return;
+  }
+  m_general["font"] = name;
+  m_currentFont = name;
+  writeGeneral();
+  emit configChanged();
+}
+
+QStringList ConfigManager::s_availableFonts;
+void ConfigManager::registerFontFamily(const QString &family) {
+  if (!s_availableFonts.contains(family)) {
+    s_availableFonts.append(family);
+  }
+}
+
+QStringList ConfigManager::availableFonts() const { return s_availableFonts; }
+// end of font stuff
 void ConfigManager::load() {
   m_theme.clear();
   m_general.clear();
   parseSection(statePath(), "general", m_general);
 
   m_currentTheme = m_general.value("theme", "midnight_purple").toString();
+  m_currentFont = m_general.value("font", "Roboto").toString();
+  if (!s_availableFonts.isEmpty() &&
+      !s_availableFonts.contains(m_currentFont)) {
+    qWarning() << "ConfigManager: saved font" << m_currentFont
+               << "not registered, falling back to Roboto";
+    m_currentFont = "Roboto";
+    m_general["font"] = "Roboto";
+    writeGeneral();
+  }
   m_currentVariant = m_general.value("variant", "dark").toString();
   m_lastMode = m_general.value("lastMode", "time").toString();
   m_lastDuration = m_general.value("lastDuration", "60").toInt();
@@ -355,6 +384,7 @@ int ConfigManager::lastWordCount() const { return m_lastWordCount; }
 bool ConfigManager::lastPunctuation() const { return m_lastPunctuation; }
 QString ConfigManager::username() const { return m_username; }
 QString ConfigManager::avatarPath() const { return m_avatarPath; }
+QString ConfigManager::currentFont() const { return m_currentFont; }
 // end of getters
 
 QStringList ConfigManager::availableThemes() const {

@@ -21,6 +21,7 @@ class ConfigManager : public QObject {
   Q_PROPERTY(QString username READ username NOTIFY configChanged)
   Q_PROPERTY(QString avatarPath READ avatarPath NOTIFY configChanged)
   Q_PROPERTY(QString currentWordList READ currentWordList NOTIFY configChanged)
+  Q_PROPERTY(QString currentFont READ currentFont NOTIFY configChanged)
 
 public:
   explicit ConfigManager(QObject *parent = nullptr);
@@ -36,6 +37,8 @@ public:
   QString username() const;
   QString avatarPath() const;
   QString currentWordList() const;
+  QString currentFont() const;
+  static void registerFontFamily(const QString &family);
 
   Q_INVOKABLE void reload();
   Q_INVOKABLE QColor themeColor(const QString &key) const;
@@ -51,6 +54,8 @@ public:
   Q_INVOKABLE void clearAvatar();
   Q_INVOKABLE void setWordList(const QString &name);
   Q_INVOKABLE QStringList availableWordLists() const;
+  Q_INVOKABLE void setFont(const QString &name);
+  Q_INVOKABLE QStringList availableFonts() const;
 
   // custom theme generation
   Q_INVOKABLE bool generateCustomThemeTemplate(bool overwrite = false);
@@ -74,7 +79,9 @@ private:
   bool m_lastPunctuation = false;
   QString m_username = "typeShitter";
   QString m_currentWordList = "english";
+  QString m_currentFont = "Roboto";
   // end of defaults
+  static QStringList s_availableFonts;
 
   QString configDir() const;
   QString configPath() const;
