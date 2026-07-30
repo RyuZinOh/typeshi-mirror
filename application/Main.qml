@@ -513,7 +513,7 @@ Window {
             Item {
                 id: profileTrigger
                 anchors.bottom: parent.bottom
-                anchors.right: themeTrigger.left
+                anchors.right: fontTrigger.left
                 anchors.rightMargin: 16
                 anchors.margins: 20
                 width: nameLabel.width + avatarImg.width + 8
@@ -579,6 +579,36 @@ Window {
                     hoverEnabled: true
                     cursorShape: Qt.PointingHandCursor
                     onClicked: themePicker.open()
+                }
+            }
+
+            Item {
+                id: fontTrigger
+                anchors.bottom: parent.bottom
+                anchors.right: themeTrigger.left
+                anchors.rightMargin: 16
+                anchors.margins: 20
+                width: 28
+                height: 28
+
+                Icon {
+                    anchors.centerIn: parent
+                    source: "assets/icons/font.svg"
+                    iconSize: 20
+                    color: fontTriggerArea.containsMouse ? Theme.primaryColor : Theme.onSurfaceVariant
+                    Behavior on color {
+                        ColorAnimation {
+                            duration: 150
+                        }
+                    }
+                }
+
+                MouseArea {
+                    id: fontTriggerArea
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: fontPicker.open()
                 }
             }
 
@@ -650,6 +680,9 @@ Window {
             }
             ProfileEditor {
                 id: profileEditor
+            }
+            FontPicker {
+                id: fontPicker
             }
         }
     }
