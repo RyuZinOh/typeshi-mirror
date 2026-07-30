@@ -1,12 +1,37 @@
 #include "./ConfigManager.hpp"
 #include <QCommandLineOption>
 #include <QCommandLineParser>
+#include <QDir>
+#include <QFontDatabase>
 #include <QGuiApplication>
 #include <QIcon>
 #include <QQmlApplicationEngine>
 #ifndef TYPESHI_VERSION
 #define TYPESHI_VERSION "dev"
 #endif
+
+namespace {
+void loadBundledFonts() {
+  QDir fontsDir(
+      QStringLiteral(":/qt/qml/typeShitter/application/assets/fonts"));
+  const QStringList folders =
+      fontsDir.entryList(QDir::Dirs | QDir::NoDotAndDotDot);
+
+  for (const QString &folder : folders) {
+    QDir familyDir(fontsDir.filePath(folder));
+    const QStringList files = familyDir.entryList({"*.ttf"}, QDir::Files);
+
+    qDebug() << "fonts: " << files;
+    for (const QString &file : files) {
+      const int id =
+          QFontDatabase::addApplicationFont(familyDir.filePath(file));
+      if (id == -1) {
+        qWarning() << "failed to Load the fonts: " << familyDir.filePath(file);
+      }
+    }
+  }
+}
+} // namespace
 
 int main(int argc, char *argv[]) {
 
@@ -16,6 +41,7 @@ int main(int argc, char *argv[]) {
   app.setApplicationVersion(TYPESHI_VERSION);
   app.setWindowIcon(
       QIcon(":/qt/qml/typeShitter/application/assets/typeShi.svg"));
+  loadBundledFonts();
   QCommandLineParser parser;
   parser.setApplicationDescription("typeshi - a typing application");
   parser.addHelpOption();
