@@ -6,10 +6,12 @@ Item {
     anchors.fill: parent
     z: 200
 
-    readonly property real paddingSize: 10
-    readonly property real cardWidth: 180
-    readonly property real cardSpacing: 16
-    readonly property real bubbleHeight: 180 + (root.paddingSize * 2)
+    readonly property real paddingSize: 8
+    readonly property real cardWidth: 120
+    readonly property real cardHeight: 120
+    readonly property real cardSpacing: 12
+
+    readonly property real bubbleHeight: root.cardHeight + (root.paddingSize * 2)
 
     property bool isOpen: false
 
@@ -17,10 +19,26 @@ Item {
 
     function open() {
         root.isOpen = true;
+        root.loadFonts();
         fontList.forceActiveFocus();
     }
+
     function close() {
         root.isOpen = false;
+    }
+
+    function loadFonts() {
+        filteredModel.clear();
+        const fonts = Config.availableFonts();
+        for (let i = 0; i < fonts.length; i++) {
+            filteredModel.append({
+                fontName: fonts[i]
+            });
+        }
+        if (filteredModel.count > 0) {
+            fontList.currentIndex = 0;
+            fontList.positionViewAtIndex(0, ListView.Center);
+        }
     }
 
     Keys.onEscapePressed: root.close()
@@ -30,19 +48,25 @@ Item {
         onClicked: root.close()
     }
 
+    ListModel {
+        id: filteredModel
+    }
+
     readonly property real bubbleTargetHeight: root.isOpen ? root.bubbleHeight : 0
-    readonly property real bubbleWidth: (root.cardWidth * 3) + (root.cardSpacing * 2) + (root.paddingSize * 2) + 32
+    readonly property real bubbleWidth: (root.cardWidth * 3) + (root.cardSpacing * 2) + (root.paddingSize * 2)
 
     PopOutShape {
         id: bubble
         alignment: 1
-        radius: 28
+        radius: 16
         color: Theme.surfaceContainer
         x: (root.width - width) / 2
         y: root.height - height
         width: root.bubbleWidth
         height: root.bubbleTargetHeight
 
+        borderColor: Theme.outlineVariant
+        borderWidth: 1.5
         opacity: root.isOpen ? 1.0 : 0.0
 
         Behavior on height {
@@ -63,17 +87,24 @@ Item {
 
         Rectangle {
             id: clipContainer
-            anchors.fill: parent
+            width: Math.max(0, parent.width - (root.paddingSize * 2))
+            height: Math.max(0, parent.height - (root.paddingSize * 2))
+            anchors.centerIn: parent
             color: "transparent"
-            anchors.margins: root.paddingSize
-            radius: 24
+            radius: 16
             clip: true
 
             Item {
-                id: contentRig
                 width: parent.width
-                height: root.bubbleHeight - (root.paddingSize * 2)
-                anchors.bottom: parent.bottom
+                height: root.cardHeight
+                anchors.verticalCenter: parent.verticalCenter
+                opacity: root.isOpen ? 1.0 : 0.0
+
+                Behavior on opacity {
+                    NumberAnimation {
+                        duration: 150
+                    }
+                }
 
                 Rectangle {
                     id: staticCenterTarget
@@ -81,7 +112,7 @@ Item {
                     height: parent.height
                     anchors.centerIn: parent
                     z: 1
-                    radius: 20
+                    radius: 16
                     color: "transparent"
                     border.color: Theme.primaryColor
                     border.width: 2
@@ -96,15 +127,31 @@ Item {
                     highlightRangeMode: ListView.StrictlyEnforceRange
                     preferredHighlightBegin: (width - root.cardWidth) / 2
                     preferredHighlightEnd: (width - root.cardWidth) / 2
-                    model: Config.availableFonts()
+                    model: filteredModel
                     z: 2
-
                     cacheBuffer: 360
                     reuseItems: true
 
+                    MouseArea {
+                        property real acc: 0
+                        anchors.fill: parent
+                        z: -1
+                        acceptedButtons: Qt.NoButton
+                        onWheel: wheel => {
+                            if (wheel.pixelDelta.x === 0 && wheel.angleDelta.y === 0)
+                                return;
+                            acc -= (wheel.pixelDelta.x || wheel.angleDelta.y / 2);
+                            if (Math.abs(acc) >= 30) {
+                                acc > 0 ? fontList.incrementCurrentIndex() : fontList.decrementCurrentIndex();
+                                acc = 0;
+                            }
+                            wheel.accepted = true;
+                        }
+                    }
+
                     delegate: Item {
                         id: fontCard
-                        required property string modelData
+                        required property string fontName
                         required property int index
 
                         readonly property bool isCenterActive: fontList.currentIndex === fontCard.index
@@ -126,14 +173,14 @@ Item {
 
                             Column {
                                 anchors.centerIn: parent
-                                spacing: 8
-                                width: parent.width - 16
+                                spacing: 6
+                                width: parent.width - 12
 
                                 Text {
                                     anchors.horizontalCenter: parent.horizontalCenter
                                     text: "Ts"
-                                    font.family: fontCard.modelData
-                                    font.pixelSize: 44
+                                    font.family: fontCard.fontName
+                                    font.pixelSize: 32
                                     color: fontCard.isCenterActive ? Theme.primaryColor : Theme.onSurface
 
                                     Behavior on color {
@@ -147,9 +194,9 @@ Item {
                                     width: parent.width
                                     anchors.horizontalCenter: parent.horizontalCenter
                                     horizontalAlignment: Text.AlignHCenter
-                                    text: fontCard.modelData
+                                    text: fontCard.fontName
                                     elide: Text.ElideRight
-                                    font.pixelSize: 14
+                                    font.pixelSize: 12
                                     font.weight: fontCard.isCenterActive ? Font.Medium : Font.Normal
                                     color: fontCard.isCenterActive ? Theme.primaryColor : Theme.onSurfaceVariant
 
@@ -167,7 +214,10 @@ Item {
                                 hoverEnabled: fontCard.isCenterActive
                                 acceptedButtons: fontCard.isCenterActive ? Qt.LeftButton : Qt.NoButton
                                 cursorShape: fontCard.isCenterActive ? Qt.PointingHandCursor : Qt.ArrowCursor
-                                onClicked: Config.setFont(fontCard.modelData)
+                                onClicked: {
+                                    Config.setFont(fontCard.fontName);
+                                    root.close();
+                                }
                             }
                         }
                     }

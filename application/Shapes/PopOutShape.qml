@@ -8,7 +8,13 @@ Item {
     property int alignment: 0
     property real radius: 50
     property color color: "lightgray"
+    property real borderWidth: 0
+    property color borderColor: "transparent"
     default property alias content: contentWrapper.data
+
+    readonly property real off: root.borderWidth / 2
+    readonly property real w: root.width - root.borderWidth
+    readonly property real h: root.height - root.borderWidth
 
     Loader {
         anchors.fill: parent
@@ -33,54 +39,57 @@ Item {
         id: attachedTop
 
         BubbleShape {
+            shapePath.startX: root.off
+            shapePath.startY: root.off
+
             PathArc {
-                x: root.radius
-                y: Math.min(root.radius, root.height / 2)
+                x: root.radius + root.off
+                y: Math.min(root.radius, root.h / 2) + root.off
                 radiusX: root.radius
-                radiusY: Math.min(root.radius, root.height / 2)
+                radiusY: Math.min(root.radius, root.h / 2)
             }
 
             PathLine {
-                x: root.radius
-                y: Math.max(root.height - root.radius, root.height / 2)
+                x: root.radius + root.off
+                y: Math.max(root.h - root.radius, root.h / 2) + root.off
             }
 
             PathArc {
-                x: 2 * root.radius
-                y: root.height
+                x: 2 * root.radius + root.off
+                y: root.h + root.off
                 radiusX: root.radius
-                radiusY: Math.min(root.radius, root.height / 2)
+                radiusY: Math.min(root.radius, root.h / 2)
                 direction: PathArc.Counterclockwise
             }
 
             PathLine {
-                x: root.width - 2 * root.radius
-                y: root.height
+                x: root.w - 2 * root.radius + root.off
+                y: root.h + root.off
             }
 
             PathArc {
-                x: root.width - root.radius
-                y: Math.max(root.height - root.radius, root.height / 2)
+                x: root.w - root.radius + root.off
+                y: Math.max(root.h - root.radius, root.h / 2) + root.off
                 radiusX: root.radius
-                radiusY: Math.min(root.radius, root.height / 2)
+                radiusY: Math.min(root.radius, root.h / 2)
                 direction: PathArc.Counterclockwise
             }
 
             PathLine {
-                x: root.width - root.radius
-                y: Math.min(root.radius, root.height / 2)
+                x: root.w - root.radius + root.off
+                y: Math.min(root.radius, root.h / 2) + root.off
             }
 
             PathArc {
-                x: root.width
-                y: 0
+                x: root.w + root.off
+                y: root.off
                 radiusX: root.radius
-                radiusY: Math.min(root.radius, root.height / 2)
+                radiusY: Math.min(root.radius, root.h / 2)
             }
 
             PathLine {
-                x: 0
-                y: 0
+                x: root.off
+                y: root.off
             }
         }
     }
@@ -89,57 +98,57 @@ Item {
         id: attachedBottom
 
         BubbleShape {
-            shapePath.startX: 0
-            shapePath.startY: root.height
+            shapePath.startX: root.off
+            shapePath.startY: root.h + root.off
 
             PathArc {
-                x: root.radius
-                y: Math.max(root.height - root.radius, root.height / 2)
+                x: root.radius + root.off
+                y: Math.max(root.h - root.radius, root.h / 2) + root.off
                 radiusX: root.radius
-                radiusY: Math.min(root.radius, root.height / 2)
+                radiusY: Math.min(root.radius, root.h / 2)
                 direction: PathArc.Counterclockwise
             }
 
             PathLine {
-                x: root.radius
-                y: Math.min(root.radius, root.height / 2)
+                x: root.radius + root.off
+                y: Math.min(root.radius, root.h / 2) + root.off
             }
 
             PathArc {
-                x: 2 * root.radius
-                y: 0
+                x: 2 * root.radius + root.off
+                y: root.off
                 radiusX: root.radius
-                radiusY: Math.min(root.radius, root.height / 2)
+                radiusY: Math.min(root.radius, root.h / 2)
             }
 
             PathLine {
-                x: root.width - 2 * root.radius
-                y: 0
+                x: root.w - 2 * root.radius + root.off
+                y: root.off
             }
 
             PathArc {
-                x: root.width - root.radius
-                y: Math.min(root.radius, root.height / 2)
+                x: root.w - root.radius + root.off
+                y: Math.min(root.radius, root.h / 2) + root.off
                 radiusX: root.radius
-                radiusY: Math.min(root.radius, root.height / 2)
+                radiusY: Math.min(root.radius, root.h / 2)
             }
 
             PathLine {
-                x: root.width - root.radius
-                y: Math.max(root.height - root.radius, root.height / 2)
+                x: root.w - root.radius + root.off
+                y: Math.max(root.h - root.radius, root.h / 2) + root.off
             }
 
             PathArc {
-                x: root.width
-                y: root.height
+                x: root.w + root.off
+                y: root.h + root.off
                 radiusX: root.radius
-                radiusY: Math.min(root.radius, root.height / 2)
+                radiusY: Math.min(root.radius, root.h / 2)
                 direction: PathArc.Counterclockwise
             }
 
             PathLine {
-                x: 0
-                y: root.height
+                x: root.off
+                y: root.h + root.off
             }
         }
     }
@@ -149,15 +158,19 @@ Item {
         property alias shapePath: shapePath
 
         anchors.fill: parent
+        antialiasing: true
         preferredRendererType: Shape.CurveRenderer
         layer.enabled: true
+        layer.smooth: true
 
         ShapePath {
             id: shapePath
-
             pathHints: ShapePath.PathSolid | ShapePath.PathNonIntersecting
             fillColor: root.color
-            strokeWidth: -1
+            strokeWidth: root.borderWidth
+            strokeColor: root.borderColor
+            joinStyle: ShapePath.RoundJoin
+            capStyle: ShapePath.RoundCap
         }
     }
 }
