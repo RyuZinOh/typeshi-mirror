@@ -17,6 +17,9 @@ Window {
     property string testMode: "time"
     property bool crtEnabled: false
     property bool inLobby: true
+    property bool shootoutEnabled: false
+
+    onShootoutEnabledChanged: TypingEngine.setOverflowInsertionEnabled(!appWindow.shootoutEnabled)
 
     Component.onCompleted: {
         appWindow.testMode = Config.lastMode;
@@ -25,6 +28,15 @@ Window {
         TypingEngine.setPunctuationEnabled(Config.lastPunctuation);
         appWindow.restartTest();
         inputCatcher.forceActiveFocus();
+    }
+    Connections {
+        target: Shootout
+        function onWordMissed(wordStart) {
+            if (appWindow.shootoutEnabled && !TypingEngine.finished) {
+                appWindow.shootoutEnabled = false;
+                appWindow.restartTest();
+            }
+        }
     }
 
     property int countdownSecondsLeft: 0
@@ -250,6 +262,7 @@ Window {
                 }
                 font.pixelSize: 20
                 color: Theme.onSurfaceVariant
+                z: 60
                 text: {
                     TypingEngine.elapsedMs;
                     TypingEngine.wpm;
@@ -262,6 +275,7 @@ Window {
                 anchors.top: parent.top
                 anchors.left: parent.left
                 anchors.margins: 20
+                z: 60
             }
 
             Item {
@@ -304,12 +318,30 @@ Window {
                         leftMargin: appWindow.sidePadding
                         rightMargin: appWindow.sidePadding
                     }
-                    height: viewport.height + 80
+
+                    height: viewportLoader.height + 80
+
+                    opacity: appWindow.shootoutEnabled ? 0 : 1
+                    scale: appWindow.shootoutEnabled ? 0.96 : 1
+                    visible: opacity > 0.01
+
+                    Behavior on opacity {
+                        NumberAnimation {
+                            duration: 260
+                            easing.type: Easing.OutCubic
+                        }
+                    }
+                    Behavior on scale {
+                        NumberAnimation {
+                            duration: 260
+                            easing.type: Easing.OutCubic
+                        }
+                    }
 
                     Row {
                         id: modeRow
                         anchors.horizontalCenter: parent.horizontalCenter
-                        anchors.bottom: viewport.top
+                        anchors.bottom: viewportLoader.top
                         anchors.bottomMargin: 20
                         spacing: 12
 
@@ -384,6 +416,9 @@ Window {
                             active: appWindow.testMode === "quote"
                             onToggled: {
                                 appWindow.testMode = appWindow.testMode === "quote" ? "time" : "quote";
+                                if (appWindow.testMode === "quote") {
+                                    appWindow.shootoutEnabled = false;
+                                }
                                 Config.saveTestDefaults(appWindow.testMode, TypingEngine.testDurationSeconds, TypingEngine.testWordCount, TypingEngine.punctuationEnabled);
                                 appWindow.restartTest();
                             }
@@ -398,7 +433,6 @@ Window {
                                 if (enteringMultiplayer) {
                                     appWindow.testMode = "multiplayer";
                                     if (!Multiplayer.connected) {
-                                        // Multiplayer.connectToServer("ws://localhost:8080/ws");
                                         Multiplayer.connectToServer("wss://typeshi-relay.onrender.com/ws");
                                     }
                                 } else {
@@ -407,17 +441,25 @@ Window {
                             }
                         }
                     }
-                    TypingViewport {
-                        id: viewport
+                    Loader {
+                        id: viewportLoader
                         anchors.top: parent.top
                         anchors.topMargin: 60
-                        passageFontSize: appWindow.passageFontSize
-                        linesVisible: appWindow.linesVisible
-                        dimmed: refreshButton.activeFocus
-                        visible: appWindow.testMode !== "multiplayer" || appWindow.racingMultiplayer
-                        opponentCharIndex: appWindow.racingMultiplayer ? appWindow.opponentCharIndex : -1
-                        opponentWordExtraCount: appWindow.racingMultiplayer ? appWindow.opponentWordExtraCount : 0
-                        opponentUsername: appWindow.opponentUsername
+                        width: parent.width
+                        active: (appWindow.testMode !== "multiplayer" || appWindow.racingMultiplayer) && !appWindow.shootoutEnabled
+                        sourceComponent: normalViewportComponent
+                    }
+
+                    Component {
+                        id: normalViewportComponent
+                        TypingViewport {
+                            passageFontSize: appWindow.passageFontSize
+                            linesVisible: appWindow.linesVisible
+                            dimmed: refreshButton.activeFocus
+                            opponentCharIndex: appWindow.racingMultiplayer ? appWindow.opponentCharIndex : -1
+                            opponentWordExtraCount: appWindow.racingMultiplayer ? appWindow.opponentWordExtraCount : 0
+                            opponentUsername: appWindow.opponentUsername
+                        }
                     }
 
                     MultiplayerPanel {
@@ -432,13 +474,42 @@ Window {
 
                     RefreshButton {
                         id: refreshButton
-                        anchors.top: viewport.bottom
+                        anchors.top: viewportLoader.bottom
                         anchors.topMargin: 20
                         anchors.horizontalCenter: parent.horizontalCenter
                         enabled: !themePicker.visible && appWindow.testMode !== "multiplayer"
                         dimmedUnlessFocused: TypingEngine.started
                         tabTarget: inputCatcher
                         onActivated: appWindow.restartTest()
+                    }
+                }
+            }
+
+            Loader {
+                id: shootoutFullscreenLoader
+                anchors.fill: parent
+                z: 55
+                active: appWindow.shootoutEnabled && appWindow.testMode !== "multiplayer" && !TypingEngine.finished
+
+                opacity: appWindow.shootoutEnabled ? 1 : 0
+                scale: appWindow.shootoutEnabled ? 1 : 0.96
+
+                Behavior on opacity {
+                    NumberAnimation {
+                        duration: 260
+                        easing.type: Easing.OutCubic
+                    }
+                }
+                Behavior on scale {
+                    NumberAnimation {
+                        duration: 260
+                        easing.type: Easing.OutCubic
+                    }
+                }
+
+                sourceComponent: Component {
+                    ShootoutViewport {
+                        passageFontSize: appWindow.passageFontSize
                     }
                 }
             }
@@ -473,6 +544,7 @@ Window {
             Loader {
                 id: aftermathLoader
                 anchors.fill: parent
+                z: 70
                 active: TypingEngine.finished && !appWindow.showCountdownOverlay
                 onActiveChanged: {
                     if (active) {
@@ -670,6 +742,18 @@ Window {
                         streakCalendar.openFrom(pos.x, pos.y, streakTrigger.width, streakTrigger.height);
                     }
                 }
+            }
+
+            ToggleChip {
+                id: shootoutTrigger
+                anchors.bottom: parent.bottom
+                anchors.bottomMargin: 20
+                readonly property real restingX: crtTrigger.x + crtTrigger.width + 10 + streakTrigger.width + 10
+                x: Math.max(shootoutTrigger.restingX, streakCalendar.panelRightEdge + 10)
+                label: "shootout"
+                active: appWindow.shootoutEnabled
+                enabled: appWindow.testMode !== "multiplayer"
+                onToggled: appWindow.shootoutEnabled = !appWindow.shootoutEnabled
             }
             StreakCalendar {
                 id: streakCalendar

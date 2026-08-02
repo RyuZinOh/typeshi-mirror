@@ -42,6 +42,18 @@ TypingEngine::TypingEngine(QObject *parent) : QObject(parent) {
   });
 }
 
+void TypingEngine::setOverflowInsertionEnabled(bool enabled) {
+  if (enabled == m_overflowInsertionEnabled) {
+    return;
+  }
+  m_overflowInsertionEnabled = enabled;
+  emit overflowInsertionEnabledChanged();
+}
+
+bool TypingEngine::overflowInsertionEnabled() const {
+  return m_overflowInsertionEnabled;
+}
+
 bool TypingEngine::punctuationEnabled() const { return m_punctuationEnabled; }
 bool TypingEngine::started() const { return m_started; }
 bool TypingEngine::finished() const { return m_finished; }
@@ -309,6 +321,9 @@ void TypingEngine::typeCharacter(const QString &ch) {
   bool isOverflow = (expectedChar == ' ');
 
   if (isOverflow) {
+    if (!m_overflowInsertionEnabled) {
+      return;
+    }
     if (m_wordExtraCount >= kMaxExtraPerWord) {
       return;
     }

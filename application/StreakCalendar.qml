@@ -14,6 +14,7 @@ Item {
     readonly property int labelColumnWidth: 68
     readonly property int labelGridSpacing: 8
     readonly property int sidePadding: 10
+    readonly property real panelRightEdge: panel.x + panel.width
     readonly property int topGridSpacing: 4
 
     property var dayMap: ({})

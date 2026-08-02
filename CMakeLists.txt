@@ -6,7 +6,7 @@ option(FLATPAK_BUILD "Build for Flatpak packaging" OFF)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_AUTOMOC ON)
 
-find_package(Qt6 REQUIRED COMPONENTS Core Gui Qml Quick Sql WebSockets)
+find_package(Qt6 REQUIRED COMPONENTS Core Gui Qml Quick Sql WebSockets Multimedia)
 
 qt_standard_project_setup()
 qt_policy(SET QTP0004 NEW)
@@ -61,6 +61,8 @@ qt_add_qml_module(typeshi
         QuoteManager.hpp
         MultiplayerClient.hpp
         MultiplayerClient.cpp
+        ShootoutEngine.hpp
+        ShootoutEngine.cpp
 )
 
 qt_add_resources(typeshi "assets"
@@ -78,6 +80,7 @@ target_link_libraries(typeshi PRIVATE
     Qt6::Quick
     Qt6::Sql
     Qt6::WebSockets
+    Qt6::Multimedia
 )
 
 qt_import_qml_plugins(typeshi)

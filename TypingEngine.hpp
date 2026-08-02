@@ -49,6 +49,9 @@ class TypingEngine : public QObject {
   // end of main
   Q_PROPERTY(int currentWordExtraCount READ currentWordExtraCount NOTIFY
                  typedTextChanged)
+  Q_PROPERTY(
+      bool overflowInsertionEnabled READ overflowInsertionEnabled WRITE
+          setOverflowInsertionEnabled NOTIFY overflowInsertionEnabledChanged)
 
 public:
   explicit TypingEngine(QObject *parent = nullptr);
@@ -96,7 +99,9 @@ public:
   double consistency() const;
   QVariantList wpmHistory() const;
   // end of main getters
+  bool overflowInsertionEnabled() const;
 
+  Q_INVOKABLE void setOverflowInsertionEnabled(bool enabled);
   Q_INVOKABLE void startTest(const QStringList &wordPool);
   Q_INVOKABLE void typeCharacter(const QString &ch);
   Q_INVOKABLE QString originalMistypeAt(int index) const;
@@ -135,6 +140,7 @@ signals:
   void finishedChanged();
   void elapsedMsChanged();
   void wordWidthCacheInvalidated();
+  void overflowInsertionEnabledChanged();
 
   // configuration
   void testDurationChanged();
@@ -214,6 +220,7 @@ private:
 
   mutable QRandomGenerator m_seededRng{0};
   bool m_useSeededRng = false;
+  bool m_overflowInsertionEnabled = true;
 
   QStringList m_wordPool;
   QString m_lastWord;
