@@ -19,13 +19,11 @@ HistoryManager::HistoryManager(QObject *parent) : QObject(parent) {
                << m_db.lastError().text();
     return;
   }
-  qDebug() << "HistoryManager: db live at: " << path;
   ensureSchema();
 }
 
 HistoryManager::~HistoryManager() {
   if (m_db.isOpen()) {
-    qDebug() << "HistoryManager: destroyed!";
     m_db.close();
   }
 }

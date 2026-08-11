@@ -481,6 +481,11 @@ Window {
                 id: bottomTray
                 appWindow: appWindow
             }
+            ContextMenu {
+                id: mainContextMenu
+                anchors.fill: parent
+                appWindow: appWindow
+            }
         }
     }
 
