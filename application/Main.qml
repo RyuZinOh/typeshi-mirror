@@ -16,6 +16,7 @@ Window {
     readonly property int sidePadding: 160
     property string testMode: "time"
     property bool crtEnabled: false
+    property bool rainEnabled: false
     property bool inLobby: true
     property bool shootoutEnabled: false
 
@@ -189,23 +190,12 @@ Window {
         }
     }
 
-    Item {
+    ShaderScene {
         id: sceneLayer
         anchors.fill: parent
+        crtEnabled: appWindow.crtEnabled
+        rainEnabled: appWindow.rainEnabled
 
-        layer.enabled: appWindow.crtEnabled
-        layer.smooth: true
-        layer.effect: ShaderEffect {
-            property variant source
-            property vector2d resolution: Qt.vector2d(width, height)
-            property real scanlineIntensity: 1.1
-            property real vignetteStrength: 0.18
-            property real glowThreshold: 0.1
-            property real glowIntensity: 1.0
-
-            vertexShader: "assets/shaders/crt.vert.qsb"
-            fragmentShader: "assets/shaders/crt.frag.qsb"
-        }
         Rectangle {
             id: opponentLeftBanner
             visible: appWindow.opponentDisconnectedMessage !== "" && appWindow.testMode === "multiplayer"
@@ -295,7 +285,7 @@ Window {
                 }
 
                 Keys.onPressed: event => {
-                    if (themePicker.visible) {
+                    if (bottomTray.themePickerVisible) {
                         return;
                     }
                     if (event.key === Qt.Key_Backspace) {
@@ -338,109 +328,14 @@ Window {
                         }
                     }
 
-                    Row {
+                    ModeControls {
                         id: modeRow
                         anchors.horizontalCenter: parent.horizontalCenter
                         anchors.bottom: viewportLoader.top
                         anchors.bottomMargin: 20
-                        spacing: 12
-
-                        readonly property int controlCellHeight: 36
-
-                        opacity: TypingEngine.started ? 0 : 1
-                        enabled: !TypingEngine.started
-                        Behavior on opacity {
-                            NumberAnimation {
-                                duration: 150
-                            }
-                        }
-                        SegmentedControl {
-                            id: primaryControl
-                            enabled: appWindow.testMode === "time" || appWindow.testMode === "words"
-                            options: appWindow.testMode === "words" ? [10, 25, 50, 100] : [15, 30, 60, 120]
-                            selectedValue: appWindow.testMode === "words" ? TypingEngine.testWordCount : TypingEngine.testDurationSeconds
-                            suffix: appWindow.testMode === "words" ? "" : "s"
-                            cellHeight: modeRow.controlCellHeight
-                            onSelected: value => {
-                                if (appWindow.testMode === "words") {
-                                    TypingEngine.setTestWordCount(value);
-                                } else {
-                                    TypingEngine.setTestDurationSeconds(value);
-                                }
-                                Config.saveTestDefaults(appWindow.testMode, TypingEngine.testDurationSeconds, TypingEngine.testWordCount, TypingEngine.punctuationEnabled);
-                                appWindow.restartTest();
-                            }
-                        }
-                        ToggleChip {
-                            id: wordList1kChip
-                            label: "1k"
-                            chipHeight: modeRow.controlCellHeight + 10
-                            enabled: appWindow.testMode !== "quote" && appWindow.testMode !== "multiplayer"
-                            active: Config.currentWordList === "english1k"
-                            onToggled: {
-                                Config.setWordList(Config.currentWordList === "english1k" ? "english" : "english1k");
-                                appWindow.restartTest();
-                            }
-                        }
-                        ToggleChip {
-                            id: wordsChip
-                            label: "words"
-                            chipHeight: modeRow.controlCellHeight + 10
-                            enabled: appWindow.testMode !== "quote" && appWindow.testMode !== "multiplayer"
-                            active: appWindow.testMode === "words"
-                            onToggled: {
-                                appWindow.testMode = appWindow.testMode === "words" ? "time" : "words";
-                                Config.saveTestDefaults(appWindow.testMode, TypingEngine.testDurationSeconds, TypingEngine.testWordCount, TypingEngine.punctuationEnabled);
-                                appWindow.restartTest();
-                            }
-                        }
-
-                        ToggleChip {
-                            id: punctuationChip
-                            label: "punctuation"
-                            chipHeight: modeRow.controlCellHeight + 10
-                            enabled: appWindow.testMode !== "quote" && appWindow.testMode !== "multiplayer"
-                            active: TypingEngine.punctuationEnabled
-                            onToggled: {
-                                TypingEngine.setPunctuationEnabled(!TypingEngine.punctuationEnabled);
-                                Config.saveTestDefaults(appWindow.testMode, TypingEngine.testDurationSeconds, TypingEngine.testWordCount, TypingEngine.punctuationEnabled);
-                                appWindow.restartTest();
-                            }
-                        }
-
-                        ToggleChip {
-                            id: quoteChip
-                            label: "quote"
-                            enabled: appWindow.testMode !== "multiplayer"
-                            chipHeight: modeRow.controlCellHeight + 10
-                            active: appWindow.testMode === "quote"
-                            onToggled: {
-                                appWindow.testMode = appWindow.testMode === "quote" ? "time" : "quote";
-                                if (appWindow.testMode === "quote") {
-                                    appWindow.shootoutEnabled = false;
-                                }
-                                Config.saveTestDefaults(appWindow.testMode, TypingEngine.testDurationSeconds, TypingEngine.testWordCount, TypingEngine.punctuationEnabled);
-                                appWindow.restartTest();
-                            }
-                        }
-                        ToggleChip {
-                            id: multiplayerChip
-                            label: "multiplayer"
-                            chipHeight: modeRow.controlCellHeight + 10
-                            active: appWindow.testMode === "multiplayer"
-                            onToggled: {
-                                const enteringMultiplayer = appWindow.testMode !== "multiplayer";
-                                if (enteringMultiplayer) {
-                                    appWindow.testMode = "multiplayer";
-                                    if (!Multiplayer.connected) {
-                                        Multiplayer.connectToServer("wss://typeshi-relay.onrender.com/ws");
-                                    }
-                                } else {
-                                    appWindow.leaveMultiplayer();
-                                }
-                            }
-                        }
+                        appWindow: appWindow
                     }
+
                     Loader {
                         id: viewportLoader
                         anchors.top: parent.top
@@ -477,7 +372,7 @@ Window {
                         anchors.top: viewportLoader.bottom
                         anchors.topMargin: 20
                         anchors.horizontalCenter: parent.horizontalCenter
-                        enabled: !themePicker.visible && appWindow.testMode !== "multiplayer"
+                        enabled: !bottomTray.themePickerVisible && appWindow.testMode !== "multiplayer"
                         dimmedUnlessFocused: TypingEngine.started
                         tabTarget: inputCatcher
                         onActivated: appWindow.restartTest()
@@ -582,191 +477,9 @@ Window {
             anchors.fill: parent
             z: 400
 
-            Item {
-                id: profileTrigger
-                anchors.bottom: parent.bottom
-                anchors.right: fontTrigger.left
-                anchors.rightMargin: 16
-                anchors.margins: 20
-                width: nameLabel.width + avatarImg.width + 8
-                height: 28
-
-                Row {
-                    anchors.fill: parent
-                    spacing: 8
-
-                    Avatar {
-                        id: avatarImg
-                        anchors.verticalCenter: parent.verticalCenter
-                        size: 48
-                    }
-
-                    Text {
-                        id: nameLabel
-                        anchors.verticalCenter: parent.verticalCenter
-                        text: Config.username
-                        font.pixelSize: 13
-                        color: profileTriggerArea.containsMouse ? Theme.primaryColor : Theme.onSurfaceVariant
-
-                        Behavior on color {
-                            ColorAnimation {
-                                duration: 150
-                            }
-                        }
-                    }
-                }
-
-                MouseArea {
-                    id: profileTriggerArea
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: profileEditor.open()
-                }
-            }
-            Item {
-                id: themeTrigger
-                anchors.bottom: parent.bottom
-                anchors.right: parent.right
-                anchors.margins: 20
-                width: 28
-                height: 28
-
-                Icon {
-                    anchors.centerIn: parent
-                    source: "assets/icons/palette.svg"
-                    iconSize: 20
-                    color: themeTriggerArea.containsMouse ? Theme.primaryColor : Theme.onSurfaceVariant
-
-                    Behavior on color {
-                        ColorAnimation {
-                            duration: 150
-                        }
-                    }
-                }
-
-                MouseArea {
-                    id: themeTriggerArea
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: themePicker.open()
-                }
-            }
-
-            Item {
-                id: fontTrigger
-                anchors.bottom: parent.bottom
-                anchors.right: themeTrigger.left
-                anchors.rightMargin: 16
-                anchors.margins: 20
-                width: 28
-                height: 28
-
-                Icon {
-                    anchors.centerIn: parent
-                    source: "assets/icons/font.svg"
-                    iconSize: 20
-                    color: fontTriggerArea.containsMouse ? Theme.primaryColor : Theme.onSurfaceVariant
-                    Behavior on color {
-                        ColorAnimation {
-                            duration: 150
-                        }
-                    }
-                }
-
-                MouseArea {
-                    id: fontTriggerArea
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: fontPicker.open()
-                }
-            }
-
-            ToggleChip {
-                id: crtTrigger
-                anchors.bottom: parent.bottom
-                anchors.left: parent.left
-                anchors.margins: 20
-                label: "CRT mode"
-                active: appWindow.crtEnabled
-                onToggled: {
-                    appWindow.crtEnabled = !appWindow.crtEnabled;
-                }
-            }
-
-            Rectangle {
-                id: streakTrigger
-                anchors.bottom: parent.bottom
-                anchors.left: crtTrigger.right
-                anchors.leftMargin: 10
-                anchors.margins: 20
-                width: streakLabel.width + 32
-                height: 48
-                radius: 10
-                color: streakArea.containsMouse ? Theme.surfaceContainerHigh : Theme.surfaceContainer
-                border.color: Theme.outlineVariant
-                border.width: 1
-
-                opacity: 1 - Math.min(1, streakCalendar.progress / 0.3)
-                visible: opacity > 0.01
-                enabled: opacity > 0.5
-
-                Behavior on opacity {
-                    NumberAnimation {
-                        duration: 150
-                    }
-                }
-                Behavior on color {
-                    ColorAnimation {
-                        duration: 150
-                    }
-                }
-
-                Text {
-                    id: streakLabel
-                    anchors.centerIn: parent
-                    text: "streaks"
-                    font.pixelSize: 13
-                    color: Theme.onSurfaceVariant
-                }
-
-                MouseArea {
-                    id: streakArea
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: {
-                        const pos = streakTrigger.mapToItem(uiOverlay, 0, 0);
-                        streakCalendar.openFrom(pos.x, pos.y, streakTrigger.width, streakTrigger.height);
-                    }
-                }
-            }
-
-            ToggleChip {
-                id: shootoutTrigger
-                anchors.bottom: parent.bottom
-                anchors.bottomMargin: 20
-                readonly property real restingX: crtTrigger.x + crtTrigger.width + 10 + streakTrigger.width + 10
-                x: Math.max(shootoutTrigger.restingX, streakCalendar.panelRightEdge + 10)
-                label: "shootout"
-                active: appWindow.shootoutEnabled
-                enabled: appWindow.testMode !== "multiplayer"
-                onToggled: appWindow.shootoutEnabled = !appWindow.shootoutEnabled
-            }
-            StreakCalendar {
-                id: streakCalendar
-            }
-
-            ThemePicker {
-                id: themePicker
-            }
-            ProfileEditor {
-                id: profileEditor
-            }
-            FontPicker {
-                id: fontPicker
+            BottomTrayIcons {
+                id: bottomTray
+                appWindow: appWindow
             }
         }
     }
