@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(typeshi VERSION 0.1.8)
+project(typeshi VERSION 0.1.9)
 
 option(FLATPAK_BUILD "Build for Flatpak packaging" OFF)
 
@@ -63,6 +63,8 @@ qt_add_qml_module(typeshi
         MultiplayerClient.cpp
         ShootoutEngine.hpp
         ShootoutEngine.cpp
+        FuzzyFinder.cpp
+        FuzzyFinder.hpp
 )
 
 qt_add_resources(typeshi "assets"

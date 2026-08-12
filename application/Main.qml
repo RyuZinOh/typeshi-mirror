@@ -281,11 +281,15 @@ Window {
                 Keys.onEscapePressed: {
                     if (appWindow.testMode === "multiplayer") {
                         appWindow.leaveMultiplayer();
+                        return;
+                    }
+                    if (!TypingEngine.started) {
+                        topJesus.open();
                     }
                 }
 
                 Keys.onPressed: event => {
-                    if (bottomTray.themePickerVisible) {
+                    if (topJesus.isOpen) {
                         return;
                     }
                     if (event.key === Qt.Key_Backspace) {
@@ -372,7 +376,7 @@ Window {
                         anchors.top: viewportLoader.bottom
                         anchors.topMargin: 20
                         anchors.horizontalCenter: parent.horizontalCenter
-                        enabled: !bottomTray.themePickerVisible && appWindow.testMode !== "multiplayer"
+                        enabled: !topJesus.isOpen && appWindow.testMode !== "multiplayer"
                         dimmedUnlessFocused: TypingEngine.started
                         tabTarget: inputCatcher
                         onActivated: appWindow.restartTest()
@@ -481,10 +485,10 @@ Window {
                 id: bottomTray
                 appWindow: appWindow
             }
-            ContextMenu {
-                id: mainContextMenu
-                anchors.fill: parent
-                appWindow: appWindow
+
+            TopJesus {
+                id: topJesus
+                onRequestFocusRestore: inputCatcher.forceActiveFocus()
             }
         }
     }

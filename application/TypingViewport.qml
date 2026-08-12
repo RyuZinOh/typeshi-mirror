@@ -263,6 +263,9 @@ Item {
                         text: displayCh === " " ? "\u00A0" : displayCh
                         font.family: Config.currentFont
                         font.pixelSize: root.passageFontSize
+
+                        width: fm.advanceWidth(displayCh === " " ? "\u00A0" : displayCh)
+                        clip: true
                         color: {
                             if (charState === TypingEngine.Correct) {
                                 return Theme.primaryColor;

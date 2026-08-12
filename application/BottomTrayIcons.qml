@@ -6,12 +6,10 @@ Item {
     required property var appWindow
     anchors.fill: parent
 
-    readonly property alias themePickerVisible: themePicker.visible
-
     Item {
         id: profileTrigger
         anchors.bottom: parent.bottom
-        anchors.right: fontTrigger.left
+        anchors.right: parent.right
         anchors.rightMargin: 16
         anchors.margins: 20
         width: nameLabel.width + avatarImg.width + 8
@@ -48,66 +46,6 @@ Item {
             hoverEnabled: true
             cursorShape: Qt.PointingHandCursor
             onClicked: profileEditor.open()
-        }
-    }
-
-    Item {
-        id: themeTrigger
-        anchors.bottom: parent.bottom
-        anchors.right: parent.right
-        anchors.margins: 20
-        width: 28
-        height: 28
-
-        Icon {
-            anchors.centerIn: parent
-            source: "assets/icons/palette.svg"
-            iconSize: 20
-            color: themeTriggerArea.containsMouse ? Theme.primaryColor : Theme.onSurfaceVariant
-
-            Behavior on color {
-                ColorAnimation {
-                    duration: 150
-                }
-            }
-        }
-
-        MouseArea {
-            id: themeTriggerArea
-            anchors.fill: parent
-            hoverEnabled: true
-            cursorShape: Qt.PointingHandCursor
-            onClicked: themePicker.open()
-        }
-    }
-
-    Item {
-        id: fontTrigger
-        anchors.bottom: parent.bottom
-        anchors.right: themeTrigger.left
-        anchors.rightMargin: 16
-        anchors.margins: 20
-        width: 28
-        height: 28
-
-        Icon {
-            anchors.centerIn: parent
-            source: "assets/icons/font.svg"
-            iconSize: 20
-            color: fontTriggerArea.containsMouse ? Theme.primaryColor : Theme.onSurfaceVariant
-            Behavior on color {
-                ColorAnimation {
-                    duration: 150
-                }
-            }
-        }
-
-        MouseArea {
-            id: fontTriggerArea
-            anchors.fill: parent
-            hoverEnabled: true
-            cursorShape: Qt.PointingHandCursor
-            onClicked: fontPicker.open()
         }
     }
 
@@ -196,13 +134,7 @@ Item {
         id: streakCalendar
     }
 
-    ThemePicker {
-        id: themePicker
-    }
     ProfileEditor {
         id: profileEditor
-    }
-    FontPicker {
-        id: fontPicker
     }
 }
