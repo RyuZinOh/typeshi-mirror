@@ -46,6 +46,45 @@ int printStreak() {
   return 0;
 }
 
+int printallPbs() {
+  HistoryManager history;
+  ConfigManager config;
+  QTextStream out(stdout);
+  const QString wordList = config.currentWordList();
+  out << "personal bests for " << wordList << "\n";
+  // [10, 25, 50, 100] : [15, 30, 60, 120]
+  out << "===================" << "\n";
+  out << "Timed Mode" << "\n";
+  const QList<int> durations = {15, 30, 60, 120};
+  for (int d : durations) {
+    double normal = history.bestWpmFor("english", d, 0, -1, wordList);
+    double punct = history.bestWpmFor("english", d, 1, -1, wordList);
+    out << d << "s: " << QString::number(normal, 'f', 1) << "/ "
+        << QString::number(punct, 'f', 1) << " punct"
+        << "\n";
+  }
+  out << "===================" << "\n";
+  out << "Word Mode" << "\n";
+  const QList<int> wordsCount = {10, 25, 50, 100};
+  for (int w : wordsCount) {
+    double normal = history.bestWpmForWords(w, 0, wordList);
+    double punct = history.bestWpmForWords(w, 1, wordList);
+    out << w << ": " << QString::number(normal, 'f', 1) << "/ "
+        << QString::number(punct, 'f', 1) << " punct"
+        << "\n";
+  }
+
+  out << "===================" << "\n";
+  out << "Quotes mode: " << QString::number(history.bestWpmFor("quote"), 'f', 1)
+      << "wpm\n";
+
+  out << "===================" << "\n";
+  out << "Best Wpm so far is " << QString::number(history.bestWpm(), 'f', 1)
+      << "wpm\n";
+
+  return 0;
+}
+
 int main(int argc, char *argv[]) {
 
   QGuiApplication app(argc, argv);
@@ -71,6 +110,8 @@ int main(int argc, char *argv[]) {
   QCommandLineOption streakOption("streak",
                                   "Prints current streak, longest streak");
   parser.addOption(streakOption);
+  QCommandLineOption pbsOption("pbs", "Prints User Personal Bests ");
+  parser.addOption(pbsOption);
 
   parser.process(app);
 
@@ -81,6 +122,10 @@ int main(int argc, char *argv[]) {
   }
   if (parser.isSet(streakOption)) {
     return printStreak();
+  }
+
+  if (parser.isSet(pbsOption)) {
+    return printallPbs();
   }
 
   QQmlApplicationEngine engine;
