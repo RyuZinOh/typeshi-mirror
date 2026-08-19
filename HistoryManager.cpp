@@ -20,7 +20,7 @@ HistoryManager::HistoryManager(QObject *parent) : QObject(parent) {
     return;
   }
   ensureSchema();
-  m_cachedStats = computeStatsSummary();
+  refreshStats();
 }
 
 HistoryManager::~HistoryManager() {
@@ -157,7 +157,98 @@ group by word_count, punctuation_enabled, word_list
   return out;
 }
 
-void HistoryManager::refreshStats() { m_cachedStats = computeStatsSummary(); }
+double HistoryManager::computeBestWpm() const {
+  if (!m_db.isOpen()) {
+    return 0.0;
+  }
+  QSqlQuery q(m_db);
+  q.exec("select max(wpm) from results");
+  return q.next() ? q.value(0).toDouble() : 0.0;
+}
+
+int HistoryManager::computeTestsToday() const {
+  if (!m_db.isOpen()) {
+    return 0;
+  }
+  QSqlQuery q(m_db);
+  q.exec("select count(*) from results where date  = ?");
+  q.addBindValue(QDate::currentDate().toString("yyyy-MM-dd"));
+  q.exec();
+  return q.next() ? q.value(0).toInt() : 0;
+}
+
+// streaks
+int HistoryManager::computeCurrentStreak() const {
+  if (!m_db.isOpen()) {
+    return 0;
+  }
+  QSqlQuery q(m_db);
+  q.exec("select distinct date from results order by date desc");
+  QVector<QDate> dates;
+  while (q.next()) {
+    dates.append(QDate::fromString(q.value(0).toString(), "yyyy-MM-dd"));
+  }
+  if (dates.isEmpty()) {
+    return 0;
+  }
+
+  const QDate today = QDate::currentDate();
+
+  // breaking it if the most recent test is not today or yesterday
+  if (dates[0] != today && dates[0] != today.addDays(-1)) {
+    return 0;
+  }
+  int streak = 1;
+  QDate cursor = dates[0];
+  for (int i = 1; i < dates.size(); ++i) {
+    const QDate expected = cursor.addDays(-1);
+    if (dates[i] == expected) {
+      streak++;
+      cursor = expected;
+    } else {
+      break;
+    }
+  }
+  return streak;
+}
+
+int HistoryManager::computeLongestStreak() const {
+  if (!m_db.isOpen()) {
+    return 0;
+  }
+  QSqlQuery q(m_db);
+  q.exec("select distinct date from results order by date asc");
+  QVector<QDate> dates;
+  while (q.next()) {
+    dates.append(QDate::fromString(q.value(0).toString(), "yyyy-MM-dd"));
+  }
+  if (dates.isEmpty()) {
+    return 0;
+  }
+
+  int longest = 1;
+  int running = 1;
+
+  for (int i = 1; i < dates.size(); ++i) {
+    if (dates[i - 1].addDays(1) == dates[i]) {
+      running++;
+      longest = qMax(longest, running);
+    } else {
+      running = 1;
+    }
+  }
+  return longest;
+}
+// end of streaks
+
+void HistoryManager::refreshStats() {
+  m_cachedStats = computeStatsSummary();
+  m_cachedBestWpm = computeBestWpm();
+  m_cachedTestsToday = computeTestsToday();
+  m_cachedCurrentStreak = computeCurrentStreak();
+  m_cachedLongestStreak = computeLongestStreak();
+}
+
 void HistoryManager::recordResult(double wpm, double rawWpm, double accuracy,
                                   double consistency, int durationSeconds,
                                   int correctCount, int incorrectCount,
@@ -197,14 +288,6 @@ void HistoryManager::recordResult(double wpm, double rawWpm, double accuracy,
   emit historyChanged();
 }
 
-double HistoryManager::bestWpm() const {
-  if (!m_db.isOpen()) {
-    return 0.0;
-  }
-  QSqlQuery q(m_db);
-  q.exec("select max(wpm) from results");
-  return q.next() ? q.value(0).toDouble() : 0.0;
-}
 double HistoryManager::bestWpmFor(const QString &mode, int durationSeconds,
                                   int punctuationEnabled, int wordCount,
                                   const QString &wordList) const {
@@ -256,16 +339,6 @@ double HistoryManager::bestWpmForWords(int wordCount, int punctuationEnabled,
                                        const QString &wordList) const {
   return bestWpmFor("words", 0, punctuationEnabled, wordCount, wordList);
 }
-int HistoryManager::testsToday() const {
-  if (!m_db.isOpen()) {
-    return 0;
-  }
-  QSqlQuery q(m_db);
-  q.exec("select count(*) from results where date  = ?");
-  q.addBindValue(QDate::currentDate().toString("yyyy-MM-dd"));
-  q.exec();
-  return q.next() ? q.value(0).toInt() : 0;
-}
 
 QVariantList HistoryManager::dailySummary() const {
   QVariantList out;
@@ -291,70 +364,10 @@ QVariantList HistoryManager::dailySummary() const {
   return out;
 }
 
-// streaks
-int HistoryManager::currentStreak() const {
-  if (!m_db.isOpen()) {
-    return 0;
-  }
-  QSqlQuery q(m_db);
-  q.exec("select distinct date from results order by date desc");
-  QVector<QDate> dates;
-  while (q.next()) {
-    dates.append(QDate::fromString(q.value(0).toString(), "yyyy-MM-dd"));
-  }
-  if (dates.isEmpty()) {
-    return 0;
-  }
-
-  const QDate today = QDate::currentDate();
-
-  // breaking it if the most recent test is not today or yesterday
-  if (dates[0] != today && dates[0] != today.addDays(-1)) {
-    return 0;
-  }
-  int streak = 1;
-  QDate cursor = dates[0];
-  for (int i = 1; i < dates.size(); ++i) {
-    const QDate expected = cursor.addDays(-1);
-    if (dates[i] == expected) {
-      streak++;
-      cursor = expected;
-    } else {
-      break;
-    }
-  }
-  return streak;
-}
-
-int HistoryManager::longestStreak() const {
-  if (!m_db.isOpen()) {
-    return 0;
-  }
-  QSqlQuery q(m_db);
-  q.exec("select distinct date from results order by date asc");
-  QVector<QDate> dates;
-  while (q.next()) {
-    dates.append(QDate::fromString(q.value(0).toString(), "yyyy-MM-dd"));
-  }
-  if (dates.isEmpty()) {
-    return 0;
-  }
-
-  int longest = 1;
-  int running = 1;
-
-  for (int i = 1; i < dates.size(); ++i) {
-    if (dates[i - 1].addDays(1) == dates[i]) {
-      running++;
-      longest = qMax(longest, running);
-    } else {
-      running = 1;
-    }
-  }
-  return longest;
-}
-// end of streaks
-
-// getter
+// getters
+double HistoryManager::bestWpm() const { return m_cachedBestWpm; }
+int HistoryManager::testsToday() const { return m_cachedTestsToday; }
+int HistoryManager::currentStreak() const { return m_cachedCurrentStreak; }
+int HistoryManager::longestStreak() const { return m_cachedLongestStreak; }
 QVariantMap HistoryManager::statsSummary() const { return m_cachedStats; }
-// end of getter
+// end of getters

@@ -46,8 +46,19 @@ private:
   QSqlDatabase m_db;
   QVariantMap m_cachedStats;
 
+  double m_cachedBestWpm = 0.0;
+  int m_cachedTestsToday = 0;
+  int m_cachedCurrentStreak = 0;
+  int m_cachedLongestStreak = 0;
+
   QString dbPath() const;
   void ensureSchema();
   QVariantMap computeStatsSummary() const;
+
+  double computeBestWpm() const;
+  int computeTestsToday() const;
+  int computeCurrentStreak() const;
+  int computeLongestStreak() const;
+
   void refreshStats();
 };
