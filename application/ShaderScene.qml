@@ -4,7 +4,6 @@ import QtQuick
 Item {
     id: root
 
-    property bool crtEnabled: false
     property bool rainEnabled: false
     default property alias content: contentItem.data
 
@@ -35,27 +34,8 @@ Item {
         }
 
         Item {
-            id: crtWrapper
+            id: contentItem
             anchors.fill: parent
-
-            layer.enabled: root.crtEnabled
-            layer.smooth: true
-            layer.effect: ShaderEffect {
-                property variant source
-                property vector2d resolution: Qt.vector2d(width, height)
-                property real scanlineIntensity: 1.1
-                property real vignetteStrength: 0.18
-                property real glowThreshold: 0.1
-                property real glowIntensity: 1.0
-
-                vertexShader: "assets/shaders/crt.vert.qsb"
-                fragmentShader: "assets/shaders/crt.frag.qsb"
-            }
-
-            Item {
-                id: contentItem
-                anchors.fill: parent
-            }
         }
     }
 }

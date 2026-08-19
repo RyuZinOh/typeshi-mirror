@@ -50,20 +50,9 @@ Item {
     }
 
     ToggleChip {
-        id: crtTrigger
-        anchors.bottom: parent.bottom
-        anchors.left: parent.left
-        anchors.margins: 20
-        label: "CRT mode"
-        active: root.appWindow.crtEnabled
-        onToggled: root.appWindow.crtEnabled = !root.appWindow.crtEnabled
-    }
-
-    ToggleChip {
         id: rainTrigger
         anchors.bottom: parent.bottom
-        anchors.left: crtTrigger.right
-        anchors.leftMargin: 10
+        anchors.left: parent.left
         anchors.margins: 20
         label: "rain mode"
         active: root.appWindow.rainEnabled
@@ -122,7 +111,7 @@ Item {
         id: shootoutTrigger
         anchors.bottom: parent.bottom
         anchors.bottomMargin: 20
-        readonly property real restingX: crtTrigger.x + crtTrigger.width + 10 + rainTrigger.width + 10 + streakTrigger.width + 10
+        readonly property real restingX: rainTrigger.x + rainTrigger.width + 10 + streakTrigger.width + 10
         x: Math.max(shootoutTrigger.restingX, streakCalendar.panelRightEdge + 10)
         label: "shootout"
         active: root.appWindow.shootoutEnabled

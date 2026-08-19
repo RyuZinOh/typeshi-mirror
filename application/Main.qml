@@ -15,7 +15,6 @@ Window {
     readonly property int passageFontSize: Config.fontSize
     readonly property int sidePadding: 160
     property string testMode: "time"
-    property bool crtEnabled: false
     property bool rainEnabled: false
     property bool inLobby: true
     property bool shootoutEnabled: false
@@ -193,7 +192,6 @@ Window {
     ShaderScene {
         id: sceneLayer
         anchors.fill: parent
-        crtEnabled: appWindow.crtEnabled
         rainEnabled: appWindow.rainEnabled
 
         Rectangle {
