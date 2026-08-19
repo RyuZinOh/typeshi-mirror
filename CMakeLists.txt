@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(typeshi VERSION 0.1.9)
+project(typeshi VERSION 0.1.10)
 
 option(FLATPAK_BUILD "Build for Flatpak packaging" OFF)
 

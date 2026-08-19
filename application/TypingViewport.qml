@@ -190,6 +190,12 @@ Item {
     Connections {
         target: TypingEngine
         function onTargetTextChanged() {
+            if (!TypingEngine.started) {
+                linesContainer.suppressScrollAnim = true;
+                Qt.callLater(function () {
+                    linesContainer.suppressScrollAnim = false;
+                });
+            }
             root.measureNewWords();
         }
         function onTypedTextChanged() {
@@ -213,7 +219,10 @@ Item {
         id: linesContainer
         width: root.width
         y: -TypingEngine.windowStart * root.lineHeight
+
+        property bool suppressScrollAnim: false
         Behavior on y {
+            enabled: !linesContainer.suppressScrollAnim
             NumberAnimation {
                 duration: 150
                 easing.type: Easing.InOutQuad

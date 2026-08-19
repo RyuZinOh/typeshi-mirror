@@ -22,6 +22,18 @@ Rectangle {
     border.width: 1
     opacity: root.enabled ? 1 : 0.4
 
+    Behavior on width {
+        NumberAnimation {
+            duration: 200
+            easing.type: Easing.OutCubic
+        }
+    }
+    Behavior on height {
+        NumberAnimation {
+            duration: 200
+            easing.type: Easing.OutCubic
+        }
+    }
     Behavior on opacity {
         NumberAnimation {
             duration: 150
@@ -39,6 +51,19 @@ Rectangle {
             return i >= 0 ? i : 0;
         }
 
+        Behavior on width {
+            NumberAnimation {
+                duration: 200
+                easing.type: Easing.OutCubic
+            }
+        }
+        Behavior on height {
+            NumberAnimation {
+                duration: 200
+                easing.type: Easing.OutCubic
+            }
+        }
+
         ShapeCanvas {
             id: selectionShape
             width: root.cellHeight
@@ -51,8 +76,21 @@ Rectangle {
 
             Behavior on x {
                 NumberAnimation {
-                    duration: 260
+                    duration: 280
                     easing.type: Easing.OutBack
+                    easing.overshoot: 1.4
+                }
+            }
+            Behavior on width {
+                NumberAnimation {
+                    duration: 200
+                    easing.type: Easing.OutCubic
+                }
+            }
+            Behavior on height {
+                NumberAnimation {
+                    duration: 200
+                    easing.type: Easing.OutCubic
                 }
             }
         }
@@ -81,11 +119,19 @@ Rectangle {
                         text: cell.modelData.toString() + root.suffix
                         font.pixelSize: 13
                         font.bold: cell.isSelected
+                        scale: cell.isSelected ? 1.08 : 1.0
                         color: cell.isSelected ? Theme.onPrimary : (cellArea.containsMouse ? Theme.onSurface : Theme.onSurfaceVariant)
 
                         Behavior on color {
                             ColorAnimation {
                                 duration: 150
+                            }
+                        }
+                        Behavior on scale {
+                            NumberAnimation {
+                                duration: 220
+                                easing.type: Easing.OutBack
+                                easing.overshoot: 2.0
                             }
                         }
                     }
