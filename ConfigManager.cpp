@@ -164,6 +164,16 @@ void ConfigManager::registerFontFamily(const QString &family) {
   }
 }
 
+void ConfigManager::setFontSize(int size) {
+  size = qBound(20, size, 64);
+  if (size == m_fontSize) {
+    return;
+  }
+  m_general["fontSize"] = size;
+  m_fontSize = size;
+  writeGeneral();
+  emit configChanged();
+}
 QStringList ConfigManager::availableFonts() const { return s_availableFonts; }
 // end of font stuff
 void ConfigManager::load() {
@@ -181,6 +191,7 @@ void ConfigManager::load() {
     m_general["font"] = "Roboto";
     writeGeneral();
   }
+  m_fontSize = m_general.value("fontSize", "36").toInt();
   m_currentVariant = m_general.value("variant", "dark").toString();
   m_lastMode = m_general.value("lastMode", "time").toString();
   m_lastDuration = m_general.value("lastDuration", "60").toInt();
@@ -381,6 +392,7 @@ QString ConfigManager::currentVariant() const { return m_currentVariant; }
 QString ConfigManager::lastMode() const { return m_lastMode; }
 int ConfigManager::lastDuration() const { return m_lastDuration; }
 int ConfigManager::lastWordCount() const { return m_lastWordCount; }
+int ConfigManager::fontSize() const { return m_fontSize; }
 bool ConfigManager::lastPunctuation() const { return m_lastPunctuation; }
 QString ConfigManager::username() const { return m_username; }
 QString ConfigManager::avatarPath() const { return m_avatarPath; }

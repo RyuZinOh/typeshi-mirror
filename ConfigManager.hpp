@@ -22,6 +22,7 @@ class ConfigManager : public QObject {
   Q_PROPERTY(QString avatarPath READ avatarPath NOTIFY configChanged)
   Q_PROPERTY(QString currentWordList READ currentWordList NOTIFY configChanged)
   Q_PROPERTY(QString currentFont READ currentFont NOTIFY configChanged)
+  Q_PROPERTY(int fontSize READ fontSize NOTIFY configChanged)
 
 public:
   explicit ConfigManager(QObject *parent = nullptr);
@@ -33,6 +34,7 @@ public:
   QString lastMode() const;
   int lastDuration() const;
   int lastWordCount() const;
+  int fontSize() const;
   bool lastPunctuation() const;
   QString username() const;
   QString avatarPath() const;
@@ -56,6 +58,7 @@ public:
   Q_INVOKABLE QStringList availableWordLists() const;
   Q_INVOKABLE void setFont(const QString &name);
   Q_INVOKABLE QStringList availableFonts() const;
+  Q_INVOKABLE void setFontSize(int size);
 
   // custom theme generation
   Q_INVOKABLE bool generateCustomThemeTemplate(bool overwrite = false);
@@ -80,6 +83,7 @@ private:
   QString m_username = "typeShitter";
   QString m_currentWordList = "english";
   QString m_currentFont = "Roboto";
+  int m_fontSize = 36;
   // end of defaults
   static QStringList s_availableFonts;
 

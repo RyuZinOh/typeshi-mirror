@@ -12,7 +12,7 @@ Window {
     color: Theme.backgroundColor
 
     readonly property int linesVisible: 3
-    readonly property int passageFontSize: 36
+    readonly property int passageFontSize: Config.fontSize
     readonly property int sidePadding: 160
     property string testMode: "time"
     property bool crtEnabled: false

@@ -14,6 +14,8 @@ Item {
     property int opponentWordExtraCount: 0
     property int lastMeasuredCursor: 0
 
+    readonly property real caretBottomGap: root.lineHeight * 0.12
+
     width: parent.width
     height: fm.height * 1.3 * root.linesVisible
     clip: true
@@ -287,7 +289,8 @@ Item {
         id: caret
         visible: root.caretReady
         x: root.caretX
-        y: root.caretY + root.lineHeight - height - 10
+
+        y: root.caretY + root.lineHeight - height - root.caretBottomGap
         width: root.caretW
         height: 3
         color: Theme.onSurface
@@ -318,7 +321,7 @@ Item {
         id: opponentCaret
         visible: root.opponentCaretVisible
         x: root.opponentCaretX
-        y: root.opponentCaretY + root.lineHeight - height - 10
+        y: root.opponentCaretY + root.lineHeight - height - root.caretBottomGap
         width: root.opponentCaretW
         height: 3
         color: Theme.secondaryColor

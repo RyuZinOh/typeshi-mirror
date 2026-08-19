@@ -20,6 +20,7 @@ HistoryManager::HistoryManager(QObject *parent) : QObject(parent) {
     return;
   }
   ensureSchema();
+  m_cachedStats = computeStatsSummary();
 }
 
 HistoryManager::~HistoryManager() {
@@ -95,7 +96,7 @@ void HistoryManager::ensureSchema() {
   )");
 }
 
-QVariantMap HistoryManager::statsSummary() const {
+QVariantMap HistoryManager::computeStatsSummary() const {
   QVariantMap out;
   if (!m_db.isOpen()) {
     return out;
@@ -156,6 +157,7 @@ group by word_count, punctuation_enabled, word_list
   return out;
 }
 
+void HistoryManager::refreshStats() { m_cachedStats = computeStatsSummary(); }
 void HistoryManager::recordResult(double wpm, double rawWpm, double accuracy,
                                   double consistency, int durationSeconds,
                                   int correctCount, int incorrectCount,
@@ -191,6 +193,7 @@ void HistoryManager::recordResult(double wpm, double rawWpm, double accuracy,
   if (!q.exec()) {
     qWarning() << "HistoryManager: insert failed: " << q.lastError().text();
   }
+  refreshStats();
   emit historyChanged();
 }
 
@@ -351,3 +354,7 @@ int HistoryManager::longestStreak() const {
   return longest;
 }
 // end of streaks
+
+// getter
+QVariantMap HistoryManager::statsSummary() const { return m_cachedStats; }
+// end of getter

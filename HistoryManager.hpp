@@ -44,6 +44,10 @@ signals:
 
 private:
   QSqlDatabase m_db;
+  QVariantMap m_cachedStats;
+
   QString dbPath() const;
   void ensureSchema();
+  QVariantMap computeStatsSummary() const;
+  void refreshStats();
 };
