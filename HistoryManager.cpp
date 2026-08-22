@@ -102,7 +102,6 @@ QVariantMap HistoryManager::computeStatsSummary() const {
     return out;
   }
   QSqlQuery q(m_db);
-
   // time mode
   q.exec(R"(
   select duration_seconds, punctuation_enabled, max(wpm) from results where mode = 'english'
@@ -126,33 +125,48 @@ QVariantMap HistoryManager::computeStatsSummary() const {
         q.value(2).toDouble();
   }
   // quote mode
-  q.exec("select max(wpm) from results where mode = 'quote'");
+  q.exec("select wpm, accuracy from results where mode = 'quote' order by wpm "
+         "desc limit 1");
   if (q.next()) {
     out["quote"] = q.value(0).toDouble();
+    out["quote_acc"] = q.value(1).toDouble();
   }
   // word list
   q.exec(R"(
-select duration_seconds, punctuation_enabled, word_list, max(wpm) from results where mode = 'english'
-group by duration_seconds, punctuation_enabled, word_list
-)");
+  select duration_seconds, punctuation_enabled, word_list, wpm, accuracy from results
+  where mode = 'english'
+  and (duration_seconds, punctuation_enabled, word_list, wpm) in (
+    select duration_seconds, punctuation_enabled, word_list, max(wpm)
+    from results where mode = 'english'
+    group by duration_seconds, punctuation_enabled, word_list
+  )
+  )");
   while (q.next()) {
     const int duration = q.value(0).toInt();
     const int punct = q.value(1).toInt();
     const QString wordList = q.value(2).toString();
-    out[QString("english_%1_%2_%3").arg(duration).arg(punct).arg(wordList)] =
-        q.value(3).toDouble();
+    const QString key =
+        QString("english_%1_%2_%3").arg(duration).arg(punct).arg(wordList);
+    out[key] = q.value(3).toDouble();
+    out[key + "_acc"] = q.value(4).toDouble();
   }
-
   q.exec(R"(
-select word_count, punctuation_enabled, word_list, max(wpm) from results where mode = 'words'
-group by word_count, punctuation_enabled, word_list
-)");
+  select word_count, punctuation_enabled, word_list, wpm, accuracy from results
+  where mode = 'words'
+  and (word_count, punctuation_enabled, word_list, wpm) in (
+    select word_count, punctuation_enabled, word_list, max(wpm)
+    from results where mode = 'words'
+    group by word_count, punctuation_enabled, word_list
+  )
+  )");
   while (q.next()) {
     const int wordCount = q.value(0).toInt();
     const int punct = q.value(1).toInt();
     const QString wordList = q.value(2).toString();
-    out[QString("words_%1_%2_%3").arg(wordCount).arg(punct).arg(wordList)] =
-        q.value(3).toDouble();
+    const QString key =
+        QString("words_%1_%2_%3").arg(wordCount).arg(punct).arg(wordList);
+    out[key] = q.value(3).toDouble();
+    out[key + "_acc"] = q.value(4).toDouble();
   }
   return out;
 }

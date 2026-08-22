@@ -133,7 +133,7 @@ Item {
     Item {
         id: plotArea
         anchors.top: parent.top
-        anchors.topMargin: 8
+        anchors.topMargin: legend.height + 12
         anchors.left: parent.left
         anchors.leftMargin: 40
         anchors.right: parent.right
@@ -234,7 +234,7 @@ Item {
                     for (const p of points) {
                         ctx.beginPath();
                         ctx.fillStyle = color;
-                        ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
+                        ctx.arc(p.x, p.y, 1.6, 0, Math.PI * 2);
                         ctx.fill();
                     }
                 }

@@ -121,52 +121,6 @@ void TypingEngine::startWordCountTest(const QStringList &wordPool,
   emit statsChanged();
   rewrapLines();
 }
-// void TypingEngine::startTest(const QStringList &wordPool) {
-//   m_started = false;
-//   m_finished = false;
-//   m_quoteMode = false;
-//   m_frozenElapsedMs = 0;
-//   m_tickTimer.stop();
-//
-//   m_wordPool = wordPool;
-//   // m_targetText = wordPool.join(' ');
-//   m_lastWord.clear();
-//   m_targetText.clear();
-//   m_typedText.clear();
-//   m_isExtra.clear();
-//   m_lockedIndex = 0;
-//   m_wordExtraCount = 0;
-//   m_wordWidths.clear();
-//   m_windowStart = 0;
-//   m_history.clear();
-//   m_lastHistorySecond = -1;
-//
-//   // stats reset too
-//   m_permanentError.clear();
-//   m_originalMistype.clear();
-//   m_countedIndicies.clear();
-//   m_correctCount = 0;
-//   m_incorrectCount = 0;
-//   m_extraCount = 0;
-//   m_missedCount = 0;
-//   m_permanentMistakeCount = 0;
-//   m_wpmCorrectKetstrokes = 0;
-//   m_totalAttemptedKeystrokes = 0;
-//
-//   m_captilizeNext = true;
-//
-//   ensureBuffer();
-//   m_isExtra.assign(m_targetText.length(), false);
-//
-//   emit targetTextChanged();
-//   emit typedTextChanged();
-//   emit startedChanged();
-//   emit finishedChanged();
-//   emit historyChanged();
-//   emit elapsedMsChanged();
-//   emit statsChanged();
-//   rewrapLines();
-// }
 void TypingEngine::startTest(const QStringList &wordPool) {
   resetState();
   m_quoteMode = false;
@@ -544,12 +498,26 @@ void TypingEngine::updateLineState() {
 }
 
 void TypingEngine::finish() {
+  if (m_typedText.length() > m_lockedIndex) {
+    int wordStart = m_lockedIndex;
+    int wordEnd = qMin(m_typedText.length(), m_targetText.length());
+    for (int i = wordStart; i < wordEnd; ++i) {
+      bool extra = i < m_isExtra.size() && m_isExtra.at(i);
+      bool skipped = m_typedText.at(i) == QChar(0x2064);
+      bool correct =
+          !extra && !skipped && m_typedText.at(i) == m_targetText.at(i);
+      QChar typedCh = skipped ? QChar() : m_typedText.at(i);
+      scoreChar(i, correct, typedCh, extra, skipped);
+    }
+  }
+
   m_finished = true;
   m_frozenElapsedMs = static_cast<int>(m_elapsedTimer.elapsed());
   m_tickTimer.stop();
 
   emit finishedChanged();
   emit elapsedMsChanged();
+  emit statsChanged();
 }
 
 void TypingEngine::scoreChar(int index, bool correct, QChar typedCh,

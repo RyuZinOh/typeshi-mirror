@@ -6,47 +6,28 @@ Item {
     required property var appWindow
     anchors.fill: parent
 
-    Item {
-        id: profileTrigger
+    property alias streakCelebration: streakCelebration
+    MouseArea {
+        anchors.fill: parent
+        visible: avatarImg.expanded
+        enabled: avatarImg.expanded
+        onClicked: avatarImg.expanded = false
+    }
+    Avatar {
+        id: avatarImg
         anchors.bottom: parent.bottom
         anchors.right: parent.right
-        anchors.rightMargin: 16
         anchors.margins: 20
-        width: nameLabel.width + avatarImg.width + 8
-        height: 28
+        size: 48
+        onAccountSettingsRequested: root.appWindow.showAccountSettings = true
+        onUserStatsRequested: root.appWindow.showUserStats = true
+    }
 
-        Row {
-            anchors.fill: parent
-            spacing: 8
-
-            Avatar {
-                id: avatarImg
-                anchors.verticalCenter: parent.verticalCenter
-                size: 48
-            }
-
-            Text {
-                id: nameLabel
-                anchors.verticalCenter: parent.verticalCenter
-                text: Config.username
-                font.pixelSize: 13
-                color: profileTriggerArea.containsMouse ? Theme.primaryColor : Theme.onSurfaceVariant
-
-                Behavior on color {
-                    ColorAnimation {
-                        duration: 150
-                    }
-                }
-            }
-        }
-
-        MouseArea {
-            id: profileTriggerArea
-            anchors.fill: parent
-            hoverEnabled: true
-            cursorShape: Qt.PointingHandCursor
-            onClicked: profileEditor.open()
-        }
+    StreakCelebration {
+        id: streakCelebration
+        anchors.bottom: parent.bottom
+        anchors.right: avatarImg.left
+        anchors.rightMargin: 12
     }
 
     ToggleChip {
@@ -115,15 +96,11 @@ Item {
         x: Math.max(shootoutTrigger.restingX, streakCalendar.panelRightEdge + 10)
         label: "shootout"
         active: root.appWindow.shootoutEnabled
-        enabled: root.appWindow.testMode !== "multiplayer"
+        enabled: root.appWindow.testMode !== "multiplayer" && !root.appWindow.showUserStats
         onToggled: root.appWindow.shootoutEnabled = !root.appWindow.shootoutEnabled
     }
 
     StreakCalendar {
         id: streakCalendar
-    }
-
-    ProfileEditor {
-        id: profileEditor
     }
 }

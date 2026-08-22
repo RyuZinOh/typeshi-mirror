@@ -18,6 +18,8 @@ Window {
     property bool rainEnabled: false
     property bool inLobby: true
     property bool shootoutEnabled: false
+    property bool showUserStats: false
+    property bool showAccountSettings: false
 
     onShootoutEnabledChanged: TypingEngine.setOverflowInsertionEnabled(!appWindow.shootoutEnabled)
 
@@ -242,37 +244,13 @@ Window {
                 }
             }
 
-            Text {
-                anchors {
-                    top: parent.top
-                    right: parent.right
-                    margins: 20
-                }
-                font.pixelSize: 20
-                color: Theme.onSurfaceVariant
-                z: 60
-                text: {
-                    TypingEngine.elapsedMs;
-                    TypingEngine.wpm;
-                    return "wpm " + TypingEngine.wpm.toFixed(0) + "\nraw " + TypingEngine.rawWpm.toFixed(0) + "\naccuracy " + TypingEngine.accuracy.toFixed(0) + "\nconsistency " + TypingEngine.consistency.toFixed(0) + " %";
-                }
-            }
-
-            Records {
-                id: records
-                anchors.top: parent.top
-                anchors.left: parent.left
-                anchors.margins: 20
-                z: 60
-            }
-
             Item {
                 id: inputCatcher
                 anchors.fill: parent
                 focus: true
                 activeFocusOnTab: true
-                enabled: !TypingEngine.finished || appWindow.showCountdownOverlay
-                visible: !TypingEngine.finished || appWindow.showCountdownOverlay
+                enabled: (!TypingEngine.finished || appWindow.showCountdownOverlay) && !appWindow.showUserStats && !appWindow.showAccountSettings
+                visible: (!TypingEngine.finished || appWindow.showCountdownOverlay) && !appWindow.showUserStats && !appWindow.showAccountSettings
 
                 KeyNavigation.tab: refreshButton
 
@@ -334,8 +312,14 @@ Window {
                         id: modeRow
                         anchors.horizontalCenter: parent.horizontalCenter
                         anchors.bottom: viewportLoader.top
-                        anchors.bottomMargin: 20
+                        anchors.bottomMargin: 50
                         appWindow: appWindow
+                    }
+                    LiveStats {
+                        id: liveStats
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        anchors.bottom: viewportLoader.top
+                        anchors.bottomMargin: 50
                     }
 
                     Loader {
@@ -442,7 +426,7 @@ Window {
                 id: aftermathLoader
                 anchors.fill: parent
                 z: 70
-                active: TypingEngine.finished && !appWindow.showCountdownOverlay
+                active: TypingEngine.finished && !appWindow.showCountdownOverlay && !appWindow.showUserStats
                 onActiveChanged: {
                     if (active) {
                         let mode = "english";
@@ -461,16 +445,43 @@ Window {
 
                         if (appWindow.testMode !== "multiplayer") {
                             const oldBest = appWindow.testMode === "words" ? History.bestWpmForWords(words, punct ? 1 : 0, Config.currentWordList) : History.bestWpmFor(mode, dur, punct ? 1 : 0, -1, Config.currentWordList);
+                            const wasFirstToday = History.testsToday === 0;
 
                             History.recordResult(TypingEngine.wpm, TypingEngine.rawWpm, TypingEngine.accuracy, TypingEngine.consistency, Math.round(TypingEngine.elapsedMs / 1000), TypingEngine.correctCount, TypingEngine.incorrectCount, TypingEngine.extraCount, TypingEngine.missedCount, mode, punct, words, Config.currentWordList);
 
                             if (TypingEngine.wpm > 0 && TypingEngine.wpm > oldBest) {
                                 confetti.tryBurst();
                             }
+
+                            if (wasFirstToday && TypingEngine.wpm > 0) {
+                                bottomTray.streakCelebration.start(History.currentStreak);
+                            }
                         }
                     }
                 }
                 sourceComponent: appWindow.testMode === "multiplayer" ? multiplayerAftermathComponent : soloAftermathComponent
+            }
+            Loader {
+                id: userStatsLoader
+                anchors.fill: parent
+                z: 70
+                active: appWindow.showUserStats
+                sourceComponent: Component {
+                    UserStats {
+                        onBackRequested: appWindow.showUserStats = false
+                    }
+                }
+            }
+            Loader {
+                id: accountSettingsLoader
+                anchors.fill: parent
+                z: 70
+                active: appWindow.showAccountSettings
+                sourceComponent: Component {
+                    AccountSettings {
+                        onBackRequested: appWindow.showAccountSettings = false
+                    }
+                }
             }
         }
 
