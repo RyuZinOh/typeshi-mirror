@@ -23,6 +23,8 @@ class ConfigManager : public QObject {
   Q_PROPERTY(QString currentWordList READ currentWordList NOTIFY configChanged)
   Q_PROPERTY(QString currentFont READ currentFont NOTIFY configChanged)
   Q_PROPERTY(int fontSize READ fontSize NOTIFY configChanged)
+  Q_PROPERTY(bool borderProgressEnabled READ borderProgressEnabled NOTIFY
+                 configChanged)
 
 public:
   explicit ConfigManager(QObject *parent = nullptr);
@@ -40,6 +42,7 @@ public:
   QString avatarPath() const;
   QString currentWordList() const;
   QString currentFont() const;
+  bool borderProgressEnabled() const;
   static void registerFontFamily(const QString &family);
 
   Q_INVOKABLE void reload();
@@ -59,6 +62,7 @@ public:
   Q_INVOKABLE void setFont(const QString &name);
   Q_INVOKABLE QStringList availableFonts() const;
   Q_INVOKABLE void setFontSize(int size);
+  Q_INVOKABLE void setBorderProgressEnabled(bool enabled);
 
   // custom theme generation
   Q_INVOKABLE bool generateCustomThemeTemplate(bool overwrite = false);
@@ -84,6 +88,7 @@ private:
   QString m_currentWordList = "english";
   QString m_currentFont = "Roboto";
   int m_fontSize = 36;
+  bool m_borderProgressEnabled = true;
   // end of defaults
   static QStringList s_availableFonts;
 

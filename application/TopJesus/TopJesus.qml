@@ -91,6 +91,20 @@ Item {
             preview: function (item) {
                 return Config.currentFont;
             }
+        },
+        {
+            prefix: "progressbar:",
+            label: "Border progress",
+            width: 380,
+            items: function () {
+                return ["on", "off"];
+            },
+            apply: function (value) {
+                Config.setBorderProgressEnabled(value === "on");
+            },
+            preview: function (item) {
+                return Config.currentFont;
+            }
         }
     ]
 

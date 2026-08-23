@@ -54,6 +54,17 @@ QVariantMap ConfigManager::previewColors(const QString &themeName,
 }
 QString ConfigManager::statePath() const { return stateDir() + "/state.ini"; }
 
+void ConfigManager::setBorderProgressEnabled(bool enabled) {
+  if (enabled == m_borderProgressEnabled) {
+    return;
+  }
+  m_borderProgressEnabled = enabled;
+  m_general["borderProgressEnabled"] = enabled ? "1" : "0";
+  writeGeneral();
+  emit configChanged();
+}
+
+
 void ConfigManager::parseSection(const QString &path, const QString &section,
                                  QVariantMap &out) const {
   QFile file(path);
@@ -192,6 +203,8 @@ void ConfigManager::load() {
     writeGeneral();
   }
   m_fontSize = m_general.value("fontSize", "36").toInt();
+  m_borderProgressEnabled =
+      m_general.value("borderProgressEnabled", "1").toString() == "1";
   m_currentVariant = m_general.value("variant", "dark").toString();
   m_lastMode = m_general.value("lastMode", "time").toString();
   m_lastDuration = m_general.value("lastDuration", "60").toInt();
@@ -384,6 +397,9 @@ void ConfigManager::saveTestDefaults(const QString &mode, int duration,
   emit configChanged();
 }
 // getters
+bool ConfigManager::borderProgressEnabled() const {
+  return m_borderProgressEnabled;
+}
 QString ConfigManager::currentWordList() const { return m_currentWordList; }
 QVariantMap ConfigManager::theme() const { return m_theme; }
 QStringList ConfigManager::words() const { return m_words; }

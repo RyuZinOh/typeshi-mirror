@@ -20,7 +20,23 @@ Window {
     property bool shootoutEnabled: false
     property bool showUserStats: false
     property bool showAccountSettings: false
-
+    readonly property real testProgress: {
+        if (!TypingEngine.started || TypingEngine.finished || appWindow.testMode === "multiplayer") {
+            return 0;
+        }
+        if (appWindow.testMode === "words" || appWindow.testMode === "quote" || appWindow.testMode === "repeat") {
+            const target = TypingEngine.targetText.length;
+            if (target <= 0) {
+                return 0;
+            }
+            return Math.max(0, Math.min(1, TypingEngine.typedText.length / target));
+        }
+        const totalMs = TypingEngine.testDurationSeconds * 1000;
+        if (totalMs <= 0) {
+            return 0;
+        }
+        return Math.max(0, Math.min(1, TypingEngine.elapsedMs / totalMs));
+    }
     onShootoutEnabledChanged: TypingEngine.setOverflowInsertionEnabled(!appWindow.shootoutEnabled)
     onShowUserStatsChanged: if (showUserStats) {
         appWindow.showAccountSettings = false;
@@ -499,7 +515,14 @@ Window {
                 }
             }
         }
-
+        Loader {
+            id: borderProgressLoader
+            anchors.fill: parent
+            active: Config.borderProgressEnabled
+            sourceComponent: BorderProgress {
+                progress: appWindow.testProgress
+            }
+        }
         Item {
             id: uiOverlay
             anchors.fill: parent
