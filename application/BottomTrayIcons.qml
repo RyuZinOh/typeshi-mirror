@@ -96,7 +96,7 @@ Item {
         x: Math.max(shootoutTrigger.restingX, streakCalendar.panelRightEdge + 10)
         label: "shootout"
         active: root.appWindow.shootoutEnabled
-        enabled: root.appWindow.testMode !== "multiplayer" && !root.appWindow.showUserStats
+        enabled: root.appWindow.testMode !== "multiplayer" && !root.appWindow.showUserStats && !root.appWindow.showAccountSettings
         onToggled: root.appWindow.shootoutEnabled = !root.appWindow.shootoutEnabled
     }
 

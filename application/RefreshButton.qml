@@ -10,6 +10,7 @@ Item {
     property bool hoverRotates: false
     property int iconSize: 28
     property Item tabTarget: null
+    property Item typingCatcher: null
 
     signal activated
 
@@ -18,14 +19,34 @@ Item {
     activeFocusOnTab: true
     focus: true
 
+    KeyNavigation.tab: root.tabTarget
+
+    Keys.onPressed: event => {
+        if (event.key === Qt.Key_Tab || event.key === Qt.Key_Backtab) {
+            return;
+        }
+        if (!root.typingCatcher) {
+            return;
+        }
+        if (event.key === Qt.Key_Backspace) {
+            root.typingCatcher.forceActiveFocus();
+            TypingEngine.deleteBackward(event.modifiers & Qt.ControlModifier);
+            event.accepted = true;
+            return;
+        }
+        if (event.text.length > 0 && event.text.charCodeAt(0) >= 32) {
+            root.typingCatcher.forceActiveFocus();
+            TypingEngine.typeCharacter(event.text);
+            event.accepted = true;
+        }
+    }
+
     opacity: (root.alwaysVisible || !root.dimmedUnlessFocused || root.activeFocus) ? 1 : 0
     Behavior on opacity {
         NumberAnimation {
             duration: 200
         }
     }
-
-    KeyNavigation.tab: root.tabTarget
 
     property bool keyRotatePulse: false
 

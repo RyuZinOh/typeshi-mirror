@@ -10,9 +10,10 @@ Item {
     property string resultMode: "english"
     property int resultDuration: 0
     property bool resultPunctuation: false
+    property bool isRepeat: false
     signal restartRequested
-    readonly property bool isNewBest: TypingEngine.wpm > 0 && TypingEngine.wpm >= (aftermath.resultMode === "words" ? History.bestWpmForWords(aftermath.resultDuration, aftermath.resultPunctuation ? 1 : 0, Config.currentWordList) : History.bestWpmFor(aftermath.resultMode, aftermath.resultDuration, aftermath.resultPunctuation ? 1 : 0, -1, Config.currentWordList))
-
+    signal repeatRequested
+    readonly property bool isNewBest: !aftermath.isRepeat && TypingEngine.wpm > 0 && TypingEngine.wpm >= (aftermath.resultMode === "words" ? History.bestWpmForWords(aftermath.resultDuration, aftermath.resultPunctuation ? 1 : 0, Config.currentWordList) : History.bestWpmFor(aftermath.resultMode, aftermath.resultDuration, aftermath.resultPunctuation ? 1 : 0, -1, Config.currentWordList))
     Component.onCompleted: Qt.callLater(function () {
         restartButtonRef.forceActiveFocus();
     })
@@ -275,6 +276,13 @@ Item {
                         }
                     }
                 }
+            }
+
+            ToggleChip {
+                label: "repeat these words"
+                active: false
+                chipHeight: 32
+                onToggled: aftermath.repeatRequested()
             }
         }
 

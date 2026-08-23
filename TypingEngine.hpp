@@ -125,6 +125,7 @@ public:
                                       int wordCount);
   Q_INVOKABLE void startMultiplayerTest(const QStringList &wordPool,
                                         qint64 seed, int durationSeconds);
+  Q_INVOKABLE void repeatTest();
   // end of mode
 
   Q_INVOKABLE bool wasErrorAt(int index) const;

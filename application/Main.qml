@@ -22,6 +22,12 @@ Window {
     property bool showAccountSettings: false
 
     onShootoutEnabledChanged: TypingEngine.setOverflowInsertionEnabled(!appWindow.shootoutEnabled)
+    onShowUserStatsChanged: if (showUserStats) {
+        appWindow.showAccountSettings = false;
+    }
+    onShowAccountSettingsChanged: if (showAccountSettings) {
+        appWindow.showUserStats = false;
+    }
 
     Component.onCompleted: {
         appWindow.testMode = Config.lastMode;
@@ -269,11 +275,17 @@ Window {
                         return;
                     }
                     if (event.key === Qt.Key_Backspace) {
+                        if (!inputCatcher.activeFocus) {
+                            inputCatcher.forceActiveFocus();
+                        }
                         TypingEngine.deleteBackward(event.modifiers & Qt.ControlModifier);
                         event.accepted = true;
                         return;
                     }
                     if (event.text.length > 0 && event.text.charCodeAt(0) >= 32) {
+                        if (!inputCatcher.activeFocus) {
+                            inputCatcher.forceActiveFocus();
+                        }
                         TypingEngine.typeCharacter(event.text);
                         event.accepted = true;
                     }
@@ -361,6 +373,7 @@ Window {
                         enabled: !topJesus.isOpen && appWindow.testMode !== "multiplayer"
                         dimmedUnlessFocused: TypingEngine.started
                         tabTarget: inputCatcher
+                        typingCatcher: inputCatcher
                         onActivated: appWindow.restartTest()
                     }
                 }
@@ -402,6 +415,8 @@ Window {
                     resultDuration: appWindow.testMode === "quote" ? 0 : (appWindow.testMode === "words" ? TypingEngine.testWordCount : TypingEngine.testDurationSeconds)
                     resultPunctuation: appWindow.testMode === "quote" ? false : TypingEngine.punctuationEnabled
                     onRestartRequested: appWindow.restartTest()
+                    isRepeat: appWindow.testMode === "repeat"
+                    onRepeatRequested: appWindow.repeatTest()
                 }
             }
 
@@ -443,7 +458,7 @@ Window {
                             words = TypingEngine.testWordCount;
                         }
 
-                        if (appWindow.testMode !== "multiplayer") {
+                        if (appWindow.testMode !== "multiplayer" && appWindow.testMode !== "repeat") {
                             const oldBest = appWindow.testMode === "words" ? History.bestWpmForWords(words, punct ? 1 : 0, Config.currentWordList) : History.bestWpmFor(mode, dur, punct ? 1 : 0, -1, Config.currentWordList);
                             const wasFirstToday = History.testsToday === 0;
 
@@ -506,6 +521,9 @@ Window {
         if (appWindow.testMode === "multiplayer") {
             return;
         }
+        if (appWindow.testMode === "repeat") {
+            appWindow.testMode = Config.lastMode;
+        }
         if (appWindow.testMode === "quote") {
             const q = Quotes.randomQuote();
             TypingEngine.startQuoteTest(q.text);
@@ -515,6 +533,12 @@ Window {
             TypingEngine.startTest(Config.words);
         }
 
+        confetti.hasBurst = false;
+        inputCatcher.forceActiveFocus();
+    }
+    function repeatTest() {
+        appWindow.testMode = "repeat";
+        TypingEngine.repeatTest();
         confetti.hasBurst = false;
         inputCatcher.forceActiveFocus();
     }

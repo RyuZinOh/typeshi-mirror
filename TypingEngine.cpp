@@ -121,6 +121,52 @@ void TypingEngine::startWordCountTest(const QStringList &wordPool,
   emit statsChanged();
   rewrapLines();
 }
+void TypingEngine::repeatTest() {
+  if (m_targetText.isEmpty()) {
+    return;
+  }
+
+  const int typedLen = qMin(m_typedText.length(), m_targetText.length());
+
+  int cutoff = 0;
+  int wordStart = 0;
+  for (int i = 0; i <= m_targetText.length(); ++i) {
+    if (i == m_targetText.length() || m_targetText.at(i) == ' ') {
+      if (i <= typedLen) {
+        cutoff = i;
+      } else {
+        break;
+      }
+      wordStart = i + 1;
+    }
+  }
+  Q_UNUSED(wordStart);
+
+  QString cleanText;
+  cleanText.reserve(cutoff);
+  for (int i = 0; i < cutoff; ++i) {
+    if (i < m_isExtra.size() && m_isExtra.at(i)) {
+      continue;
+    }
+    cleanText.append(m_targetText.at(i));
+  }
+
+  resetState();
+  m_quoteMode = true;
+  m_wordCountMode = false;
+  m_targetText = cleanText;
+  m_isExtra.assign(m_targetText.length(), false);
+
+  emit targetTextChanged();
+  emit typedTextChanged();
+  emit startedChanged();
+  emit finishedChanged();
+  emit historyChanged();
+  emit elapsedMsChanged();
+  emit statsChanged();
+  rewrapLines();
+}
+
 void TypingEngine::startTest(const QStringList &wordPool) {
   resetState();
   m_quoteMode = false;
