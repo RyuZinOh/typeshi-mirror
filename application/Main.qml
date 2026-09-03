@@ -457,7 +457,7 @@ Window {
                 id: aftermathLoader
                 anchors.fill: parent
                 z: 70
-                active: TypingEngine.finished && !appWindow.showCountdownOverlay && !appWindow.showUserStats
+                active: TypingEngine.finished && !appWindow.showCountdownOverlay && !appWindow.showUserStats && !appWindow.showAccountSettings
                 onActiveChanged: {
                     if (active) {
                         let mode = "english";
