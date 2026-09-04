@@ -45,6 +45,12 @@ int printStreak() {
   out << "Longest streak: " << history.longestStreak() << " day's\n";
   return 0;
 }
+int printNWpm() {
+  HistoryManager history;
+  QTextStream out(stdout);
+  out << "nWpm: " << QString::number(history.nWpm()) << " nWPM\n";
+  return 0;
+}
 
 int printallPbs() {
   HistoryManager history;
@@ -110,8 +116,13 @@ int main(int argc, char *argv[]) {
   QCommandLineOption streakOption("streak",
                                   "Prints current streak, longest streak");
   parser.addOption(streakOption);
+
   QCommandLineOption pbsOption("pbs", "Prints User Personal Bests ");
   parser.addOption(pbsOption);
+
+  QCommandLineOption nwpmOption(
+      "nwpm", "gives you the nWPM for last hundred avg wpm..");
+  parser.addOption(nwpmOption);
 
   parser.process(app);
 
@@ -126,6 +137,10 @@ int main(int argc, char *argv[]) {
 
   if (parser.isSet(pbsOption)) {
     return printallPbs();
+  }
+
+  if (parser.isSet(nwpmOption)) {
+    return printNWpm();
   }
 
   QQmlApplicationEngine engine;

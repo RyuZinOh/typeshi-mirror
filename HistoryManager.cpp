@@ -260,6 +260,7 @@ void HistoryManager::refreshStats() {
   m_cachedBestWpm = computeBestWpm();
   m_cachedTestsToday = computeTestsToday();
   m_cachedCurrentStreak = computeCurrentStreak();
+  m_cachedNWpm = computeNWpm();
   m_cachedLongestStreak = computeLongestStreak();
 }
 
@@ -378,8 +379,46 @@ QVariantList HistoryManager::dailySummary() const {
   return out;
 }
 
+double HistoryManager::recencyWeight(double daysAgo, double halfLifeDays) {
+  double gracePeriod = 2.0;
+  double u = qMax(0.0, daysAgo - gracePeriod);
+  double lambda = std::log(0.5) / halfLifeDays;
+  return std::exp(lambda * u);
+}
+
+double HistoryManager::computeNWpm() const {
+  if (!m_db.isOpen()) {
+    return 0.0;
+  }
+  QSqlQuery q(m_db);
+  q.prepare(R"(
+  select avg(wpm), date from results
+  group by date
+  order by date desc
+  limit 100
+  )");
+  q.exec();
+  QDate today = QDate::currentDate();
+  double halfLifeDays = 7.0;
+  double weightedSum = 0.0;
+  double weightTotal = 0.0;
+
+  while (q.next()) {
+    double avgWpm = q.value(0).toDouble();
+    QString dateStr = q.value(1).toString();
+    QDate xplict = QDate::fromString(dateStr, "yyyy-MM-dd");
+    double daysAgo = xplict.daysTo(today);
+
+    double w = recencyWeight(daysAgo, halfLifeDays);
+    weightedSum += w * avgWpm;
+    weightTotal += w;
+  }
+
+  return weightTotal > 0.0 ? weightedSum / weightTotal : 0.0;
+}
 // getters
 double HistoryManager::bestWpm() const { return m_cachedBestWpm; }
+double HistoryManager::nWpm() const { return m_cachedNWpm; }
 int HistoryManager::testsToday() const { return m_cachedTestsToday; }
 int HistoryManager::currentStreak() const { return m_cachedCurrentStreak; }
 int HistoryManager::longestStreak() const { return m_cachedLongestStreak; }

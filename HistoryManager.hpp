@@ -13,6 +13,7 @@ class HistoryManager : public QObject {
   Q_PROPERTY(int testsToday READ testsToday NOTIFY historyChanged)
   Q_PROPERTY(int currentStreak READ currentStreak NOTIFY historyChanged)
   Q_PROPERTY(int longestStreak READ longestStreak NOTIFY historyChanged)
+  Q_PROPERTY(double nWpm READ nWpm NOTIFY historyChanged)
   Q_PROPERTY(QVariantMap statsSummary READ statsSummary NOTIFY historyChanged)
 
 public:
@@ -34,6 +35,7 @@ public:
                                      const QString &wordList = "") const;
 
   double bestWpm() const;
+  double nWpm() const;
   int testsToday() const;
   int currentStreak() const;
   int longestStreak() const;
@@ -47,6 +49,7 @@ private:
   QVariantMap m_cachedStats;
 
   double m_cachedBestWpm = 0.0;
+  double m_cachedNWpm = 0.0;
   int m_cachedTestsToday = 0;
   int m_cachedCurrentStreak = 0;
   int m_cachedLongestStreak = 0;
@@ -56,6 +59,8 @@ private:
   QVariantMap computeStatsSummary() const;
 
   double computeBestWpm() const;
+  double computeNWpm() const;
+  static double recencyWeight(double daysAgo, double halfLifeDays);
   int computeTestsToday() const;
   int computeCurrentStreak() const;
   int computeLongestStreak() const;
