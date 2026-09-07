@@ -7,6 +7,15 @@
 #include <QtSql/QSqlError>
 #include <QtSql/QSqlQuery>
 
+namespace {
+double applySoftCap(double value, double softCap, double factor) {
+  if (value <= softCap) {
+    return value;
+  }
+  return softCap + (value - softCap) * factor;
+}
+} // namespace
+
 HistoryManager::HistoryManager(QObject *parent) : QObject(parent) {
   const QString path = dbPath();
   QDir().mkpath(QFileInfo(path).absolutePath());
@@ -392,7 +401,7 @@ double HistoryManager::computeNWpm() const {
   }
   QSqlQuery q(m_db);
   q.prepare(R"(
-  select avg(wpm), date from results
+  select avg(wpm), date from results where mode ='english' 
   group by date
   order by date desc
   limit 100
@@ -413,8 +422,12 @@ double HistoryManager::computeNWpm() const {
     weightedSum += w * avgWpm;
     weightTotal += w;
   }
-
-  return weightTotal > 0.0 ? weightedSum / weightTotal : 0.0;
+  // for (int i = 0; i < 11; i++) {
+  // double w = recencyWeight(i, 7.0);
+  // qDebug() << i << "day -> weight: " << w;
+  // }
+  double rawNwpm = weightTotal > 0.0 ? weightedSum / weightTotal : 0.0;
+  return applySoftCap(rawNwpm, 80.0, 0.5);
 }
 // getters
 double HistoryManager::bestWpm() const { return m_cachedBestWpm; }

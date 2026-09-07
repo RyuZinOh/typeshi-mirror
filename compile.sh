@@ -8,4 +8,4 @@ cmake --build . -j $(nproc)
 cd ..
 
 ln -sf build/compile_commands.json compile_commands.json
-# ./build/typeshi --nwpm
+./build/typeshi --nwpm
