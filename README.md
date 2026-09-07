@@ -7,3 +7,5 @@
 ## preview
 ![typeShi](./application/assets/preview.jpeg)
 
+[Watch me Develop this..](https://www.youtube.com/playlist?list=PLTfPT4niTWcQ)
+
