@@ -6,6 +6,7 @@ Item {
     id: resultRow
     required property var modelData
     required property int index
+    property bool isNav: false
     height: 44
 
     signal activated(var entry)
@@ -14,6 +15,31 @@ Item {
     readonly property string previewFamily: resultRow.modelData.source.preview(resultRow.modelData.label)
     readonly property bool showPalette: resultRow.modelData.source.label === "Theme"
     readonly property var paletteColors: resultRow.showPalette ? Config.previewColors(resultRow.modelData.label, Config.currentVariant) : ({})
+    readonly property bool isCurrent: resultRow.modelData.source.currentValue ? ("" + resultRow.modelData.source.currentValue()) === resultRow.modelData.label : false
+
+    Rectangle {
+        anchors.fill: parent
+        radius: 8
+        color: Theme.surfaceContainerHigh
+        opacity: resultRow.isNav ? 1 : 0
+        visible: opacity > 0.01
+
+        Behavior on opacity {
+            NumberAnimation {
+                duration: 100
+            }
+        }
+    }
+
+    Text {
+        visible: resultRow.isCurrent
+        anchors.right: parent.right
+        anchors.rightMargin: 10
+        anchors.verticalCenter: parent.verticalCenter
+        text: "current"
+        font.pixelSize: 11
+        color: Theme.primaryColor
+    }
 
     Row {
         anchors.left: parent.left

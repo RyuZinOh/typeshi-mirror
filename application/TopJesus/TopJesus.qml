@@ -29,6 +29,9 @@ Item {
             items: function () {
                 return Config.availableFonts();
             },
+            currentValue: function () {
+                return Config.currentFont;
+            },
             apply: function (name) {
                 Config.setFont(name);
             },
@@ -57,6 +60,9 @@ Item {
             items: function () {
                 return Config.availableThemes();
             },
+            currentValue: function () {
+                return Config.currentTheme;
+            },
             apply: function (name) {
                 Config.setTheme(name, Config.currentVariant);
             },
@@ -70,6 +76,9 @@ Item {
             width: 340,
             items: function () {
                 return ["dark", "light"];
+            },
+            currentValue: function () {
+                return Config.currentVariant;
             },
             apply: function (value) {
                 Config.setTheme(Config.currentTheme, value);
@@ -85,6 +94,9 @@ Item {
             items: function () {
                 return ["on", "off"];
             },
+            currentValue: function () {
+                return Config.currentTheme === "custom" ? "on" : "off";
+            },
             apply: function (value) {
                 Config.setCustomTheme(value === "on");
             },
@@ -99,6 +111,9 @@ Item {
             items: function () {
                 return ["on", "off"];
             },
+            currentValue: function () {
+                return Config.borderProgressEnabled ? "on" : "off";
+            },
             apply: function (value) {
                 Config.setBorderProgressEnabled(value === "on");
             },
@@ -107,7 +122,6 @@ Item {
             }
         }
     ]
-
     function computeTargetWidth() {
         if (root.results.length === 0) {
             return root.minWidth;

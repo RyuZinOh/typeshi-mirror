@@ -17,6 +17,12 @@ Item {
 
     height: contentCol.implicitHeight
 
+    property int navIndex: results.length > 0 ? 0 : -1
+
+    onResultsChanged: {
+        root.navIndex = root.results.length > 0 ? 0 : -1;
+    }
+
     function clearInput() {
         textInput.text = "";
     }
@@ -26,10 +32,10 @@ Item {
     }
 
     function applyCurrentSelection() {
-        if (listView.currentIndex < 0 || listView.currentIndex >= root.results.length) {
+        if (root.navIndex < 0 || root.navIndex >= root.results.length) {
             return;
         }
-        root.entryActivated(root.results[listView.currentIndex]);
+        root.entryActivated(root.results[root.navIndex]);
     }
 
     Column {
@@ -59,14 +65,14 @@ Item {
                     event.accepted = true;
                 }
                 Keys.onDownPressed: event => {
-                    if (listView.count > 0) {
-                        listView.currentIndex = Math.min(listView.currentIndex + 1, listView.count - 1);
+                    if (root.results.length > 0) {
+                        root.navIndex = Math.min(root.navIndex + 1, root.results.length - 1);
                     }
                     event.accepted = true;
                 }
                 Keys.onUpPressed: event => {
-                    if (listView.count > 0) {
-                        listView.currentIndex = Math.max(listView.currentIndex - 1, 0);
+                    if (root.results.length > 0) {
+                        root.navIndex = Math.max(root.navIndex - 1, 0);
                     }
                     event.accepted = true;
                 }
@@ -100,24 +106,19 @@ Item {
             clip: true
             visible: root.results.length > 0
             model: root.results
-            currentIndex: root.results.length > 0 ? 0 : -1
-
-            highlightFollowsCurrentItem: true
-            highlightMoveDuration: 80
-            highlightResizeDuration: 0
-
-            highlight: Rectangle {
-                radius: 8
-                color: Theme.surfaceContainerHigh
-            }
+            currentIndex: -1
+            highlight: null
 
             delegate: ResultDelegate {
                 width: listView.width
+                isNav: index === root.navIndex
                 onActivated: entry => {
-                    listView.currentIndex = index;
+                    root.navIndex = index;
                     root.entryActivated(entry);
                 }
-                onHovered: idx => listView.currentIndex = idx
+                onHovered: idx => {
+                    root.navIndex = idx;
+                }
             }
         }
     }
