@@ -1,6 +1,5 @@
 import QtQuick
 import QtQuick.Shapes
-import typeShitter
 
 Item {
     id: root
@@ -9,10 +8,9 @@ Item {
     property color trackColor: Theme.outlineVariant
     property color progressColor: Theme.primaryContainerColor
     property int startAngle: -90
-    property real gapDeg: 10
+    property real gapDeg: 20
 
     readonly property real clampedValue: Math.max(0, Math.min(1, root.value))
-    readonly property real sweepDeg: 360 * root.clampedValue
     readonly property bool isFull: root.clampedValue >= 1
     readonly property bool isEmpty: root.clampedValue <= 0
 
@@ -26,7 +24,7 @@ Item {
             return 360;
         if (root.isEmpty)
             return 0;
-        return Math.max(0, root.sweepDeg - root.gapDeg * 2);
+        return Math.max(0, (360 - (root.gapDeg * 2)) * root.clampedValue);
     }
 
     readonly property real trackStartDeg: root.progressStartDeg + root.progressSweepDeg + (root.isFull || root.isEmpty ? 0 : root.gapDeg)
@@ -35,7 +33,7 @@ Item {
             return 0;
         if (root.isEmpty)
             return 360;
-        return Math.max(0, 360 - root.trackStartDeg - root.gapDeg);
+        return Math.max(0, 360 - root.progressSweepDeg - (root.gapDeg * 2));
     }
 
     Shape {
