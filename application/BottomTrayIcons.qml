@@ -6,22 +6,23 @@ Item {
     anchors.fill: parent
 
     property alias streakCelebration: streakCelebration
-    MouseArea {
-        anchors.fill: parent
-        visible: avatarImg.expanded
-        enabled: avatarImg.expanded
-        onClicked: avatarImg.expanded = false
-    }
+
     Avatar {
         id: avatarImg
         anchors.bottom: parent.bottom
         anchors.right: parent.right
         anchors.margins: 20
         size: 48
-        onAccountSettingsRequested: root.appWindow.showAccountSettings = true
-        onUserStatsRequested: root.appWindow.showUserStats = true
+        onClicked: avatarMenu.expanded = !avatarMenu.expanded
     }
 
+    AvatarMenu {
+        id: avatarMenu
+        anchorItem: avatarImg
+        onAccountSettingsRequested: root.appWindow.showAccountSettings = true
+        onUserStatsRequested: root.appWindow.showUserStats = true
+        onRequestFocusRestore: root.appWindow.restoreInputFocus()
+    }
     StreakCelebration {
         id: streakCelebration
         anchors.bottom: parent.bottom

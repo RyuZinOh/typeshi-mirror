@@ -19,6 +19,9 @@ Window {
     property bool shootoutEnabled: false
     property bool showUserStats: false
     property bool showAccountSettings: false
+    function restoreInputFocus() {
+        inputCatcher.forceActiveFocus();
+    }
     readonly property real testProgress: {
         if (!TypingEngine.started || TypingEngine.finished) {
             return 0;
