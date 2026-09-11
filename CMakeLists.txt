@@ -6,7 +6,7 @@ option(FLATPAK_BUILD "Build for Flatpak packaging" OFF)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_AUTOMOC ON)
 
-find_package(Qt6 REQUIRED COMPONENTS Core Gui Qml Quick Sql WebSockets Multimedia)
+find_package(Qt6 REQUIRED COMPONENTS Core Gui Qml Quick Sql Multimedia)
 
 qt_standard_project_setup()
 qt_policy(SET QTP0004 NEW)
@@ -79,7 +79,6 @@ target_link_libraries(typeshi PRIVATE
     Qt6::Qml
     Qt6::Quick
     Qt6::Sql
-    Qt6::WebSockets
     Qt6::Multimedia
 )
 

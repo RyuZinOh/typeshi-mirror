@@ -768,9 +768,7 @@ QString TypingEngine::randomWord() const {
   const int lastIdx = m_wordPool.indexOf(m_lastWord);
 
   int roll =
-      m_useSeededRng
-          ? static_cast<int>(m_seededRng.bounded(poolSize - 1))
-          : static_cast<int>(QRandomGenerator::global()->bounded(poolSize - 1));
+      static_cast<int>(QRandomGenerator::global()->bounded(poolSize - 1));
   int idx = (lastIdx >= 0 && roll >= lastIdx) ? roll + 1 : roll;
 
   return m_wordPool.at(idx);
