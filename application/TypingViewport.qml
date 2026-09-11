@@ -1,6 +1,5 @@
 pragma ComponentBehavior: Bound
 import QtQuick
-import typeShitter
 
 Item {
     id: root
@@ -9,9 +8,6 @@ Item {
     property int linesVisible: 3
     property bool dimmed: false
 
-    property int opponentCharIndex: -1
-    property string opponentUsername: ""
-    property int opponentWordExtraCount: 0
     property int lastMeasuredCursor: 0
 
     readonly property real caretBottomGap: root.lineHeight * 0.12
@@ -85,73 +81,6 @@ Item {
 
     property real lineHeight: fm.height * 1.3
 
-    property int clampedOpponentCharIndex: {
-        if (root.opponentCharIndex < 0) {
-            return -1;
-        }
-        const rawIndex = TypingEngine.rawIndexForCanonical(root.opponentCharIndex);
-        const len = TypingEngine.targetText.length;
-        return Math.max(0, Math.min(len, rawIndex));
-    }
-
-    property int opponentLineIndex: {
-        if (root.clampedOpponentCharIndex < 0) {
-            return -1;
-        }
-        const lines = TypingEngine.lines;
-        for (let i = 0; i < lines.length; i++) {
-            if (root.clampedOpponentCharIndex >= lines[i].start && root.clampedOpponentCharIndex <= lines[i].end) {
-                return i;
-            }
-        }
-        if (lines.length > 0) {
-            return lines.length - 1;
-        }
-        return -1;
-    }
-    property real opponentCaretW: {
-        const cursor = root.clampedOpponentCharIndex;
-        const target = TypingEngine.targetText;
-        if (cursor < 0 || cursor >= target.length) {
-            return fm.averageCharacterWidth;
-        }
-        return fm.advanceWidth(target.charAt(cursor));
-    }
-    property real opponentCaretX: {
-        if (root.opponentLineIndex < 0) {
-            return 0;
-        }
-        const line = TypingEngine.lines[root.opponentLineIndex];
-        const target = TypingEngine.targetText;
-        const end = Math.min(root.clampedOpponentCharIndex, line.end);
-        if (end <= line.start) {
-            return root.opponentWordExtraCount * fm.averageCharacterWidth;
-        }
-        let width = 0;
-        for (let i = line.start; i < end; i++) {
-            const ch = target.charAt(i);
-            width += fm.advanceWidth(ch === " " ? "\u00A0" : ch);
-        }
-        return width + root.opponentWordExtraCount * fm.averageCharacterWidth;
-    }
-    property real opponentCaretY: (root.opponentLineIndex - TypingEngine.windowStart) * root.lineHeight
-
-    property bool opponentCaretVisible: {
-        if (root.opponentCharIndex < 0) {
-            return false;
-        }
-        if (root.opponentLineIndex < 0) {
-            return false;
-        }
-        if (root.opponentLineIndex < TypingEngine.windowStart) {
-            return false;
-        }
-        if (root.opponentLineIndex >= TypingEngine.windowStart + root.linesVisible) {
-            return false;
-        }
-        return true;
-    }
-
     function measureNewWords() {
         const target = TypingEngine.targetText;
         const typed = TypingEngine.typedText;
@@ -180,8 +109,6 @@ Item {
                 }
                 chunkWidth += fm.advanceWidth(ch === " " ? "\u00A0" : ch);
             }
-            // const chunkWidth = fm.advanceWidth(target.substring(w.start, w.end));
-            // const chunkWidth = fm.advanceWidth(chunkText);
             TypingEngine.setWordWidth(w.start, w.end, chunkWidth);
         }
         root.lastMeasuredCursor = newCursor;
@@ -324,40 +251,6 @@ Item {
                 duration: 110
                 easing.type: Easing.OutCubic
             }
-        }
-    }
-    Caret {
-        id: opponentCaret
-        visible: root.opponentCaretVisible
-        x: root.opponentCaretX
-        y: root.opponentCaretY + root.lineHeight - height - root.caretBottomGap
-        width: root.opponentCaretW
-        height: 3
-        color: Theme.secondaryColor
-        opacity: 0.85
-        z: 9
-
-        Behavior on x {
-            NumberAnimation {
-                duration: 180
-                easing.type: Easing.OutCubic
-            }
-        }
-        Behavior on y {
-            NumberAnimation {
-                duration: 180
-                easing.type: Easing.OutCubic
-            }
-        }
-
-        Text {
-            anchors.bottom: parent.top
-            anchors.bottomMargin: 3
-            anchors.horizontalCenter: parent.horizontalCenter
-            text: root.opponentUsername
-            font.pixelSize: 10
-            font.bold: true
-            color: Theme.secondaryColor
         }
     }
 }

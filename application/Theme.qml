@@ -1,6 +1,5 @@
 pragma Singleton
 import QtQuick
-import typeShitter
 
 QtObject {
     readonly property color backgroundColor: {

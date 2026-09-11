@@ -1,7 +1,6 @@
 pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Window
-import typeShitter
 
 Window {
     id: appWindow
@@ -21,7 +20,7 @@ Window {
     property bool showUserStats: false
     property bool showAccountSettings: false
     readonly property real testProgress: {
-        if (!TypingEngine.started || TypingEngine.finished || appWindow.testMode === "multiplayer") {
+        if (!TypingEngine.started || TypingEngine.finished) {
             return 0;
         }
         if (appWindow.testMode === "words" || appWindow.testMode === "quote" || appWindow.testMode === "repeat") {
@@ -63,188 +62,10 @@ Window {
         }
     }
 
-    property int countdownSecondsLeft: 0
-
-    property double multiplayerStartAtMs: 0
-    property double multiplayerSeed: 0
-    property int multiplayerDuration: 60
-    property bool racingMultiplayer: false
-    property string opponentDisconnectedMessage: ""
-    property double opponentWpm: 0
-    property int opponentCharIndex: 0
-    property double opponentAccuracy: 0
-    property double opponentConsistency: 0
-    property int opponentWordExtraCount: 0
-    property string opponentUsername: ""
-
-    property bool rematchOfferPending: false
-    property bool rematchRequestSent: false
-    property string rematchDeclinedMessage: ""
-    readonly property bool showCountdownOverlay: appWindow.testMode === "multiplayer" && appWindow.multiplayerStartAtMs > 0 && !appWindow.racingMultiplayer
-
-    Connections {
-        target: Multiplayer
-        function onRaceStarting(seed, startAtMs, duration) {
-            appWindow.testMode = "multiplayer";
-            appWindow.racingMultiplayer = false;
-            appWindow.multiplayerStartAtMs = startAtMs;
-            appWindow.multiplayerSeed = seed;
-            appWindow.multiplayerDuration = duration;
-            appWindow.countdownToRaceStart();
-        }
-        function onOpponentLeft(username) {
-            appWindow.opponentDisconnectedMessage = username + " has been disconnected";
-        }
-        function onOpponentProgress(username, wpm, charIndex, accuracy, consistency, wordExtraCount) {
-            appWindow.opponentUsername = username;
-            appWindow.opponentWpm = wpm;
-            appWindow.opponentCharIndex = charIndex;
-            appWindow.opponentAccuracy = accuracy;
-            appWindow.opponentConsistency = consistency;
-            appWindow.opponentWordExtraCount = wordExtraCount;
-        }
-        function onRematchOffered() {
-            appWindow.rematchOfferPending = true;
-        }
-        function onRematchDeclined() {
-            appWindow.rematchRequestSent = false;
-            appWindow.rematchDeclinedMessage = "opponent declined the rematch";
-            rematchDeclinedTimer.restart();
-        }
-    }
-
-    Timer {
-        id: rematchDeclinedTimer
-        interval: 2500
-        onTriggered: appWindow.rematchDeclinedMessage = ""
-    }
-
-    function countdownToRaceStart() {
-        const waitMs = appWindow.multiplayerStartAtMs - Date.now();
-        countdownTimer.interval = Math.max(0, waitMs);
-        countdownTimer.start();
-    }
-
-    Timer {
-        id: countdownTimer
-        repeat: false
-        onTriggered: {
-            TypingEngine.startMultiplayerTest(Config.words, appWindow.multiplayerSeed, appWindow.multiplayerDuration);
-            appWindow.racingMultiplayer = true;
-            appWindow.rematchRequestSent = false;
-            appWindow.rematchOfferPending = false;
-            Multiplayer.notifyRaceStarted();
-            inputCatcher.forceActiveFocus();
-        }
-    }
-    Timer {
-        id: countdownTickTimer
-        interval: 100
-        repeat: true
-        running: appWindow.multiplayerStartAtMs > 0 && !appWindow.racingMultiplayer
-        onTriggered: {
-            const remaining = Math.ceil((appWindow.multiplayerStartAtMs - Date.now()) / 1000);
-            appWindow.countdownSecondsLeft = Math.max(0, remaining);
-        }
-    }
-    function leaveMultiplayer() {
-        appWindow.testMode = "time";
-        appWindow.racingMultiplayer = false;
-        appWindow.multiplayerStartAtMs = 0;
-        appWindow.countdownSecondsLeft = 0;
-        appWindow.opponentDisconnectedMessage = "";
-        appWindow.opponentWpm = 0;
-        appWindow.opponentCharIndex = 0;
-        appWindow.opponentAccuracy = 0;
-        appWindow.opponentConsistency = 0;
-        appWindow.opponentUsername = "";
-        appWindow.rematchOfferPending = false;
-        appWindow.rematchRequestSent = false;
-        appWindow.rematchDeclinedMessage = "";
-        Multiplayer.disconnectFromServer();
-        multiplayerPanel.reset();
-        Config.saveTestDefaults(appWindow.testMode, TypingEngine.testDurationSeconds, TypingEngine.testWordCount, TypingEngine.punctuationEnabled);
-        appWindow.restartTest();
-    }
-
-    function requestRematch() {
-        if (!Multiplayer.isRoomCreator) {
-            return;
-        }
-        appWindow.opponentWpm = 0;
-        appWindow.opponentCharIndex = 0;
-        appWindow.opponentAccuracy = 0;
-        appWindow.opponentConsistency = 0;
-        appWindow.rematchRequestSent = true;
-        Multiplayer.requestRematch();
-    }
-
-    function acceptRematch() {
-        appWindow.opponentWpm = 0;
-        appWindow.opponentCharIndex = 0;
-        appWindow.opponentAccuracy = 0;
-        appWindow.opponentConsistency = 0;
-        appWindow.rematchOfferPending = false;
-        Multiplayer.acceptRematch();
-    }
-
-    function declineRematch() {
-        appWindow.rematchOfferPending = false;
-        Multiplayer.declineRematch();
-    }
-    Timer {
-        id: progressBroadcastTimer
-        interval: 400
-        repeat: true
-        running: appWindow.racingMultiplayer && !TypingEngine.finished
-        onTriggered: Multiplayer.sendProgress(TypingEngine.wpm, TypingEngine.canonicalCursorIndex(), TypingEngine.accuracy, TypingEngine.consistency, TypingEngine.currentWordExtraCount)
-    }
-    Connections {
-        target: TypingEngine
-        function onStartedChanged() {
-            if (appWindow.testMode === "multiplayer" && TypingEngine.started) {
-                Multiplayer.notifyRaceStarted();
-            }
-        }
-        function onFinishedChanged() {
-            if (appWindow.testMode === "multiplayer" && TypingEngine.finished && appWindow.racingMultiplayer) {
-                Multiplayer.sendProgress(TypingEngine.wpm, TypingEngine.canonicalCursorIndex(), TypingEngine.accuracy, TypingEngine.consistency, TypingEngine.currentWordExtraCount);
-            }
-        }
-    }
-
     ShaderScene {
         id: sceneLayer
         anchors.fill: parent
         rainEnabled: appWindow.rainEnabled
-
-        Rectangle {
-            id: opponentLeftBanner
-            visible: appWindow.opponentDisconnectedMessage !== "" && appWindow.testMode === "multiplayer"
-            anchors.top: parent.top
-            anchors.horizontalCenter: parent.horizontalCenter
-            anchors.topMargin: 20
-            width: bannerText.width + 32
-            height: 40
-            radius: 10
-            color: Theme.surfaceContainer
-            border.color: Theme.errorColor
-            border.width: 1
-            z: 300
-
-            Row {
-                anchors.centerIn: parent
-                spacing: 10
-
-                Text {
-                    id: bannerText
-                    text: appWindow.opponentDisconnectedMessage + " — press esc to leave"
-                    font.pixelSize: 13
-                    color: Theme.onSurface
-                    anchors.verticalCenter: parent.verticalCenter
-                }
-            }
-        }
 
         Item {
             id: sceneRoot
@@ -271,16 +92,12 @@ Window {
                 anchors.fill: parent
                 focus: true
                 activeFocusOnTab: true
-                enabled: (!TypingEngine.finished || appWindow.showCountdownOverlay) && !appWindow.showUserStats && !appWindow.showAccountSettings
-                visible: (!TypingEngine.finished || appWindow.showCountdownOverlay) && !appWindow.showUserStats && !appWindow.showAccountSettings
+                enabled: !TypingEngine.finished && !appWindow.showUserStats && !appWindow.showAccountSettings
+                visible: !TypingEngine.finished && !appWindow.showUserStats && !appWindow.showAccountSettings
 
                 KeyNavigation.tab: refreshButton
 
                 Keys.onEscapePressed: {
-                    if (appWindow.testMode === "multiplayer") {
-                        appWindow.leaveMultiplayer();
-                        return;
-                    }
                     if (!TypingEngine.started) {
                         topJesus.open();
                     }
@@ -355,7 +172,7 @@ Window {
                         anchors.top: parent.top
                         anchors.topMargin: 60
                         width: parent.width
-                        active: (appWindow.testMode !== "multiplayer" || appWindow.racingMultiplayer) && !appWindow.shootoutEnabled
+                        active: !appWindow.shootoutEnabled
                         sourceComponent: normalViewportComponent
                     }
 
@@ -365,20 +182,7 @@ Window {
                             passageFontSize: appWindow.passageFontSize
                             linesVisible: appWindow.linesVisible
                             dimmed: refreshButton.activeFocus
-                            opponentCharIndex: appWindow.racingMultiplayer ? appWindow.opponentCharIndex : -1
-                            opponentWordExtraCount: appWindow.racingMultiplayer ? appWindow.opponentWordExtraCount : 0
-                            opponentUsername: appWindow.opponentUsername
                         }
-                    }
-
-                    MultiplayerPanel {
-                        id: multiplayerPanel
-                        anchors.top: parent.top
-                        anchors.topMargin: 60
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        visible: appWindow.testMode === "multiplayer" && !appWindow.racingMultiplayer
-                        countdownSecondsLeft: appWindow.countdownSecondsLeft
-                        onReadyToPlay: {}
                     }
 
                     RefreshButton {
@@ -386,7 +190,7 @@ Window {
                         anchors.top: viewportLoader.bottom
                         anchors.topMargin: 20
                         anchors.horizontalCenter: parent.horizontalCenter
-                        enabled: !topJesus.isOpen && appWindow.testMode !== "multiplayer"
+                        enabled: !topJesus.isOpen
                         dimmedUnlessFocused: TypingEngine.started
                         tabTarget: inputCatcher
                         typingCatcher: inputCatcher
@@ -399,7 +203,7 @@ Window {
                 id: shootoutFullscreenLoader
                 anchors.fill: parent
                 z: 55
-                active: appWindow.shootoutEnabled && appWindow.testMode !== "multiplayer" && !TypingEngine.finished
+                active: appWindow.shootoutEnabled && !TypingEngine.finished
 
                 opacity: appWindow.shootoutEnabled ? 1 : 0
                 scale: appWindow.shootoutEnabled ? 1 : 0.96
@@ -436,28 +240,11 @@ Window {
                 }
             }
 
-            Component {
-                id: multiplayerAftermathComponent
-                MultiplayerAftermath {
-                    opponentUsername: appWindow.opponentUsername
-                    opponentWpm: appWindow.opponentWpm
-                    opponentAccuracy: appWindow.opponentAccuracy
-                    opponentConsistency: appWindow.opponentConsistency
-                    isRoomCreator: Multiplayer.isRoomCreator
-                    rematchOfferPending: appWindow.rematchOfferPending
-                    rematchRequestSent: appWindow.rematchRequestSent
-                    rematchDeclinedMessage: appWindow.rematchDeclinedMessage
-                    onRestartRequested: appWindow.requestRematch()
-                    onAcceptRequested: appWindow.acceptRematch()
-                    onDeclineRequested: appWindow.declineRematch()
-                }
-            }
-
             Loader {
                 id: aftermathLoader
                 anchors.fill: parent
                 z: 70
-                active: TypingEngine.finished && !appWindow.showCountdownOverlay && !appWindow.showUserStats && !appWindow.showAccountSettings
+                active: TypingEngine.finished && !appWindow.showUserStats && !appWindow.showAccountSettings
                 onActiveChanged: {
                     if (active) {
                         let mode = "english";
@@ -474,7 +261,7 @@ Window {
                             words = TypingEngine.testWordCount;
                         }
 
-                        if (appWindow.testMode !== "multiplayer" && appWindow.testMode !== "repeat") {
+                        if (appWindow.testMode !== "repeat") {
                             const oldBest = appWindow.testMode === "words" ? History.bestWpmForWords(words, punct ? 1 : 0, Config.currentWordList) : History.bestWpmFor(mode, dur, punct ? 1 : 0, -1, Config.currentWordList);
                             const wasFirstToday = History.testsToday === 0;
 
@@ -490,7 +277,7 @@ Window {
                         }
                     }
                 }
-                sourceComponent: appWindow.testMode === "multiplayer" ? multiplayerAftermathComponent : soloAftermathComponent
+                sourceComponent: soloAftermathComponent
             }
             Loader {
                 id: userStatsLoader
@@ -541,9 +328,6 @@ Window {
     }
 
     function restartTest() {
-        if (appWindow.testMode === "multiplayer") {
-            return;
-        }
         if (appWindow.testMode === "repeat") {
             appWindow.testMode = Config.lastMode;
         }

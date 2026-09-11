@@ -191,7 +191,6 @@ void TypingEngine::resetState() {
   m_frozenElapsedMs = 0;
   m_tickTimer.stop();
   m_wordCountMode = false;
-  m_useSeededRng = false;
 
   m_cachedWordBoundaries.clear();
   m_lastWord.clear();
@@ -838,64 +837,3 @@ void TypingEngine::setTestDurationSeconds(int seconds) {
   m_testDurationSeconds = seconds;
   emit testDurationChanged();
 }
-
-// multiplayer mode
-void TypingEngine::startMultiplayerTest(const QStringList &wordPool,
-                                        qint64 seed, int durationSeconds) {
-  resetState();
-  m_quoteMode = false;
-  m_wordCountMode = false;
-  m_punctuationEnabled = false;
-  m_wordPool = wordPool;
-  m_testDurationSeconds =
-      durationSeconds > 0 ? durationSeconds : m_testDurationSeconds;
-
-  m_seededRng = QRandomGenerator(static_cast<quint32>(seed));
-  m_useSeededRng = true;
-
-  ensureBuffer();
-  m_isExtra.assign(m_targetText.length(), false);
-
-  m_started = true;
-  m_elapsedTimer.start();
-  m_tickTimer.start();
-
-  emit targetTextChanged();
-  emit typedTextChanged();
-  emit startedChanged();
-  emit finishedChanged();
-  emit historyChanged();
-  emit elapsedMsChanged();
-  emit statsChanged();
-  emit testDurationChanged();
-  rewrapLines();
-}
-int TypingEngine::canonicalCursorIndex() const {
-  int cursor = m_typedText.length();
-  int extrasBefore = 0;
-  for (int i = 0; i < cursor && i < m_isExtra.size(); ++i) {
-    if (m_isExtra.at(i)) {
-      extrasBefore++;
-    }
-  }
-  return cursor - extrasBefore;
-}
-
-int TypingEngine::rawIndexForCanonical(int canonicalIndex) const {
-  if (canonicalIndex <= 0) {
-    return 0;
-  }
-  int seen = 0;
-  int i = 0;
-  for (; i < m_targetText.length(); ++i) {
-    bool extra = i < m_isExtra.size() && m_isExtra.at(i);
-    if (!extra) {
-      seen++;
-    }
-    if (seen >= canonicalIndex) {
-      return i + 1;
-    }
-  }
-  return m_targetText.length();
-}
-// end of multiplayer modek

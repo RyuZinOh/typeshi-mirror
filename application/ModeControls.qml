@@ -1,5 +1,4 @@
 import QtQuick
-import typeShitter
 
 Row {
     id: root
@@ -37,7 +36,7 @@ Row {
         id: wordList1kChip
         label: "1k"
         chipHeight: root.controlCellHeight + 10
-        enabled: root.appWindow.testMode !== "quote" && root.appWindow.testMode !== "multiplayer"
+        enabled: root.appWindow.testMode !== "quote"
         active: Config.currentWordList === "english1k"
         onToggled: {
             Config.setWordList(Config.currentWordList === "english1k" ? "english" : "english1k");
@@ -49,7 +48,7 @@ Row {
         id: wordsChip
         label: "words"
         chipHeight: root.controlCellHeight + 10
-        enabled: root.appWindow.testMode !== "quote" && root.appWindow.testMode !== "multiplayer"
+        enabled: root.appWindow.testMode !== "quote"
         active: root.appWindow.testMode === "words"
         onToggled: {
             root.appWindow.testMode = root.appWindow.testMode === "words" ? "time" : "words";
@@ -62,7 +61,7 @@ Row {
         id: punctuationChip
         label: "punctuation"
         chipHeight: root.controlCellHeight + 10
-        enabled: root.appWindow.testMode !== "quote" && root.appWindow.testMode !== "multiplayer"
+        enabled: root.appWindow.testMode !== "quote"
         active: TypingEngine.punctuationEnabled
         onToggled: {
             TypingEngine.setPunctuationEnabled(!TypingEngine.punctuationEnabled);
@@ -74,7 +73,6 @@ Row {
     ToggleChip {
         id: quoteChip
         label: "quote"
-        enabled: root.appWindow.testMode !== "multiplayer"
         chipHeight: root.controlCellHeight + 10
         active: root.appWindow.testMode === "quote"
         onToggled: {
@@ -84,24 +82,6 @@ Row {
             }
             Config.saveTestDefaults(root.appWindow.testMode, TypingEngine.testDurationSeconds, TypingEngine.testWordCount, TypingEngine.punctuationEnabled);
             root.appWindow.restartTest();
-        }
-    }
-
-    ToggleChip {
-        id: multiplayerChip
-        label: "multiplayer"
-        chipHeight: root.controlCellHeight + 10
-        active: root.appWindow.testMode === "multiplayer"
-        onToggled: {
-            const enteringMultiplayer = root.appWindow.testMode !== "multiplayer";
-            if (enteringMultiplayer) {
-                root.appWindow.testMode = "multiplayer";
-                if (!Multiplayer.connected) {
-                    Multiplayer.connectToServer("wss://typeshi-relay.onrender.com/ws");
-                }
-            } else {
-                root.appWindow.leaveMultiplayer();
-            }
         }
     }
 }

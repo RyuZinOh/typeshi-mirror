@@ -59,8 +59,6 @@ qt_add_qml_module(typeshi
         ConfettiRenderer.hpp
         QuoteManager.cpp
         QuoteManager.hpp
-        MultiplayerClient.hpp
-        MultiplayerClient.cpp
         ShootoutEngine.hpp
         ShootoutEngine.cpp
         FuzzyFinder.cpp

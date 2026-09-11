@@ -1,7 +1,6 @@
 pragma ComponentBehavior: Bound
 import QtQuick
 import QtMultimedia
-import typeShitter
 
 Item {
     id: root

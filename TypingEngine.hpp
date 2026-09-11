@@ -123,14 +123,10 @@ public:
   Q_INVOKABLE void startQuoteTest(const QString &quoteText);
   Q_INVOKABLE void startWordCountTest(const QStringList &wordPool,
                                       int wordCount);
-  Q_INVOKABLE void startMultiplayerTest(const QStringList &wordPool,
-                                        qint64 seed, int durationSeconds);
   Q_INVOKABLE void repeatTest();
   // end of mode
 
   Q_INVOKABLE bool wasErrorAt(int index) const;
-  Q_INVOKABLE int canonicalCursorIndex() const;
-  Q_INVOKABLE int rawIndexForCanonical(int canonicalIndex) const;
 
 signals:
   void targetTextChanged();
@@ -219,8 +215,6 @@ private:
   bool m_quoteMode = false;
   // end of quote
 
-  mutable QRandomGenerator m_seededRng{0};
-  bool m_useSeededRng = false;
   bool m_overflowInsertionEnabled = true;
 
   QStringList m_wordPool;
