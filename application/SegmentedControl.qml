@@ -63,12 +63,12 @@ Rectangle {
             }
         }
 
-        ShapeCanvas {
+        ShapeImage {
             id: selectionShape
             width: root.cellHeight
             height: root.cellHeight
             color: Theme.primaryColor
-            roundedPolygon: GetMShapes.get(21)
+            source: ShapeCatalog.get(21)
             x: inner.selectedIndex * (root.cellWidth + root.cellSpacing) + (root.cellWidth - width) / 2
             y: 0
             z: 0
@@ -80,20 +80,7 @@ Rectangle {
                     easing.overshoot: 1.4
                 }
             }
-            Behavior on width {
-                NumberAnimation {
-                    duration: 200
-                    easing.type: Easing.OutCubic
-                }
-            }
-            Behavior on height {
-                NumberAnimation {
-                    duration: 200
-                    easing.type: Easing.OutCubic
-                }
-            }
         }
-
         Row {
             id: row
             spacing: root.cellSpacing

@@ -20,7 +20,7 @@ target_compile_definitions(typeshi PRIVATE
 set_source_files_properties(application/Theme.qml PROPERTIES
     QT_QML_SINGLETON_TYPE TRUE
 )
-set_source_files_properties(application/Shapes/GetMShapes.qml PROPERTIES
+set_source_files_properties(application/Shapes/ShapeCatalog.qml PROPERTIES
     QT_QML_SINGLETON_TYPE TRUE
 )
 file(GLOB_RECURSE QML_ABS CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/application/*.qml")

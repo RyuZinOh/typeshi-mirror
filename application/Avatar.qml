@@ -1,5 +1,6 @@
 pragma ComponentBehavior: Bound
 import QtQuick
+import QtQuick.Effects
 
 Item {
     id: root
@@ -24,33 +25,81 @@ Item {
         return Qt.hsla(Math.abs(hash) % 360 / 360, 0.55, 0.45, 1);
     }
 
-    ShapeCanvas {
+    Item {
         id: shape
         anchors.top: parent.top
         anchors.right: parent.right
         width: root.size
         height: root.size
-        clip: true
+        clip: false
 
-        roundedPolygon: GetMShapes.get(root.shapeIndex)
-        borderColor: shapeArea.containsMouse ? Theme.primaryColor : Theme.outlineVariant
-        borderWidth: 2
-        color: root.generatedColor
-        imageSource: root.avatarPath !== "" ? (root.avatarPath.startsWith("file://") ? root.avatarPath : "file://" + root.avatarPath) : ""
+        ShapeImage {
+            id: borderLayer
+            anchors.centerIn: parent
+            width: parent.width + (shapeArea.containsMouse ? 4 : 0)
+            height: parent.height + (shapeArea.containsMouse ? 4 : 0)
+            source: ShapeCatalog.get(root.shapeIndex)
+            color: shapeArea.containsMouse ? Theme.primaryColor : Theme.outlineVariant
 
-        Behavior on borderColor {
-            ColorAnimation {
-                duration: 150
+            Behavior on width {
+                NumberAnimation {
+                    duration: 150
+                }
+            }
+            Behavior on height {
+                NumberAnimation {
+                    duration: 150
+                }
             }
         }
 
-        Text {
+        Item {
+            id: fillClip
             anchors.centerIn: parent
-            visible: root.avatarPath === ""
-            text: root.username.length > 0 ? root.username.charAt(0).toUpperCase() : "?"
-            font.pixelSize: root.size * 0.45
-            font.bold: true
-            color: "white"
+            width: root.size
+            height: root.size
+            clip: true
+
+            Image {
+                id: maskSvg
+                anchors.fill: parent
+                source: ShapeCatalog.get(root.shapeIndex)
+                sourceSize.width: width * 2
+                sourceSize.height: height * 2
+                fillMode: Image.PreserveAspectFit
+                visible: false
+            }
+
+            Image {
+                id: avatarPhoto
+                anchors.fill: parent
+                source: root.avatarPath !== "" ? (root.avatarPath.startsWith("file://") ? root.avatarPath : "file://" + root.avatarPath) : ""
+                visible: false
+            }
+
+            MultiEffect {
+                anchors.fill: parent
+                source: avatarPhoto
+                maskEnabled: true
+                maskSource: maskSvg
+                visible: root.avatarPath !== ""
+            }
+
+            ShapeImage {
+                anchors.fill: parent
+                source: maskSvg.source
+                color: root.generatedColor
+                visible: root.avatarPath === ""
+            }
+
+            Text {
+                anchors.centerIn: parent
+                visible: root.avatarPath === ""
+                text: root.username.length > 0 ? root.username.charAt(0).toUpperCase() : "?"
+                font.pixelSize: root.size * 0.45
+                font.bold: true
+                color: "white"
+            }
         }
 
         MouseArea {
@@ -61,7 +110,6 @@ Item {
             onClicked: root.clicked()
         }
     }
-
     Text {
         id: nameLabel
         anchors.top: shape.bottom
