@@ -307,9 +307,9 @@ void HistoryManager::recordResult(double wpm, double rawWpm, double accuracy,
   emit historyChanged();
 }
 
-double HistoryManager::bestWpmFor(const QString &mode, int durationSeconds,
-                                  int punctuationEnabled, int wordCount,
-                                  const QString &wordList) const {
+double HistoryManager::bestWpmForImpl(const QString &mode, int durationSeconds,
+                                      std::optional<bool> punct, int wordCount,
+                                      const QString &wordList) const {
   if (!m_db.isOpen()) {
     return 0.0;
   }
@@ -323,7 +323,7 @@ double HistoryManager::bestWpmFor(const QString &mode, int durationSeconds,
   if (durationSeconds > 0) {
     sql += " and duration_seconds = ?";
   }
-  if (punctuationEnabled >= 0) {
+  if (punct.has_value()) {
     sql += " and punctuation_enabled = ?";
   }
   if (wordCount > 0) {
@@ -340,8 +340,8 @@ double HistoryManager::bestWpmFor(const QString &mode, int durationSeconds,
   if (durationSeconds > 0) {
     q.addBindValue(durationSeconds);
   }
-  if (punctuationEnabled >= 0) {
-    q.addBindValue(punctuationEnabled);
+  if (punct.has_value()) {
+    q.addBindValue(*punct ? 1 : 0);
   }
   if (wordCount > 0) {
     q.addBindValue(wordCount);
@@ -352,6 +352,16 @@ double HistoryManager::bestWpmFor(const QString &mode, int durationSeconds,
 
   q.exec();
   return q.next() ? q.value(0).toDouble() : 0.0;
+}
+double HistoryManager::bestWpmFor(const QString &mode, int durationSeconds,
+                                  int punctuationEnabled, int wordCount,
+                                  const QString &wordList) const {
+  std::optional<bool> punctuation;
+  if (punctuation >= 0) {
+    punctuation = punctuationEnabled != 0;
+  }
+  return bestWpmForImpl(mode, durationSeconds, punctuation, wordCount,
+                        wordList);
 }
 
 double HistoryManager::bestWpmForWords(int wordCount, int punctuationEnabled,

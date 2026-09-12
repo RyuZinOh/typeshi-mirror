@@ -3,6 +3,7 @@
 #include <QString>
 #include <QtQmlIntegration/qqmlintegration.h>
 #include <QtSql/QSqlDatabase>
+#include <optional>
 
 class HistoryManager : public QObject {
   Q_OBJECT
@@ -65,6 +66,9 @@ private:
   int computeCurrentStreak() const;
   void mergeGroupedBests(QVariantMap &out, const QString &mode,
                          const QString &keyCol, bool includeWordList) const;
+  double bestWpmForImpl(const QString &mode, int durationSeconds,
+                        std::optional<bool> punct, int wordCount,
+                        const QString &wordList) const;
   int computeLongestStreak() const;
 
   void refreshStats();
