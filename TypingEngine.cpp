@@ -82,7 +82,7 @@ void TypingEngine::startQuoteTest(const QString &quoteText) {
   resetState();
   m_quoteMode = true;
   m_targetText = quoteText.trimmed();
-  m_isExtra.assign(m_targetText.length(), false);
+  m_charMeta.assign(m_targetText.length(), CharMeta{});
 
   emit targetTextChanged();
   emit typedTextChanged();
@@ -110,7 +110,7 @@ void TypingEngine::startWordCountTest(const QStringList &wordPool,
     m_targetText.append(applyPunctuation(word));
     m_lastWord = word;
   }
-  m_isExtra.assign(m_targetText.length(), false);
+  m_charMeta.assign(m_targetText.length(), CharMeta{});
 
   emit targetTextChanged();
   emit typedTextChanged();
@@ -145,7 +145,7 @@ void TypingEngine::repeatTest() {
   QString cleanText;
   cleanText.reserve(cutoff);
   for (int i = 0; i < cutoff; ++i) {
-    if (i < m_isExtra.size() && m_isExtra.at(i)) {
+    if (i < m_charMeta.size() && m_charMeta.at(i).isExtra) {
       continue;
     }
     cleanText.append(m_targetText.at(i));
@@ -155,7 +155,7 @@ void TypingEngine::repeatTest() {
   m_quoteMode = true;
   m_wordCountMode = false;
   m_targetText = cleanText;
-  m_isExtra.assign(m_targetText.length(), false);
+  m_charMeta.assign(m_targetText.length(), CharMeta{});
 
   emit targetTextChanged();
   emit typedTextChanged();
@@ -173,7 +173,7 @@ void TypingEngine::startTest(const QStringList &wordPool) {
   m_wordPool = wordPool;
 
   ensureBuffer();
-  m_isExtra.assign(m_targetText.length(), false);
+  m_charMeta.assign(m_targetText.length(), CharMeta{});
 
   emit targetTextChanged();
   emit typedTextChanged();
@@ -196,7 +196,6 @@ void TypingEngine::resetState() {
   m_lastWord.clear();
   m_targetText.clear();
   m_typedText.clear();
-  m_isExtra.clear();
   m_lockedIndex = 0;
   m_wordExtraCount = 0;
   m_wordWidths.clear();
@@ -204,9 +203,6 @@ void TypingEngine::resetState() {
   m_history.clear();
   m_lastHistorySecond = -1;
 
-  m_permanentError.clear();
-  m_originalMistype.clear();
-  m_countedIndicies.clear();
   m_correctCount = 0;
   m_incorrectCount = 0;
   m_extraCount = 0;
@@ -229,8 +225,8 @@ int TypingEngine::elapsedMs() const {
 int TypingEngine::testDurationSeconds() const { return m_testDurationSeconds; }
 
 void TypingEngine::ensureCapacity(int len) {
-  if (m_isExtra.size() < len) {
-    m_isExtra.resize(len, false);
+  if (m_charMeta.size() < len) {
+    m_charMeta.resize(len);
   }
 }
 
@@ -267,15 +263,7 @@ void TypingEngine::commitWord() {
           QChar(0x2064)); // skipping placeholder, invisible spacing
     }
   }
-  for (int i = wordStart; i < wordEnd; ++i) {
-    bool extra = i < m_isExtra.size() && m_isExtra.at(i);
-    bool skipped = m_typedText.at(i) == QChar(0x2064);
-    bool correct =
-        !extra && !skipped && m_typedText.at(i) == m_targetText.at(i);
-
-    QChar typedCh = skipped ? QChar() : m_typedText.at(i);
-    scoreChar(i, correct, typedCh, extra, skipped);
-  }
+  scoreRange(wordStart, wordEnd);
 
   if (wordEnd < m_targetText.length() && m_targetText.at(wordEnd) == ' ') {
     if (m_typedText.length() <= wordEnd) {
@@ -328,7 +316,8 @@ void TypingEngine::typeCharacter(const QString &ch) {
     }
     m_targetText.insert(pos, kExtraPlaceholder);
     ensureCapacity(m_targetText.length());
-    m_isExtra.insert(pos, true);
+    m_charMeta.insert(pos, CharMeta{});
+    m_charMeta[pos].isExtra = true;
     m_wordExtraCount += 1;
     invalidateBoundaryCache();
     emit targetTextChanged();
@@ -353,12 +342,12 @@ void TypingEngine::deleteBackward(bool wholeWord) {
       }
       pos = m_typedText.length() - 1; // moving  the index point lock hanuKi..
     }
-    bool wasExtra = pos < m_isExtra.size() && m_isExtra.at(pos);
+    bool wasExtra = pos < m_charMeta.size() && m_charMeta.at(pos).isExtra;
     m_typedText.chop(1);
 
     if (wasExtra) {
       m_targetText.remove(pos, 1);
-      m_isExtra.remove(pos);
+      m_charMeta.remove(pos);
       if (m_wordExtraCount > 0) {
         m_wordExtraCount -= 1;
       }
@@ -380,7 +369,7 @@ int TypingEngine::characterStateAt(int index) const {
     return Pending;
   }
   if (index < m_typedText.length()) {
-    if (index < m_isExtra.size() && m_isExtra.at(index)) {
+    if (index < m_charMeta.size() && m_charMeta.at(index).isExtra) {
       return Extra;
     }
     return m_typedText.at(index) == m_targetText.at(index) ? Correct
@@ -546,14 +535,7 @@ void TypingEngine::finish() {
   if (m_typedText.length() > m_lockedIndex) {
     int wordStart = m_lockedIndex;
     int wordEnd = qMin(m_typedText.length(), m_targetText.length());
-    for (int i = wordStart; i < wordEnd; ++i) {
-      bool extra = i < m_isExtra.size() && m_isExtra.at(i);
-      bool skipped = m_typedText.at(i) == QChar(0x2064);
-      bool correct =
-          !extra && !skipped && m_typedText.at(i) == m_targetText.at(i);
-      QChar typedCh = skipped ? QChar() : m_typedText.at(i);
-      scoreChar(i, correct, typedCh, extra, skipped);
-    }
+    scoreRange(wordStart, wordEnd);
   }
 
   m_finished = true;
@@ -565,17 +547,27 @@ void TypingEngine::finish() {
   emit statsChanged();
 }
 
+void TypingEngine::scoreRange(int start, int end) {
+  for (int i = start; i < end; ++i) {
+    bool extra = i < m_charMeta.size() && m_charMeta.at(i).isExtra;
+    bool skipped = m_typedText.at(i) == QChar(0x2064);
+    bool correct =
+        !extra && !skipped && m_typedText.at(i) == m_targetText.at(i);
+    QChar typedCh = skipped ? QChar() : m_typedText.at(i);
+    scoreChar(i, correct, typedCh, extra, skipped);
+  }
+}
 void TypingEngine::scoreChar(int index, bool correct, QChar typedCh,
                              bool isExtraChar, bool isMissed) {
-  if (m_countedIndicies.size() <= index) {
-    m_countedIndicies.resize(index + 1, false);
+  if (m_charMeta.size() <= index) {
+    m_charMeta.resize(index + 1);
   }
   // !double count gatePoint
-  if (m_countedIndicies.at(index)) {
+  if (m_charMeta.at(index).counted) {
     return;
   }
 
-  m_countedIndicies[index] = true;
+  m_charMeta[index].counted = true;
   m_totalAttemptedKeystrokes++;
 
   if (correct) {
@@ -583,16 +575,8 @@ void TypingEngine::scoreChar(int index, bool correct, QChar typedCh,
     m_correctCount++;
   } else {
     m_permanentMistakeCount++;
-
-    if (m_permanentError.size() <= index) {
-      m_permanentError.resize(index + 1, false);
-    }
-    m_permanentError[index] = true;
-
-    if (m_originalMistype.size() <= index) {
-      m_originalMistype.resize(index + 1, QChar());
-    }
-    m_originalMistype[index] = typedCh;
+    m_charMeta[index].permanentError = true;
+    m_charMeta[index].originalMistype = typedCh;
     if (isExtraChar) {
       m_extraCount++;
     } else if (isMissed) {
@@ -605,8 +589,8 @@ void TypingEngine::scoreChar(int index, bool correct, QChar typedCh,
 
 // utilities for typing
 bool TypingEngine::wordHasError(int wordStart, int wordEnd) const {
-  for (int i = wordStart; i < wordEnd && i < m_permanentError.size(); ++i) {
-    if (m_permanentError.at(i)) {
+  for (int i = wordStart; i < wordEnd && i < m_charMeta.size(); ++i) {
+    if (m_charMeta.at(i).permanentError) {
       return true;
     }
   }
@@ -627,7 +611,7 @@ bool TypingEngine::unlockPreviousWord() {
   int wordStart = previousWordStart(m_lockedIndex);
   bool currentlyCorrect = true;
   for (int i = wordStart; i < m_lockedIndex; ++i) {
-    bool extra = i < m_isExtra.size() && m_isExtra.at(i);
+    bool extra = i < m_charMeta.size() && m_charMeta.at(i).isExtra;
     bool skipped =
         i < m_typedText.length() && m_typedText.at(i) == QChar(0x2064);
     bool ok = !extra && !skipped && i < m_typedText.length() &&
@@ -660,17 +644,17 @@ int TypingEngine::mistakeCount() const { return m_permanentMistakeCount; }
 // end of getters for  typing utilities
 
 bool TypingEngine::wasErrorAt(int index) const {
-  if (index < 0 || index >= m_permanentError.size()) {
+  if (index < 0 || index >= m_charMeta.size()) {
     return false;
   }
-  return m_permanentError.at(index);
+  return m_charMeta.at(index).permanentError;
 }
 
 QString TypingEngine::originalMistypeAt(int index) const {
-  if (index < 0 || index >= m_originalMistype.size()) {
+  if (index < 0 || index >= m_charMeta.size()) {
     return QString();
   }
-  QChar c = m_originalMistype.at(index);
+  QChar c = m_charMeta.at(index).originalMistype;
   if (c.isNull()) {
     return QString();
   }

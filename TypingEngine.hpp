@@ -157,6 +157,13 @@ private:
     int end;
   };
 
+  struct CharMeta {
+    bool isExtra = false;
+    bool permanentError = false;
+    bool counted = false;
+    QChar originalMistype;
+  };
+
   mutable QVector<QPair<int, int>> m_cachedWordBoundaries;
   mutable int m_boundaryScanPos = 0;
   QString m_targetText;
@@ -173,7 +180,6 @@ private:
   QElapsedTimer m_elapsedTimer;
   QTimer m_tickTimer;
 
-  QVector<bool> m_isExtra;
   int m_lockedIndex = 0;
   int m_wordExtraCount = 0;
 
@@ -188,10 +194,7 @@ private:
   int m_windowStart = 0;
 
   // stats related
-  QVector<bool> m_permanentError;
-  QVector<QChar> m_originalMistype;
-  QVector<bool> m_countedIndicies;
-
+  QVector<CharMeta> m_charMeta;
   int m_correctCount = 0;
   int m_incorrectCount = 0;
   int m_extraCount = 0;
@@ -231,6 +234,7 @@ private:
   int previousWordStart(int before) const;
   void commitWord();
   void finish();
+  void scoreRange(int start, int end);
 
   static qint64 wordKey(int start, int end);
   qreal wordWidthFor(int start, int end) const;
