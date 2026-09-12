@@ -10,6 +10,7 @@ class ConfigManager : public QObject {
   Q_OBJECT
   QML_NAMED_ELEMENT(Config)
   QML_SINGLETON
+  Q_PROPERTY(bool tapeModeEnabled READ tapeModeEnabled NOTIFY configChanged)
   Q_PROPERTY(QString currentTheme READ currentTheme NOTIFY configChanged)
   Q_PROPERTY(QString currentVariant READ currentVariant NOTIFY configChanged)
   Q_PROPERTY(QVariantMap theme READ theme NOTIFY configChanged)
@@ -38,6 +39,7 @@ public:
   int lastWordCount() const;
   int fontSize() const;
   bool lastPunctuation() const;
+  bool tapeModeEnabled() const;
   QString username() const;
   QString avatarPath() const;
   QString currentWordList() const;
@@ -63,6 +65,7 @@ public:
   Q_INVOKABLE QStringList availableFonts() const;
   Q_INVOKABLE void setFontSize(int size);
   Q_INVOKABLE void setBorderProgressEnabled(bool enabled);
+  Q_INVOKABLE void setTapeModeEnabled(bool enabled);
 
   // custom theme generation
   Q_INVOKABLE bool generateCustomThemeTemplate(bool overwrite = false);
@@ -89,6 +92,7 @@ private:
   QString m_currentFont = "Roboto";
   int m_fontSize = 36;
   bool m_borderProgressEnabled = true;
+  bool m_tapeModeEnabled = false;
   // end of defaults
   static QStringList s_availableFonts;
 

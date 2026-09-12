@@ -36,8 +36,8 @@ Item {
         ShapeImage {
             id: borderLayer
             anchors.centerIn: parent
-            width: parent.width + (shapeArea.containsMouse ? 4 : 0)
-            height: parent.height + (shapeArea.containsMouse ? 4 : 0)
+            width: parent.width + (shapeArea.containsMouse ? 6 : 0)
+            height: parent.height + (shapeArea.containsMouse ? 6 : 0)
             source: ShapeCatalog.get(root.shapeIndex)
             color: shapeArea.containsMouse ? Theme.primaryColor : Theme.outlineVariant
 

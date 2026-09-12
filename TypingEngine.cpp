@@ -470,6 +470,13 @@ void TypingEngine::setLinesVisible(int count) {
 }
 
 void TypingEngine::rewrapLines() {
+  if (m_wrapDisabled) {
+    m_lines.clear();
+    m_lines.append({0, static_cast<int>(m_targetText.length())});
+    emit linesChanged();
+    updateLineState();
+    return;
+  }
   if (m_viewportWidth <= 0) {
     m_lines.clear();
     emit linesChanged();
@@ -636,6 +643,7 @@ bool TypingEngine::unlockPreviousWord() {
   return true;
 }
 // getters i guess.
+bool TypingEngine::wrapDisapbled() const { return m_wrapDisabled; }
 int TypingEngine::correctCount() const { return m_correctCount; }
 int TypingEngine::incorrectCount() const { return m_incorrectCount; }
 int TypingEngine::extraCount() const { return m_extraCount; }
@@ -643,6 +651,14 @@ int TypingEngine::missedCount() const { return m_missedCount; }
 int TypingEngine::mistakeCount() const { return m_permanentMistakeCount; }
 // end of getters for  typing utilities
 
+void TypingEngine::setWrapDisabled(bool disabled) {
+  if (disabled == m_wrapDisabled) {
+    return;
+  }
+  m_wrapDisabled = disabled;
+  emit wrapDisapbledChanged();
+  rewrapLines();
+}
 bool TypingEngine::wasErrorAt(int index) const {
   if (index < 0 || index >= m_charMeta.size()) {
     return false;

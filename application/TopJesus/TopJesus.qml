@@ -119,6 +119,23 @@ Item {
             preview: function (item) {
                 return Config.currentFont;
             }
+        },
+        {
+            prefix: "tape:",
+            label: "Tape mode",
+            width: 380,
+            items: function () {
+                return ["on", "off"];
+            },
+            currentValue: function () {
+                return Config.tapeModeEnabled ? "on" : "off";
+            },
+            apply: function (value) {
+                Config.setTapeModeEnabled(value === "on");
+            },
+            preview: function (item) {
+                return Config.currentFont;
+            }
         }
     ]
     function computeTargetWidth() {

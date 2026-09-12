@@ -64,7 +64,6 @@ void ConfigManager::setBorderProgressEnabled(bool enabled) {
   emit configChanged();
 }
 
-
 void ConfigManager::parseSection(const QString &path, const QString &section,
                                  QVariantMap &out) const {
   QFile file(path);
@@ -210,6 +209,7 @@ void ConfigManager::load() {
   m_lastDuration = m_general.value("lastDuration", "60").toInt();
   m_lastWordCount = m_general.value("lastWordCount", "25").toInt();
   m_lastPunctuation = m_general.value("lastPunctuation", "0").toString() == "1";
+  m_tapeModeEnabled = m_general.value("tapeModeEnabled", "0").toString() == "1";
   m_currentWordList = m_general.value("wordList", "english").toString();
 
   m_username = m_general.value("username", "typeshitter").toString();
@@ -413,6 +413,7 @@ bool ConfigManager::lastPunctuation() const { return m_lastPunctuation; }
 QString ConfigManager::username() const { return m_username; }
 QString ConfigManager::avatarPath() const { return m_avatarPath; }
 QString ConfigManager::currentFont() const { return m_currentFont; }
+bool ConfigManager::tapeModeEnabled() const { return m_tapeModeEnabled; }
 // end of getters
 
 QStringList ConfigManager::availableThemes() const {
@@ -437,6 +438,16 @@ QColor ConfigManager::themeColor(const QString &key) const {
     return QColor(Qt::red);
   }
   return color;
+}
+
+void ConfigManager::setTapeModeEnabled(bool enabled) {
+  if (enabled == m_tapeModeEnabled) {
+    return;
+  }
+  m_tapeModeEnabled = enabled;
+  m_general["tapeModeEnabled"] = enabled ? "1" : "0";
+  writeGeneral();
+  emit configChanged();
 }
 
 // custom theme generation

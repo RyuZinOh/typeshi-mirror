@@ -14,6 +14,8 @@ class TypingEngine : public QObject {
   Q_OBJECT
   QML_ELEMENT
   QML_SINGLETON
+  Q_PROPERTY(bool wrapDisapbled READ wrapDisapbled WRITE setWrapDisabled NOTIFY
+                 wrapDisapbledChanged)
   Q_PROPERTY(QString targetText READ targetText NOTIFY targetTextChanged)
   Q_PROPERTY(QString typedText READ typedText NOTIFY typedTextChanged)
   Q_PROPERTY(
@@ -79,6 +81,7 @@ public:
   // configuration
   int testDurationSeconds() const;
   bool punctuationEnabled() const;
+  bool wrapDisapbled() const;
 
   int testWordCount() const;
   // end of configuration
@@ -110,6 +113,7 @@ public:
   Q_INVOKABLE QString characterAt(int index) const;
 
   // configuration
+  Q_INVOKABLE void setWrapDisabled(bool disabled);
   Q_INVOKABLE void setTestDurationSeconds(int seconds);
   Q_INVOKABLE void setPunctuationEnabled(bool enabled);
   Q_INVOKABLE void setViewportWidth(qreal width);
@@ -143,6 +147,7 @@ signals:
   void testDurationChanged();
   void punctuationEnabledChanged();
   void testWordCountChanged();
+  void wrapDisapbledChanged();
   // end of configuration
 
   // stats signal
@@ -206,6 +211,7 @@ private:
   // end of stats related
 
   // configuration
+  bool m_wrapDisabled = false;
   bool m_punctuationEnabled = false;
   bool m_captilizeNext = true;
   // end of configuration

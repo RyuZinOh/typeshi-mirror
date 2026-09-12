@@ -176,7 +176,7 @@ Window {
                         anchors.topMargin: 60
                         width: parent.width
                         active: !appWindow.shootoutEnabled
-                        sourceComponent: normalViewportComponent
+                        sourceComponent: Config.tapeModeEnabled ? tapeViewportComponent : normalViewportComponent
                     }
 
                     Component {
@@ -184,6 +184,13 @@ Window {
                         TypingViewport {
                             passageFontSize: appWindow.passageFontSize
                             linesVisible: appWindow.linesVisible
+                            dimmed: refreshButton.activeFocus
+                        }
+                    }
+                    Component {
+                        id: tapeViewportComponent
+                        TapeViewport {
+                            passageFontSize: appWindow.passageFontSize
                             dimmed: refreshButton.activeFocus
                         }
                     }
