@@ -25,7 +25,7 @@ Row {
             color: Theme.onSurfaceVariant
         }
         Text {
-            text: TypingEngine.wpm.toFixed(0)
+            text: TypingEngine.wpm.toFixed(1)
             font.pixelSize: root.valueSize
             font.bold: true
             color: Theme.primaryColor
@@ -40,7 +40,7 @@ Row {
             color: Theme.onSurfaceVariant
         }
         Text {
-            text: TypingEngine.rawWpm.toFixed(0)
+            text: TypingEngine.rawWpm.toFixed(1)
             font.pixelSize: root.valueSize
             font.bold: true
             color: Theme.onSurface
@@ -68,7 +68,7 @@ Row {
             }
             Text {
                 anchors.centerIn: parent
-                text: TypingEngine.accuracy.toFixed(0)
+                text: TypingEngine.accuracy.toFixed(1)
                 font.pixelSize: root.valueSize * 0.65
                 font.bold: true
                 color: Theme.onSurface
@@ -97,7 +97,7 @@ Row {
             }
             Text {
                 anchors.centerIn: parent
-                text: TypingEngine.consistency.toFixed(0)
+                text: TypingEngine.consistency.toFixed(1)
                 font.pixelSize: root.valueSize * 0.65
                 font.bold: true
                 color: Theme.onSurface

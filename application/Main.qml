@@ -23,8 +23,11 @@ Window {
         inputCatcher.forceActiveFocus();
     }
     readonly property real testProgress: {
-        if (!TypingEngine.started || TypingEngine.finished) {
+        if (!TypingEngine.started) {
             return 0;
+        }
+        if (TypingEngine.finished) {
+            return 1;
         }
         if (appWindow.testMode === "words" || appWindow.testMode === "quote" || appWindow.testMode === "repeat") {
             const target = TypingEngine.targetText.length;

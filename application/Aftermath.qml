@@ -34,30 +34,18 @@ Item {
         }
         return label;
     }
-
-    property int reviewLength: {
-        const minLen = Math.min(TypingEngine.typedText.length, TypingEngine.targetText.length);
-        const words = TypingEngine.wordBoundaries;
-        let cutoff = 0;
-        for (let i = 0; i < words.length; i++) {
-            if (words[i].end <= minLen) {
-                cutoff = words[i].end;
-            } else {
-                break;
-            }
-        }
-        return cutoff;
-    }
-
+    property int reviewLength: Math.min(TypingEngine.typedText.length, TypingEngine.targetText.length)
     property var reviewWords: {
         const words = TypingEngine.wordBoundaries;
         const result = [];
         for (let i = 0; i < words.length; i++) {
-            if (words[i].end <= aftermath.reviewLength) {
-                result.push(words[i]);
-            } else {
+            if (words[i].start >= aftermath.reviewLength) {
                 break;
             }
+            result.push({
+                start: words[i].start,
+                end: Math.min(words[i].end, aftermath.reviewLength)
+            });
         }
         return result;
     }

@@ -174,6 +174,13 @@ private:
   QString m_targetText;
   QString m_typedText;
 
+  mutable bool m_liveStatsDirty = true;
+  mutable int m_liveCorrect = 0;
+  mutable int m_liveIncorrect = 0;
+  mutable int m_liveExtra = 0;
+  mutable int m_liveMissed = 0;
+  void refreshLiveCharTotals() const;
+
   bool m_started = false;
   bool m_finished = false;
   int m_testDurationSeconds = 60;
@@ -184,6 +191,7 @@ private:
 
   QElapsedTimer m_elapsedTimer;
   QTimer m_tickTimer;
+  QTimer m_finishTimer;
 
   int m_lockedIndex = 0;
   int m_wordExtraCount = 0;

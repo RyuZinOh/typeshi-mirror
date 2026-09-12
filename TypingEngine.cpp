@@ -4,15 +4,9 @@
 
 // marker
 const QChar TypingEngine::kExtraPlaceholder(0x2063);
-
 TypingEngine::TypingEngine(QObject *parent) : QObject(parent) {
   m_tickTimer.setInterval(100);
   connect(&m_tickTimer, &QTimer::timeout, this, [this]() {
-    if (m_started && !m_finished && !m_quoteMode && !m_wordCountMode &&
-        elapsedMs() >= m_testDurationSeconds * 1000) {
-      finish();
-      return;
-    }
     if (m_started && !m_finished) {
       // history sampling
       int sec = elapsedMs() / 1000;
@@ -38,8 +32,45 @@ TypingEngine::TypingEngine(QObject *parent) : QObject(parent) {
       // end of quotes completion /wordCount mode
 
       emit elapsedMsChanged();
+      emit statsChanged();
     }
   });
+  m_finishTimer.setSingleShot(true);
+  connect(&m_finishTimer, &QTimer::timeout, this, [this]() {
+    if (m_started && !m_finished && !m_quoteMode && !m_wordCountMode) {
+      finish();
+    }
+  });
+}
+
+void TypingEngine::refreshLiveCharTotals() const {
+  if (!m_liveStatsDirty) {
+    return;
+  }
+  int correct = m_correctCount;
+  int incorrect = m_incorrectCount;
+  int extra = m_extraCount;
+  int missed = m_missedCount;
+  for (int i = m_lockedIndex;
+       i < m_typedText.length() && i < m_targetText.length(); ++i) {
+    bool isExtra = i < m_charMeta.size() && m_charMeta.at(i).isExtra;
+    bool skipped = m_typedText.at(i) == QChar(0x2064);
+    bool ok = !isExtra && !skipped && m_typedText.at(i) == m_targetText.at(i);
+    if (ok) {
+      correct++;
+    } else if (isExtra) {
+      extra++;
+    } else if (skipped) {
+      missed++;
+    } else {
+      incorrect++;
+    }
+  }
+  m_liveCorrect = correct;
+  m_liveIncorrect = incorrect;
+  m_liveExtra = extra;
+  m_liveMissed = missed;
+  m_liveStatsDirty = false;
 }
 
 void TypingEngine::setOverflowInsertionEnabled(bool enabled) {
@@ -190,8 +221,9 @@ void TypingEngine::resetState() {
   m_finished = false;
   m_frozenElapsedMs = 0;
   m_tickTimer.stop();
+  m_finishTimer.stop();
   m_wordCountMode = false;
-
+  m_liveStatsDirty = true;
   m_cachedWordBoundaries.clear();
   m_lastWord.clear();
   m_targetText.clear();
@@ -275,6 +307,7 @@ void TypingEngine::commitWord() {
     m_lockedIndex = wordEnd;
   }
 
+  m_liveStatsDirty = true;
   m_wordExtraCount = 0;
   ensureBuffer();
   emit typedTextChanged();
@@ -290,6 +323,9 @@ void TypingEngine::typeCharacter(const QString &ch) {
     m_started = true;
     m_elapsedTimer.start();
     m_tickTimer.start();
+    if (!m_quoteMode && !m_wordCountMode) {
+      m_finishTimer.start(m_testDurationSeconds * 1000);
+    }
     emit startedChanged();
   }
 
@@ -324,8 +360,10 @@ void TypingEngine::typeCharacter(const QString &ch) {
   }
 
   m_typedText.append(typedChar);
+  m_liveStatsDirty = true;
   ensureBuffer();
   emit typedTextChanged();
+  emit statsChanged();
   updateLineState();
 }
 
@@ -344,6 +382,7 @@ void TypingEngine::deleteBackward(bool wholeWord) {
     }
     bool wasExtra = pos < m_charMeta.size() && m_charMeta.at(pos).isExtra;
     m_typedText.chop(1);
+    m_liveStatsDirty = true;
 
     if (wasExtra) {
       m_targetText.remove(pos, 1);
@@ -361,6 +400,7 @@ void TypingEngine::deleteBackward(bool wholeWord) {
     return;
   }
   emit typedTextChanged();
+  emit statsChanged();
   updateLineState();
 }
 
@@ -543,12 +583,14 @@ void TypingEngine::finish() {
     int wordStart = m_lockedIndex;
     int wordEnd = qMin(m_typedText.length(), m_targetText.length());
     scoreRange(wordStart, wordEnd);
+    m_lockedIndex = wordEnd;
   }
 
   m_finished = true;
   m_frozenElapsedMs = static_cast<int>(m_elapsedTimer.elapsed());
   m_tickTimer.stop();
-
+  m_finishTimer.stop();
+  m_liveStatsDirty = true;
   emit finishedChanged();
   emit elapsedMsChanged();
   emit statsChanged();
@@ -569,7 +611,7 @@ void TypingEngine::scoreChar(int index, bool correct, QChar typedCh,
   if (m_charMeta.size() <= index) {
     m_charMeta.resize(index + 1);
   }
-  // !double count gatePoint
+
   if (m_charMeta.at(index).counted) {
     return;
   }
@@ -644,10 +686,22 @@ bool TypingEngine::unlockPreviousWord() {
 }
 // getters i guess.
 bool TypingEngine::wrapDisapbled() const { return m_wrapDisabled; }
-int TypingEngine::correctCount() const { return m_correctCount; }
-int TypingEngine::incorrectCount() const { return m_incorrectCount; }
-int TypingEngine::extraCount() const { return m_extraCount; }
-int TypingEngine::missedCount() const { return m_missedCount; }
+int TypingEngine::correctCount() const {
+  refreshLiveCharTotals();
+  return m_liveCorrect;
+}
+int TypingEngine::incorrectCount() const {
+  refreshLiveCharTotals();
+  return m_liveIncorrect;
+}
+int TypingEngine::extraCount() const {
+  refreshLiveCharTotals();
+  return m_liveExtra;
+}
+int TypingEngine::missedCount() const {
+  refreshLiveCharTotals();
+  return m_liveMissed;
+}
 int TypingEngine::mistakeCount() const { return m_permanentMistakeCount; }
 // end of getters for  typing utilities
 
@@ -684,9 +738,9 @@ double TypingEngine::wpm() const {
   if (ms <= 0) {
     return 0.0;
   }
+  refreshLiveCharTotals();
   double minutes = ms / 60000.0;
-  double words = m_wpmCorrectKetstrokes / 5.0;
-  return words / minutes;
+  return (m_liveCorrect / 5.0) / minutes;
 }
 
 double TypingEngine::rawWpm() const {
@@ -694,17 +748,19 @@ double TypingEngine::rawWpm() const {
   if (ms <= 0) {
     return 0.0;
   }
+  refreshLiveCharTotals();
+  int attempted = m_liveCorrect + m_liveIncorrect + m_liveExtra + m_liveMissed;
   double minutes = ms / 60000.0;
-  double words = m_totalAttemptedKeystrokes / 5.0;
-  return words / minutes;
+  return (attempted / 5.0) / minutes;
 }
 
 double TypingEngine::accuracy() const {
-  if (m_totalAttemptedKeystrokes <= 0) {
+  refreshLiveCharTotals();
+  int attempted = m_liveCorrect + m_liveIncorrect + m_liveExtra + m_liveMissed;
+  if (attempted <= 0) {
     return 100.0;
   }
-  double correct = m_totalAttemptedKeystrokes - m_permanentMistakeCount;
-  return (correct / static_cast<double>(m_totalAttemptedKeystrokes)) * 100.0;
+  return (m_liveCorrect / static_cast<double>(attempted)) * 100.0;
 }
 
 QVariantList TypingEngine::wpmHistory() const {

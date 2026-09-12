@@ -357,7 +357,7 @@ double HistoryManager::bestWpmFor(const QString &mode, int durationSeconds,
                                   int punctuationEnabled, int wordCount,
                                   const QString &wordList) const {
   std::optional<bool> punctuation;
-  if (punctuation >= 0) {
+  if (punctuationEnabled >= 0) {
     punctuation = punctuationEnabled != 0;
   }
   return bestWpmForImpl(mode, durationSeconds, punctuation, wordCount,
