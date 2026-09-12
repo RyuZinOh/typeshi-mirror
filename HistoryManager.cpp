@@ -110,73 +110,26 @@ QVariantMap HistoryManager::computeStatsSummary() const {
   if (!m_db.isOpen()) {
     return out;
   }
-  QSqlQuery q(m_db);
   // time mode
-  q.exec(R"(
-  select duration_seconds, punctuation_enabled, max(wpm) from results where mode = 'english'
-  group by duration_seconds, punctuation_enabled
-  )");
-  while (q.next()) {
-    const int duration = q.value(0).toInt();
-    const int punct = q.value(1).toInt();
-    out[QString("english_%1_%2").arg(duration).arg(punct)] =
-        q.value(2).toDouble();
-  }
+  mergeGroupedBests(out, "english", "duration_seconds", false);
   // word mode
-  q.exec(R"(
-  select word_count, punctuation_enabled, max(wpm) from results where mode = 'words'
-  group by word_count, punctuation_enabled
-  )");
-  while (q.next()) {
-    const int wordCount = q.value(0).toInt();
-    const int punct = q.value(1).toInt();
-    out[QString("words_%1_%2").arg(wordCount).arg(punct)] =
-        q.value(2).toDouble();
-  }
+  mergeGroupedBests(out, "words", "word_count", false);
   // quote mode
-  q.exec("select wpm, accuracy from results where mode = 'quote' order by wpm "
-         "desc limit 1");
+  QSqlQuery q(m_db);
+  q.prepare(R"(select wpm, accuracy from results where mode = ?
+      order by wpm desc 
+      limit 1
+      )");
+  q.addBindValue("quote");
+  q.exec();
   if (q.next()) {
     out["quote"] = q.value(0).toDouble();
     out["quote_acc"] = q.value(1).toDouble();
   }
   // word list
-  q.exec(R"(
-  select duration_seconds, punctuation_enabled, word_list, wpm, accuracy from results
-  where mode = 'english'
-  and (duration_seconds, punctuation_enabled, word_list, wpm) in (
-    select duration_seconds, punctuation_enabled, word_list, max(wpm)
-    from results where mode = 'english'
-    group by duration_seconds, punctuation_enabled, word_list
-  )
-  )");
-  while (q.next()) {
-    const int duration = q.value(0).toInt();
-    const int punct = q.value(1).toInt();
-    const QString wordList = q.value(2).toString();
-    const QString key =
-        QString("english_%1_%2_%3").arg(duration).arg(punct).arg(wordList);
-    out[key] = q.value(3).toDouble();
-    out[key + "_acc"] = q.value(4).toDouble();
-  }
-  q.exec(R"(
-  select word_count, punctuation_enabled, word_list, wpm, accuracy from results
-  where mode = 'words'
-  and (word_count, punctuation_enabled, word_list, wpm) in (
-    select word_count, punctuation_enabled, word_list, max(wpm)
-    from results where mode = 'words'
-    group by word_count, punctuation_enabled, word_list
-  )
-  )");
-  while (q.next()) {
-    const int wordCount = q.value(0).toInt();
-    const int punct = q.value(1).toInt();
-    const QString wordList = q.value(2).toString();
-    const QString key =
-        QString("words_%1_%2_%3").arg(wordCount).arg(punct).arg(wordList);
-    out[key] = q.value(3).toDouble();
-    out[key + "_acc"] = q.value(4).toDouble();
-  }
+  mergeGroupedBests(out, "english", "duration_seconds", true);
+  mergeGroupedBests(out, "words", "word_count", true);
+
   return out;
 }
 
@@ -200,6 +153,48 @@ int HistoryManager::computeTestsToday() const {
   return q.next() ? q.value(0).toInt() : 0;
 }
 
+void HistoryManager::mergeGroupedBests(QVariantMap &out, const QString &mode,
+                                       const QString &keyCol,
+                                       bool includeWordList) const {
+  QSqlQuery q(m_db);
+  if (!includeWordList) {
+    q.prepare(QString(R"(
+    select %1, punctuation_enabled, max(wpm) from results where mode = ? 
+    group by %1, punctuation_enabled
+    )")
+                  .arg(keyCol));
+    q.addBindValue(mode);
+    q.exec();
+
+    while (q.next()) {
+      const int keyVal = q.value(0).toInt();
+      const int punct = q.value(1).toInt();
+      out[QString("%1_%2_%3").arg(mode).arg(keyVal).arg(punct)] =
+          q.value(2).toDouble();
+    }
+    return;
+  }
+  q.prepare(QString(R"(
+  select %1, punctuation_enabled, word_list, wpm, accuracy from results
+  where mode = ? and (%1, punctuation_enabled, word_list, wpm) in (
+  select %1, punctuation_enabled, word_list, max(wpm) from results where mode = ?
+  group by %1, punctuation_enabled, word_list )
+  )")
+                .arg(keyCol));
+  q.addBindValue(mode);
+  q.addBindValue(mode);
+  q.exec();
+
+  while (q.next()) {
+    const int keyVal = q.value(0).toInt();
+    const int punct = q.value(1).toInt();
+    const QString wordList = q.value(2).toString();
+    const QString key =
+        QString("%1_%2_%3_%4").arg(mode).arg(keyVal).arg(punct).arg(wordList);
+    out[key] = q.value(3).toDouble();
+    out[key + "_acc"] = q.value(4).toDouble();
+  }
+}
 // streaks
 int HistoryManager::computeCurrentStreak() const {
   if (!m_db.isOpen()) {

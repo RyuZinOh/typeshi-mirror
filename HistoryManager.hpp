@@ -63,6 +63,8 @@ private:
   static double recencyWeight(double daysAgo, double halfLifeDays);
   int computeTestsToday() const;
   int computeCurrentStreak() const;
+  void mergeGroupedBests(QVariantMap &out, const QString &mode,
+                         const QString &keyCol, bool includeWordList) const;
   int computeLongestStreak() const;
 
   void refreshStats();
