@@ -6,6 +6,7 @@ Item {
     anchors.fill: parent
     z: 250
 
+    property bool instant: false
     property real progress: 0
     property color traceColor: Theme.primaryColor
     property real lineWidth: 4
@@ -13,6 +14,7 @@ Item {
     visible: root.progress > 0.001 && root.progress < 1.0
 
     Behavior on progress {
+        enabled: !root.instant
         NumberAnimation {
             duration: 150
             easing.type: Easing.Linear

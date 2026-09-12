@@ -16,6 +16,7 @@ Window {
     property string testMode: "time"
     property bool rainEnabled: false
     property bool inLobby: true
+    property bool resettingProgress: false
     property bool shootoutEnabled: false
     property bool showUserStats: false
     property bool showAccountSettings: false
@@ -171,8 +172,8 @@ Window {
                         anchors.horizontalCenter: parent.horizontalCenter
                         anchors.bottom: viewportLoader.top
                         anchors.bottomMargin: 50
+                        instant: appWindow.resettingProgress
                     }
-
                     Loader {
                         id: viewportLoader
                         anchors.top: parent.top
@@ -252,14 +253,36 @@ Window {
                     onRepeatRequested: appWindow.repeatTest()
                 }
             }
-
             Loader {
                 id: aftermathLoader
                 anchors.fill: parent
                 z: 70
-                active: TypingEngine.finished && !appWindow.showUserStats && !appWindow.showAccountSettings
+
+                readonly property bool shouldShow: TypingEngine.finished && !appWindow.showUserStats && !appWindow.showAccountSettings
+
+                active: aftermathLoader.shouldShow || fadeOutTimer.running
+                opacity: aftermathLoader.shouldShow ? 1 : 0
+
+                Behavior on opacity {
+                    NumberAnimation {
+                        duration: 200
+                        easing.type: Easing.OutCubic
+                    }
+                }
+
+                Timer {
+                    id: fadeOutTimer
+                    interval: 200
+                }
+
+                onShouldShowChanged: {
+                    if (!aftermathLoader.shouldShow) {
+                        fadeOutTimer.restart();
+                    }
+                }
+
                 onActiveChanged: {
-                    if (active) {
+                    if (active && aftermathLoader.shouldShow) {
                         let mode = "english";
                         let dur = TypingEngine.testDurationSeconds;
                         let punct = TypingEngine.punctuationEnabled;
@@ -321,6 +344,7 @@ Window {
             active: Config.borderProgressEnabled
             sourceComponent: BorderProgress {
                 progress: appWindow.testProgress
+                instant: appWindow.resettingProgress
             }
         }
         Item {
@@ -339,8 +363,8 @@ Window {
             }
         }
     }
-
     function restartTest() {
+        appWindow.resettingProgress = true;
         if (appWindow.testMode === "repeat") {
             appWindow.testMode = Config.lastMode;
         }
@@ -355,11 +379,18 @@ Window {
 
         confetti.hasBurst = false;
         inputCatcher.forceActiveFocus();
+        Qt.callLater(function () {
+            appWindow.resettingProgress = false;
+        });
     }
     function repeatTest() {
+        appWindow.resettingProgress = true;
         appWindow.testMode = "repeat";
         TypingEngine.repeatTest();
         confetti.hasBurst = false;
         inputCatcher.forceActiveFocus();
+        Qt.callLater(function () {
+            appWindow.resettingProgress = false;
+        });
     }
 }

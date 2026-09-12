@@ -5,6 +5,7 @@ Row {
     id: root
     spacing: 28
 
+    property bool instant: false
     readonly property int valueSize: Math.max(16, Config.fontSize - 14)
     readonly property int labelSize: Math.max(10, Config.fontSize - 24)
     readonly property int ringSize: valueSize * 2.6
@@ -12,6 +13,7 @@ Row {
     opacity: TypingEngine.started ? 1 : 0
     visible: opacity > 0.01
     Behavior on opacity {
+        enabled: !root.instant
         NumberAnimation {
             duration: 150
         }

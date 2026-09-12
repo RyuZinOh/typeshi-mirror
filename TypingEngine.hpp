@@ -213,9 +213,6 @@ private:
   int m_extraCount = 0;
   int m_missedCount = 0;
   int m_permanentMistakeCount = 0;
-
-  int m_wpmCorrectKetstrokes = 0;
-  int m_totalAttemptedKeystrokes = 0;
   // end of stats related
 
   // configuration
@@ -235,7 +232,7 @@ private:
   bool m_overflowInsertionEnabled = true;
 
   QStringList m_wordPool;
-  QString m_lastWord;
+  mutable int m_lastWordIndex = -1;
   static constexpr int kBufferAheadChars = 400;
   static constexpr int kWordsPerChunk = 20;
 

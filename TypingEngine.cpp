@@ -138,8 +138,8 @@ void TypingEngine::startWordCountTest(const QStringList &wordPool,
       m_targetText.append(' ');
     }
     QString word = randomWord();
-    m_targetText.append(applyPunctuation(word));
-    m_lastWord = word;
+    QString displayWord = applyPunctuation(word);
+    m_targetText.append(displayWord);
   }
   m_charMeta.assign(m_targetText.length(), CharMeta{});
 
@@ -225,7 +225,6 @@ void TypingEngine::resetState() {
   m_wordCountMode = false;
   m_liveStatsDirty = true;
   m_cachedWordBoundaries.clear();
-  m_lastWord.clear();
   m_targetText.clear();
   m_typedText.clear();
   m_lockedIndex = 0;
@@ -240,9 +239,7 @@ void TypingEngine::resetState() {
   m_extraCount = 0;
   m_missedCount = 0;
   m_permanentMistakeCount = 0;
-  m_wpmCorrectKetstrokes = 0;
   m_boundaryScanPos = 0;
-  m_totalAttemptedKeystrokes = 0;
   m_lastSampledMistakeCount = 0;
 
   m_captilizeNext = true;
@@ -617,10 +614,8 @@ void TypingEngine::scoreChar(int index, bool correct, QChar typedCh,
   }
 
   m_charMeta[index].counted = true;
-  m_totalAttemptedKeystrokes++;
 
   if (correct) {
-    m_wpmCorrectKetstrokes++;
     m_correctCount++;
   } else {
     m_permanentMistakeCount++;
@@ -817,16 +812,17 @@ QString TypingEngine::randomWord() const {
     return QStringLiteral("word");
   }
   if (m_wordPool.size() == 1) {
+    m_lastWordIndex = 0;
     return m_wordPool.first();
   }
 
   const int poolSize = static_cast<int>(m_wordPool.size());
-  const int lastIdx = m_wordPool.indexOf(m_lastWord);
 
   int roll =
       static_cast<int>(QRandomGenerator::global()->bounded(poolSize - 1));
-  int idx = (lastIdx >= 0 && roll >= lastIdx) ? roll + 1 : roll;
+  int idx = (m_lastWordIndex >= 0 && roll >= m_lastWordIndex) ? roll + 1 : roll;
 
+  m_lastWordIndex = idx;
   return m_wordPool.at(idx);
 }
 
@@ -872,7 +868,6 @@ void TypingEngine::ensureBuffer() {
       QString word = randomWord();
       QString displayWord = applyPunctuation(word);
       m_targetText.append(displayWord);
-      m_lastWord = word;
       // m_targetText.append(word);
       // m_lastWord = word;
     }
