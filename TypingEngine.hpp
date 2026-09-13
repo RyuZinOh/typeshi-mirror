@@ -255,6 +255,8 @@ private:
   // configuration helper
   QString applyPunctuation(const QString &word);
   //  end configuration helper
+  void finalizeMutation();
+  void emitTestStartedSignals();
 
   // stats related methods
   void scoreChar(int index, bool correct, QChar typedCh, bool isExtraChar,

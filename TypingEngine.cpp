@@ -115,14 +115,7 @@ void TypingEngine::startQuoteTest(const QString &quoteText) {
   m_targetText = quoteText.trimmed();
   m_charMeta.assign(m_targetText.length(), CharMeta{});
 
-  emit targetTextChanged();
-  emit typedTextChanged();
-  emit startedChanged();
-  emit finishedChanged();
-  emit historyChanged();
-  emit elapsedMsChanged();
-  emit statsChanged();
-  rewrapLines();
+  emitTestStartedSignals();
 }
 
 void TypingEngine::startWordCountTest(const QStringList &wordPool,
@@ -143,14 +136,7 @@ void TypingEngine::startWordCountTest(const QStringList &wordPool,
   }
   m_charMeta.assign(m_targetText.length(), CharMeta{});
 
-  emit targetTextChanged();
-  emit typedTextChanged();
-  emit startedChanged();
-  emit finishedChanged();
-  emit historyChanged();
-  emit elapsedMsChanged();
-  emit statsChanged();
-  rewrapLines();
+  emitTestStartedSignals();
 }
 void TypingEngine::repeatTest() {
   if (m_targetText.isEmpty()) {
@@ -188,14 +174,7 @@ void TypingEngine::repeatTest() {
   m_targetText = cleanText;
   m_charMeta.assign(m_targetText.length(), CharMeta{});
 
-  emit targetTextChanged();
-  emit typedTextChanged();
-  emit startedChanged();
-  emit finishedChanged();
-  emit historyChanged();
-  emit elapsedMsChanged();
-  emit statsChanged();
-  rewrapLines();
+  emitTestStartedSignals();
 }
 
 void TypingEngine::startTest(const QStringList &wordPool) {
@@ -206,14 +185,7 @@ void TypingEngine::startTest(const QStringList &wordPool) {
   ensureBuffer();
   m_charMeta.assign(m_targetText.length(), CharMeta{});
 
-  emit targetTextChanged();
-  emit typedTextChanged();
-  emit startedChanged();
-  emit finishedChanged();
-  emit historyChanged();
-  emit elapsedMsChanged();
-  emit statsChanged();
-  rewrapLines();
+  emitTestStartedSignals();
 }
 
 void TypingEngine::resetState() {
@@ -304,12 +276,9 @@ void TypingEngine::commitWord() {
     m_lockedIndex = wordEnd;
   }
 
-  m_liveStatsDirty = true;
   m_wordExtraCount = 0;
   ensureBuffer();
-  emit typedTextChanged();
-  emit statsChanged();
-  updateLineState();
+  finalizeMutation();
 }
 
 void TypingEngine::typeCharacter(const QString &ch) {
@@ -357,11 +326,8 @@ void TypingEngine::typeCharacter(const QString &ch) {
   }
 
   m_typedText.append(typedChar);
-  m_liveStatsDirty = true;
   ensureBuffer();
-  emit typedTextChanged();
-  emit statsChanged();
-  updateLineState();
+  finalizeMutation();
 }
 
 void TypingEngine::deleteBackward(bool wholeWord) {
@@ -379,7 +345,6 @@ void TypingEngine::deleteBackward(bool wholeWord) {
     }
     bool wasExtra = pos < m_charMeta.size() && m_charMeta.at(pos).isExtra;
     m_typedText.chop(1);
-    m_liveStatsDirty = true;
 
     if (wasExtra) {
       m_targetText.remove(pos, 1);
@@ -396,9 +361,7 @@ void TypingEngine::deleteBackward(bool wholeWord) {
   if (!didSomething) {
     return;
   }
-  emit typedTextChanged();
-  emit statsChanged();
-  updateLineState();
+  finalizeMutation();
 }
 
 int TypingEngine::characterStateAt(int index) const {
@@ -885,4 +848,22 @@ void TypingEngine::setTestDurationSeconds(int seconds) {
   }
   m_testDurationSeconds = seconds;
   emit testDurationChanged();
+}
+
+void TypingEngine::finalizeMutation() {
+  m_liveStatsDirty = true;
+  emit typedTextChanged();
+  emit statsChanged();
+  updateLineState();
+}
+
+void TypingEngine::emitTestStartedSignals() {
+  emit targetTextChanged();
+  emit typedTextChanged();
+  emit startedChanged();
+  emit finishedChanged();
+  emit historyChanged();
+  emit elapsedMsChanged();
+  emit statsChanged();
+  rewrapLines();
 }
