@@ -10,6 +10,66 @@ Row {
     readonly property int labelSize: Math.max(10, Config.fontSize - 24)
     readonly property int ringSize: valueSize * 2.6
 
+    property real displayWpm: 0
+    property real displayRawWpm: 0
+    property real displayAccuracy: 0
+    property real displayConsistency: 0
+
+    Behavior on displayWpm {
+        enabled: !root.instant
+        NumberAnimation {
+            duration: 200
+            easing.type: Easing.OutCubic
+        }
+    }
+    Behavior on displayRawWpm {
+        enabled: !root.instant
+        NumberAnimation {
+            duration: 200
+            easing.type: Easing.OutCubic
+        }
+    }
+    Behavior on displayAccuracy {
+        enabled: !root.instant
+        NumberAnimation {
+            duration: 200
+            easing.type: Easing.OutCubic
+        }
+    }
+    Behavior on displayConsistency {
+        enabled: !root.instant
+        NumberAnimation {
+            duration: 200
+            easing.type: Easing.OutCubic
+        }
+    }
+
+    function sampleStats() {
+        root.displayWpm = TypingEngine.wpm;
+        root.displayRawWpm = TypingEngine.rawWpm;
+        root.displayAccuracy = TypingEngine.accuracy;
+        root.displayConsistency = TypingEngine.consistency;
+    }
+
+    Timer {
+        interval: 250
+        running: TypingEngine.started && !TypingEngine.finished
+        repeat: true
+        triggeredOnStart: true
+        onTriggered: root.sampleStats()
+    }
+
+    Connections {
+        target: TypingEngine
+        function onTargetTextChanged() {
+            if (!TypingEngine.started) {
+                root.displayWpm = 0;
+                root.displayRawWpm = 0;
+                root.displayAccuracy = 0;
+                root.displayConsistency = 0;
+            }
+        }
+    }
     opacity: TypingEngine.started ? 1 : 0
     visible: opacity > 0.01
     Behavior on opacity {
@@ -27,7 +87,7 @@ Row {
             color: Theme.onSurfaceVariant
         }
         Text {
-            text: TypingEngine.wpm.toFixed(1)
+            text: root.displayWpm.toFixed(1)
             font.pixelSize: root.valueSize
             font.bold: true
             color: Theme.primaryColor
@@ -42,7 +102,7 @@ Row {
             color: Theme.onSurfaceVariant
         }
         Text {
-            text: TypingEngine.rawWpm.toFixed(1)
+            text: root.displayRawWpm.toFixed(1)
             font.pixelSize: root.valueSize
             font.bold: true
             color: Theme.onSurface
@@ -65,12 +125,13 @@ Row {
             CircularProgress {
                 anchors.fill: parent
                 trackWidth: 3
-                value: TypingEngine.accuracy / 100
+                value: root.displayAccuracy / 100
                 progressColor: Theme.primaryColor
+                animated: false
             }
             Text {
                 anchors.centerIn: parent
-                text: TypingEngine.accuracy.toFixed(1)
+                text: root.displayAccuracy.toFixed(1)
                 font.pixelSize: root.valueSize * 0.65
                 font.bold: true
                 color: Theme.onSurface
@@ -94,12 +155,13 @@ Row {
             CircularProgress {
                 anchors.fill: parent
                 trackWidth: 3
-                value: TypingEngine.consistency / 100
+                value: root.displayConsistency / 100
+                animated: false
                 progressColor: Theme.onSurface
             }
             Text {
                 anchors.centerIn: parent
-                text: TypingEngine.consistency.toFixed(1)
+                text: root.displayConsistency.toFixed(1)
                 font.pixelSize: root.valueSize * 0.65
                 font.bold: true
                 color: Theme.onSurface

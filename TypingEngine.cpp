@@ -20,6 +20,7 @@ TypingEngine::TypingEngine(QObject *parent) : QObject(parent) {
         m_lastSampledMistakeCount = m_permanentMistakeCount;
         m_history.append(point);
         emit historyChanged();
+        emit statsChanged();
       }
       // end of history sampling
 
@@ -32,7 +33,6 @@ TypingEngine::TypingEngine(QObject *parent) : QObject(parent) {
       // end of quotes completion /wordCount mode
 
       emit elapsedMsChanged();
-      emit statsChanged();
     }
   });
   m_finishTimer.setSingleShot(true);
@@ -693,7 +693,7 @@ QString TypingEngine::originalMistypeAt(int index) const {
 // calculation and main stuff
 double TypingEngine::wpm() const {
   int ms = elapsedMs();
-  if (ms <= 0) {
+  if (ms < kMinElapsedForWpmMs) {
     return 0.0;
   }
   refreshLiveCharTotals();
@@ -703,7 +703,7 @@ double TypingEngine::wpm() const {
 
 double TypingEngine::rawWpm() const {
   int ms = elapsedMs();
-  if (ms <= 0) {
+  if (ms < kMinElapsedForWpmMs) {
     return 0.0;
   }
   refreshLiveCharTotals();

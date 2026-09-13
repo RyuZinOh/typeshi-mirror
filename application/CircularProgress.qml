@@ -9,6 +9,7 @@ Item {
     property color progressColor: Theme.primaryContainerColor
     property int startAngle: -90
     property real gapDeg: 20
+    property bool animated: true
 
     readonly property real clampedValue: Math.max(0, Math.min(1, root.value))
     readonly property bool isFull: root.clampedValue >= 1
@@ -55,12 +56,14 @@ Item {
                 sweepAngle: root.trackSweepDeg
 
                 Behavior on startAngle {
+                    enabled: root.animated
                     NumberAnimation {
                         duration: 500
                         easing.type: Easing.OutCubic
                     }
                 }
                 Behavior on sweepAngle {
+                    enabled: root.animated
                     NumberAnimation {
                         duration: 500
                         easing.type: Easing.OutCubic
@@ -84,6 +87,7 @@ Item {
                 sweepAngle: root.progressSweepDeg
 
                 Behavior on sweepAngle {
+                    enabled: root.animated
                     NumberAnimation {
                         duration: 500
                         easing.type: Easing.OutCubic
