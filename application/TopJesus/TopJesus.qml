@@ -136,6 +136,23 @@ Item {
             preview: function (item) {
                 return Config.currentFont;
             }
+        },
+        {
+            prefix: "precision:",
+            label: "Precision mode",
+            width: 380,
+            items: function () {
+                return ["on", "off"];
+            },
+            currentValue: function () {
+                return Config.precisionModeEnabled ? "on" : "off";
+            },
+            apply: function (value) {
+                Config.setPrecisionModeEnabled(value === "on");
+            },
+            preview: function (item) {
+                return Config.currentFont;
+            }
         }
     ]
     function computeTargetWidth() {

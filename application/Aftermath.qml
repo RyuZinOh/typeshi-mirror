@@ -95,7 +95,7 @@ Item {
                     }
 
                     Text {
-                        text: TypingEngine.wpm.toFixed(1)
+                        text: Config.precisionModeEnabled ? TypingEngine.wpm.toFixed(1) : TypingEngine.wpm.toFixed(0)
                         font.pixelSize: 64
                         font.bold: true
                         color: Theme.primaryColor
@@ -111,7 +111,7 @@ Item {
                     }
 
                     Text {
-                        text: TypingEngine.accuracy.toFixed(1) + "%"
+                        text: (Config.precisionModeEnabled ? TypingEngine.accuracy.toFixed(1) : TypingEngine.accuracy.toFixed(0)) + "%"
                         font.pixelSize: 64
                         font.bold: true
                         color: Theme.primaryColor
@@ -153,7 +153,7 @@ Item {
                         }
 
                         Text {
-                            text: TypingEngine.rawWpm.toFixed(1)
+                            text: Config.precisionModeEnabled ? TypingEngine.rawWpm.toFixed(1) : TypingEngine.rawWpm.toFixed(0)
                             font.pixelSize: 24
                             font.bold: true
                             color: Theme.primaryColor
@@ -191,7 +191,7 @@ Item {
                         }
 
                         Text {
-                            text: TypingEngine.consistency.toFixed(1) + "%"
+                            text: (Config.precisionModeEnabled ? TypingEngine.consistency.toFixed(1) : TypingEngine.consistency.toFixed(0)) + "%"
                             font.pixelSize: 24
                             font.bold: true
                             color: Theme.primaryColor

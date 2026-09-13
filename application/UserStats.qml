@@ -60,14 +60,14 @@ Item {
                                 anchors.horizontalCenter: parent.horizontalCenter
                             }
                             Text {
-                                text: timeCell.bestWpm.toFixed(0)
+                                text: Config.precisionModeEnabled ? timeCell.bestWpm.toFixed(1) : timeCell.bestWpm.toFixed(0)
                                 font.pixelSize: 36
                                 font.bold: true
                                 color: Theme.onSurface
                                 anchors.horizontalCenter: parent.horizontalCenter
                             }
                             Text {
-                                text: timeCell.bestAcc.toFixed(0) + "%"
+                                text: (Config.precisionModeEnabled ? timeCell.bestAcc.toFixed(1) : timeCell.bestAcc.toFixed(0)) + "%"
                                 font.pixelSize: 13
                                 color: Theme.onSurfaceVariant
                                 anchors.horizontalCenter: parent.horizontalCenter
@@ -111,14 +111,14 @@ Item {
                                 anchors.horizontalCenter: parent.horizontalCenter
                             }
                             Text {
-                                text: wordCell.bestWpm.toFixed(0)
+                                text: Config.precisionModeEnabled ? wordCell.bestWpm.toFixed(1) : wordCell.bestWpm.toFixed(0)
                                 font.pixelSize: 36
                                 font.bold: true
                                 color: Theme.onSurface
                                 anchors.horizontalCenter: parent.horizontalCenter
                             }
                             Text {
-                                text: wordCell.bestAcc.toFixed(0) + "%"
+                                text: (Config.precisionModeEnabled ? wordCell.bestAcc.toFixed(1) : wordCell.bestAcc.toFixed(0)) + "%"
                                 font.pixelSize: 13
                                 color: Theme.onSurfaceVariant
                                 anchors.horizontalCenter: parent.horizontalCenter
@@ -149,7 +149,7 @@ Item {
                     model: [
                         {
                             label: "best wpm",
-                            value: History.bestWpm.toFixed(1)
+                            value: Config.precisionModeEnabled ? History.bestWpm.toFixed(1) : History.bestWpm.toFixed(0)
                         },
                         {
                             label: "tests today",

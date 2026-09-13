@@ -87,7 +87,7 @@ Row {
             color: Theme.onSurfaceVariant
         }
         Text {
-            text: root.displayWpm.toFixed(1)
+            text: Config.precisionModeEnabled ? root.displayWpm.toFixed(1) : root.displayWpm.toFixed(0)
             font.pixelSize: root.valueSize
             font.bold: true
             color: Theme.primaryColor
@@ -102,7 +102,7 @@ Row {
             color: Theme.onSurfaceVariant
         }
         Text {
-            text: root.displayRawWpm.toFixed(1)
+            text: Config.precisionModeEnabled ? root.displayRawWpm.toFixed(1) : root.displayRawWpm.toFixed(0)
             font.pixelSize: root.valueSize
             font.bold: true
             color: Theme.onSurface
@@ -131,7 +131,7 @@ Row {
             }
             Text {
                 anchors.centerIn: parent
-                text: root.displayAccuracy.toFixed(1)
+                text: Config.precisionModeEnabled ? root.displayAccuracy.toFixed(1) : root.displayAccuracy.toFixed(0)
                 font.pixelSize: root.valueSize * 0.65
                 font.bold: true
                 color: Theme.onSurface
@@ -161,7 +161,7 @@ Row {
             }
             Text {
                 anchors.centerIn: parent
-                text: root.displayConsistency.toFixed(1)
+                text: Config.precisionModeEnabled ? root.displayConsistency.toFixed(1) : root.displayConsistency.toFixed(0)
                 font.pixelSize: root.valueSize * 0.65
                 font.bold: true
                 color: Theme.onSurface

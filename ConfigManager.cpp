@@ -210,6 +210,8 @@ void ConfigManager::load() {
   m_lastWordCount = m_general.value("lastWordCount", "25").toInt();
   m_lastPunctuation = m_general.value("lastPunctuation", "0").toString() == "1";
   m_tapeModeEnabled = m_general.value("tapeModeEnabled", "0").toString() == "1";
+  m_precisionModeEnabled =
+      m_general.value("precisionModeEnabled", "0").toString() == "1";
   m_currentWordList = m_general.value("wordList", "english").toString();
 
   m_username = m_general.value("username", "typeshitter").toString();
@@ -414,6 +416,9 @@ QString ConfigManager::username() const { return m_username; }
 QString ConfigManager::avatarPath() const { return m_avatarPath; }
 QString ConfigManager::currentFont() const { return m_currentFont; }
 bool ConfigManager::tapeModeEnabled() const { return m_tapeModeEnabled; }
+bool ConfigManager::precisionModeEnabled() const {
+  return m_precisionModeEnabled;
+}
 // end of getters
 
 QStringList ConfigManager::availableThemes() const {
@@ -446,6 +451,16 @@ void ConfigManager::setTapeModeEnabled(bool enabled) {
   }
   m_tapeModeEnabled = enabled;
   m_general["tapeModeEnabled"] = enabled ? "1" : "0";
+  writeGeneral();
+  emit configChanged();
+}
+
+void ConfigManager::setPrecisionModeEnabled(bool enabled) {
+  if (enabled == m_precisionModeEnabled) {
+    return;
+  }
+  m_precisionModeEnabled = enabled;
+  m_general["precisionModeEnabled"] = enabled ? "1" : "0";
   writeGeneral();
   emit configChanged();
 }

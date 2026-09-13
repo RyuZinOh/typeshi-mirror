@@ -20,7 +20,6 @@ TypingEngine::TypingEngine(QObject *parent) : QObject(parent) {
         m_lastSampledMistakeCount = m_permanentMistakeCount;
         m_history.append(point);
         emit historyChanged();
-        emit statsChanged();
       }
       // end of history sampling
 
@@ -33,6 +32,7 @@ TypingEngine::TypingEngine(QObject *parent) : QObject(parent) {
       // end of quotes completion /wordCount mode
 
       emit elapsedMsChanged();
+      emit statsChanged();
     }
   });
   m_finishTimer.setSingleShot(true);
