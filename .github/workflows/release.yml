@@ -15,7 +15,7 @@ jobs:
       - name: Install Qt6
         uses: jurplel/install-qt-action@v4
         with:
-          version: '6.7.*'
+          version: '6.11.*'
           modules: 'qtmultimedia'
       - name: Build
         run: |
