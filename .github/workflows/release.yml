@@ -7,8 +7,16 @@ jobs:
   hello:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - name: SAY HELLO
-        run: echo "hello mirror! tag was ${GITHUB_REF_NAME}"
-      - name: LIST REPO
-        run: ls -la
+      - uses: actions/checkout@v7
+      # - name: SAY HELLO
+      # run: echo "hello mirror! tag was ${GITHUB_REF_NAME}"
+      # - name: LIST REPO
+      # run: ls -la
+      - name: Install Qt6
+        run: "sudo apt-get update\nsudo apt-get install -y qt6-base-dev qt6-declarative-dev qt6-multimedia-dev libqt6sql6-sqlite cmake build-essential \n"
+      - name: Build
+        run: |
+          mkdir -p build
+          cd build
+          cmake .. -DCMAKE_BUILD_TYPE=Release
+          cmake --build . -j "$(nproc)"
