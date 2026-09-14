@@ -2,7 +2,6 @@ build/
 compile_commands.json
 .cache/
 application/.qmlls.ini
-package-bin.sh
 *.gz
 samples
 /shaders/

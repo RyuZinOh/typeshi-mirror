@@ -19,7 +19,11 @@ jobs:
           modules: 'qtmultimedia'
       - name: Build
         run: |
-          mkdir -p build
-          cd build
-          cmake .. -DCMAKE_BUILD_TYPE=Release
-          cmake --build . -j "$(nproc)"
+          chmod +x compile.sh
+          ./compile.sh
+      - name: Package
+        run: |
+          chmod +x package-bin.sh
+          ./package-bin.sh "${GITHUB_REF_NAME#v}"
+      - name: List Output
+        run: ls -a *.tar.gz
