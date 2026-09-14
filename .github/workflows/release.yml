@@ -1,0 +1,14 @@
+name: Test mirror trigger
+on:
+  push:
+    tags:
+      - 'v*'
+jobs:
+  hello:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: SAY HELLO
+        run: echo "hello mirror! tag was ${GITHUB_REF_NAME}"
+      - name: LIST REPO
+        run: ls -la
