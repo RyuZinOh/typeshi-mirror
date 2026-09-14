@@ -199,9 +199,15 @@ Window {
                         }
                     }
 
+                    KeyboardViz {
+                        id: keyboardViz
+                        anchors.top: viewportLoader.bottom
+                        anchors.topMargin: 20
+                        anchors.horizontalCenter: parent.horizontalCenter
+                    }
                     RefreshButton {
                         id: refreshButton
-                        anchors.top: viewportLoader.bottom
+                        anchors.top: keyboardViz.bottom
                         anchors.topMargin: 20
                         anchors.horizontalCenter: parent.horizontalCenter
                         enabled: !topJesus.isOpen
