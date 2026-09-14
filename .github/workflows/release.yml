@@ -1,4 +1,4 @@
-name: Test mirror trigger
+name: typeshi
 on:
   push:
     tags:
@@ -6,6 +6,8 @@ on:
 jobs:
   hello:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v7
       # - name: SAY HELLO
@@ -27,3 +29,7 @@ jobs:
           ./package-bin.sh "${GITHUB_REF_NAME#v}"
       - name: List Output
         run: ls -a *.tar.gz
+      - name: Create Github Release
+        uses: softprops/action-gh-release@v3
+        with:
+          files: typeshi-bin*.tar.gz
