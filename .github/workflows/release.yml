@@ -13,7 +13,10 @@ jobs:
       # - name: LIST REPO
       # run: ls -la
       - name: Install Qt6
-        run: "sudo apt-get update\nsudo apt-get install -y qt6-base-dev qt6-declarative-dev qt6-multimedia-dev libqt6sql6-sqlite cmake build-essential \n"
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.7.*'
+          modules: 'qtmultimedia'
       - name: Build
         run: |
           mkdir -p build
