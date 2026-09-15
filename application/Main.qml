@@ -127,8 +127,12 @@ Window {
                             inputCatcher.forceActiveFocus();
                         }
                         TypingEngine.typeCharacter(event.text);
+                        keyboardViz.keyDown(event.text === " " ? " " : event.text.toLowerCase());
                         event.accepted = true;
                     }
+                }
+                Keys.onReleased: event => {
+                    keyboardViz.keyUP(event.text === " " ? " " : event.text.toLowerCase());
                 }
 
                 Item {
@@ -204,10 +208,11 @@ Window {
                         anchors.top: viewportLoader.bottom
                         anchors.topMargin: 20
                         anchors.horizontalCenter: parent.horizontalCenter
+                        visible: Config.keyboardVizModeEnabled
                     }
                     RefreshButton {
                         id: refreshButton
-                        anchors.top: keyboardViz.bottom
+                        anchors.top: Config.keyboardVizModeEnabled ? keyboardViz.bottom : viewportLoader.bottom
                         anchors.topMargin: 20
                         anchors.horizontalCenter: parent.horizontalCenter
                         enabled: !topJesus.isOpen

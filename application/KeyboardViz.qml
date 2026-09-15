@@ -1,28 +1,58 @@
+pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Layouts
 
 Item {
     id: root
+    property var activeKeys: ({})
     implicitWidth: layout.implicitWidth
     implicitHeight: layout.implicitHeight
+    function keyDown(text) {
+        if (!text) {
+            return;
+        }
+        const updated = Object.assign({}, root.activeKeys);
+        updated[text] = true;
+        root.activeKeys = updated;
+    }
+    function keyUP(text) {
+        if (!text) {
+            return;
+        }
+        const updated = Object.assign({}, root.activeKeys);
+        delete updated[text];
+        root.activeKeys = updated;
+    }
 
     component KeyCap: Rectangle {
         required property string keyLabel
+        property string keyValue: keyLabel
         property real keyWidth: 40
+        readonly property bool pressed: root.activeKeys[keyValue] === true
 
         implicitWidth: keyWidth
         implicitHeight: 40
         border.width: 2
         border.color: Theme.outlineVariant
         radius: 10
-        color: Theme.surfaceContainer
+        color: pressed ? Theme.primaryColor : Theme.surfaceContainer
+        Behavior on color {
+            ColorAnimation {
+                duration: 50
+            }
+        }
 
         Text {
             anchors.centerIn: parent
             text: parent.keyLabel
             font.family: Config.currentFont
             font.pixelSize: 15
-            color: Theme.onSurfaceVariant
+            color: parent.pressed ? Theme.onPrimary : Theme.onSurfaceVariant
+            Behavior on color {
+                ColorAnimation {
+                    duration: 50
+                }
+            }
         }
     }
     ColumnLayout {
@@ -66,6 +96,7 @@ Item {
             Layout.alignment: Qt.AlignHCenter
             KeyCap {
                 keyLabel: "default"
+                keyValue: " "
                 keyWidth: 270
             }
         }

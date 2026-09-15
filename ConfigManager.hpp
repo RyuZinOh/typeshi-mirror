@@ -13,6 +13,8 @@ class ConfigManager : public QObject {
   Q_PROPERTY(bool tapeModeEnabled READ tapeModeEnabled NOTIFY configChanged)
   Q_PROPERTY(
       bool precisionModeEnabled READ precisionModeEnabled NOTIFY configChanged)
+  Q_PROPERTY(bool keyboardVizModeEnabled READ keyboardVizModeEnabled NOTIFY
+                 configChanged)
   Q_PROPERTY(QString currentTheme READ currentTheme NOTIFY configChanged)
   Q_PROPERTY(QString currentVariant READ currentVariant NOTIFY configChanged)
   Q_PROPERTY(QVariantMap theme READ theme NOTIFY configChanged)
@@ -43,6 +45,7 @@ public:
   bool lastPunctuation() const;
   bool tapeModeEnabled() const;
   bool precisionModeEnabled() const;
+  bool keyboardVizModeEnabled() const;
   QString username() const;
   QString avatarPath() const;
   QString currentWordList() const;
@@ -70,6 +73,7 @@ public:
   Q_INVOKABLE void setBorderProgressEnabled(bool enabled);
   Q_INVOKABLE void setTapeModeEnabled(bool enabled);
   Q_INVOKABLE void setPrecisionModeEnabled(bool enabled);
+  Q_INVOKABLE void setKeyboardVizModeEnabled(bool enabled);
 
   // custom theme generation
   Q_INVOKABLE bool generateCustomThemeTemplate(bool overwrite = false);
@@ -98,6 +102,7 @@ private:
   bool m_borderProgressEnabled = true;
   bool m_tapeModeEnabled = false;
   bool m_precisionModeEnabled = false;
+  bool m_keyboardVizModeenabled = false;
   // end of defaults
   static QStringList s_availableFonts;
 

@@ -153,6 +153,23 @@ Item {
             preview: function (item) {
                 return Config.currentFont;
             }
+        },
+        {
+            prefix: "keyboard:",
+            label: "Keyboard Visuzalizer",
+            width: 380,
+            items: function () {
+                return ["on", "off"];
+            },
+            currentValue: function () {
+                return Config.keyboardVizModeEnabled ? "on" : "off";
+            },
+            apply: function (value) {
+                Config.setKeyboardVizModeEnabled(value === "on");
+            },
+            preview: function (item) {
+                return Config.currentFont;
+            }
         }
     ]
     function computeTargetWidth() {

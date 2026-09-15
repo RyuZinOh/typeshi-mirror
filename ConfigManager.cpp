@@ -212,6 +212,9 @@ void ConfigManager::load() {
   m_tapeModeEnabled = m_general.value("tapeModeEnabled", "0").toString() == "1";
   m_precisionModeEnabled =
       m_general.value("precisionModeEnabled", "0").toString() == "1";
+  m_keyboardVizModeenabled =
+      m_general.value("keyboardVizModeEnabled", "0").toString() == "1";
+
   m_currentWordList = m_general.value("wordList", "english").toString();
 
   m_username = m_general.value("username", "typeshitter").toString();
@@ -419,6 +422,9 @@ bool ConfigManager::tapeModeEnabled() const { return m_tapeModeEnabled; }
 bool ConfigManager::precisionModeEnabled() const {
   return m_precisionModeEnabled;
 }
+bool ConfigManager::keyboardVizModeEnabled() const {
+  return m_keyboardVizModeenabled;
+}
 // end of getters
 
 QStringList ConfigManager::availableThemes() const {
@@ -461,6 +467,16 @@ void ConfigManager::setPrecisionModeEnabled(bool enabled) {
   }
   m_precisionModeEnabled = enabled;
   m_general["precisionModeEnabled"] = enabled ? "1" : "0";
+  writeGeneral();
+  emit configChanged();
+}
+
+void ConfigManager::setKeyboardVizModeEnabled(bool enabled) {
+  if (enabled == m_keyboardVizModeenabled) {
+    return;
+  }
+  m_keyboardVizModeenabled = enabled;
+  m_general["keyboardVizModeEnabled"] = enabled ? "1" : "0";
   writeGeneral();
   emit configChanged();
 }
