@@ -111,6 +111,7 @@ public:
   Q_INVOKABLE void deleteBackward(bool wholeWord = false);
   Q_INVOKABLE int characterStateAt(int index) const;
   Q_INVOKABLE QString characterAt(int index) const;
+  Q_INVOKABLE QString displayCharAt(int index) const;
 
   // configuration
   Q_INVOKABLE void setWrapDisabled(bool disabled);

@@ -170,7 +170,24 @@ Item {
             preview: function (item) {
                 return Config.currentFont;
             }
-        }
+        },
+        {
+            prefix: "watcher:",
+            label: "Watcher",
+            width: 380,
+            items: function () {
+                return ["on", "off"];
+            },
+            currentValue: function () {
+                return Config.watcherEnabled ? "on" : "off";
+            },
+            apply: function (value) {
+                Config.setWatcherEnabled(value === "on");
+            },
+            preview: function (item) {
+                return Config.currentFont;
+            }
+        },
     ]
     function computeTargetWidth() {
         if (root.results.length === 0) {

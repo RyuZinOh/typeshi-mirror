@@ -9,11 +9,19 @@ Item {
     property bool dimmed: false
 
     property int lastMeasuredCursor: 0
-
+    readonly property point caretScenePos: root.mapToItem(null, root.caretX + root.caretW / 2, root.caretY + root.lineHeight / 2)
     readonly property real caretBottomGap: root.lineHeight * 0.12
 
+    readonly property int visibleLineCount: Math.max(1, Math.min(root.linesVisible, TypingEngine.lines.length))
+
     width: parent.width
-    height: fm.height * 1.3 * root.linesVisible
+    height: root.lineHeight * root.visibleLineCount
+    Behavior on height {
+        NumberAnimation {
+            duration: 150
+            easing.type: Easing.OutCubic
+        }
+    }
     clip: true
     opacity: root.dimmed ? 0.35 : 1
     Behavior on opacity {
@@ -189,14 +197,7 @@ Item {
                         }
                         property string displayCh: {
                             TypingEngine.typedText.length;
-                            if ((charState === TypingEngine.Extra || charState === TypingEngine.Incorrect) && charDelegate.globalIndex < TypingEngine.typedText.length) {
-                                const typedAt = TypingEngine.typedText.charAt(charDelegate.globalIndex);
-                                if (typedAt === "\u2064") {
-                                    return TypingEngine.characterAt(charDelegate.globalIndex);
-                                }
-                                return typedAt;
-                            }
-                            return TypingEngine.characterAt(charDelegate.globalIndex);
+                            return TypingEngine.displayCharAt(charDelegate.globalIndex);
                         }
                         text: displayCh === " " ? "\u00A0" : displayCh
                         font.family: Config.currentFont

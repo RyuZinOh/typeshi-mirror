@@ -7,6 +7,7 @@ Item {
     property bool dimmed: false
     readonly property real anchorX: width * 0.32
     readonly property real fadeWidth: 60
+    readonly property point caretScenePos: root.mapToItem(null, root.anchorX, root.height / 2)
 
     width: parent.width
     height: fm.height * 1.6
@@ -79,13 +80,7 @@ Item {
                 }
                 property string displayCh: {
                     TypingEngine.typedText.length;
-                    if ((charState === TypingEngine.Extra || charState === TypingEngine.Incorrect) && charDelegate.index < TypingEngine.typedText.length) {
-                        const typedAt = TypingEngine.typedText.charAt(charDelegate.index);
-                        if (typedAt === "\u2064")
-                            return TypingEngine.characterAt(charDelegate.index);
-                        return typedAt;
-                    }
-                    return TypingEngine.characterAt(charDelegate.index);
+                    return TypingEngine.displayCharAt(charDelegate.index);
                 }
                 text: displayCh === " " ? "\u00A0" : displayCh
                 font.family: Config.currentFont

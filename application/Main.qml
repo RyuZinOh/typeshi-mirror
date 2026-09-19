@@ -20,6 +20,7 @@ Window {
     property bool shootoutEnabled: false
     property bool showUserStats: false
     property bool showAccountSettings: false
+    property bool aftermathLeaving: false
     function restoreInputFocus() {
         inputCatcher.forceActiveFocus();
     }
@@ -93,15 +94,34 @@ Window {
                     confetti.spawnBurst([Theme.primaryColor, Theme.secondaryColor, Theme.tertiaryColor]);
                 }
             }
+            Timer {
+                id: leaveTimer
+                interval: 220
+                property var action: null
+                onTriggered: {
+                    if (action) {
+                        action();
+                    }
+                    action = null;
+                    appWindow.aftermathLeaving = false;
+                }
+            }
 
             Item {
                 id: inputCatcher
                 anchors.fill: parent
                 focus: true
                 activeFocusOnTab: true
-                enabled: !TypingEngine.finished && !appWindow.showUserStats && !appWindow.showAccountSettings
-                visible: !TypingEngine.finished && !appWindow.showUserStats && !appWindow.showAccountSettings
-
+                readonly property bool shown: !TypingEngine.finished && !appWindow.showUserStats && !appWindow.showAccountSettings
+                enabled: shown
+                opacity: shown ? 1 : 0
+                visible: opacity > 0.01
+                Behavior on opacity {
+                    NumberAnimation {
+                        duration: 200
+                        easing.type: Easing.OutCubic
+                    }
+                }
                 KeyNavigation.tab: refreshButton
 
                 Keys.onEscapePressed: {
@@ -259,9 +279,9 @@ Window {
                     resultMode: appWindow.testMode === "quote" ? "quote" : (appWindow.testMode === "words" ? "words" : "english")
                     resultDuration: appWindow.testMode === "quote" ? 0 : (appWindow.testMode === "words" ? TypingEngine.testWordCount : TypingEngine.testDurationSeconds)
                     resultPunctuation: appWindow.testMode === "quote" ? false : TypingEngine.punctuationEnabled
-                    onRestartRequested: appWindow.restartTest()
+                    onRestartRequested: appWindow.leaveAftermathThen(appWindow.restartTest)
                     isRepeat: appWindow.testMode === "repeat"
-                    onRepeatRequested: appWindow.repeatTest()
+                    onRepeatRequested: appWindow.leaveAftermathThen(appWindow.repeatTest)
                 }
             }
             Loader {
@@ -269,7 +289,7 @@ Window {
                 anchors.fill: parent
                 z: 70
 
-                readonly property bool shouldShow: TypingEngine.finished && !appWindow.showUserStats && !appWindow.showAccountSettings
+                readonly property bool shouldShow: TypingEngine.finished && !appWindow.showUserStats && !appWindow.showAccountSettings && !appWindow.aftermathLeaving
 
                 active: aftermathLoader.shouldShow || fadeOutTimer.running
                 opacity: aftermathLoader.shouldShow ? 1 : 0
@@ -363,9 +383,63 @@ Window {
             anchors.fill: parent
             z: 400
 
+            property bool mouseFollow: false
+            property point mousePos: Qt.point(0, 0)
+
+            HoverHandler {
+                id: mouseHover
+                onPointChanged: {
+                    if (TypingEngine.started && !TypingEngine.finished) {
+                        return;
+                    }
+                    uiOverlay.mousePos = mouseHover.point.scenePosition;
+                    uiOverlay.mouseFollow = true;
+                    mouseIdleTimer.restart();
+                }
+            }
+
+            Timer {
+                id: mouseIdleTimer
+                interval: 2500
+                onTriggered: uiOverlay.mouseFollow = false
+            }
+
+            Connections {
+                target: TypingEngine
+                function onTypedTextChanged() {
+                    uiOverlay.mouseFollow = false;
+                }
+            }
             BottomTrayIcons {
                 id: bottomTray
                 appWindow: appWindow
+            }
+            Loader {
+                id: watcherLoader
+                anchors.top: parent.top
+                anchors.topMargin: 40
+                anchors.horizontalCenter: parent.horizontalCenter
+                active: Config.watcherEnabled && !appWindow.shootoutEnabled && !appWindow.showUserStats && !appWindow.showAccountSettings
+                sourceComponent: Watcher {
+                    id: watcher
+                    size: 110
+                    bodyColor: Theme.backgroundColor
+                    progress: appWindow.testProgress
+
+                    readonly property var vp: viewportLoader.item
+                    readonly property var target: {
+                        const typing = TypingEngine.started && !TypingEngine.finished;
+                        if (uiOverlay.mouseFollow && !typing && !TypingEngine.finished) {
+                            return uiOverlay.mousePos;
+                        }
+                        if (TypingEngine.finished || !vp || vp.caretScenePos === undefined) {
+                            return Qt.point(appWindow.width / 2, appWindow.height / 2);
+                        }
+                        return vp.caretScenePos;
+                    }
+                    onTargetChanged: watcher.lookAt(target.x, target.y)
+                    Component.onCompleted: watcher.lookAt(target.x, target.y)
+                }
             }
 
             TopJesus {
@@ -373,6 +447,11 @@ Window {
                 onRequestFocusRestore: inputCatcher.forceActiveFocus()
             }
         }
+    }
+    function leaveAftermathThen(action) {
+        appWindow.aftermathLeaving = true;
+        leaveTimer.action = action;
+        leaveTimer.restart();
     }
     function restartTest() {
         appWindow.resettingProgress = true;

@@ -382,6 +382,22 @@ int TypingEngine::characterStateAt(int index) const {
   return Pending;
 }
 
+QString TypingEngine::displayCharAt(int index) const {
+  if (index < 0 || index >= m_targetText.length()) {
+    return QString();
+  }
+
+  const int state = characterStateAt(index);
+  if ((state == Extra || state == Incorrect) && index < m_typedText.length()) {
+    const QChar typedAt = m_typedText.at(index);
+    if (typedAt == QChar(0x2064)) {
+      return characterAt(index);
+    }
+    return QString(typedAt);
+  }
+  return characterAt(index);
+}
+
 QString TypingEngine::characterAt(int index) const {
   if (index < 0 || index >= m_targetText.length()) {
     return QString();
