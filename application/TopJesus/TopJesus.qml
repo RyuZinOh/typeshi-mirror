@@ -20,6 +20,26 @@ Item {
     readonly property int minWidth: 340
     readonly property string defaultPlaceholder: "search..."
 
+    function toggleSource(prefix, label, read, write) {
+        return {
+            prefix: prefix,
+            label: label,
+            width: 380,
+            items: function () {
+                return ["on", "off"];
+            },
+            currentValue: function () {
+                return read() ? "on" : "off";
+            },
+            apply: function (value) {
+                write(value === "on");
+            },
+            preview: function (item) {
+                return Config.currentFont;
+            }
+        };
+    }
+
     property var sources: [
         {
             prefix: "font:",
@@ -86,109 +106,7 @@ Item {
                 return Config.currentFont;
             }
         },
-        {
-            prefix: "custom:",
-            label: "Custom theme",
-            width: 380,
-            items: function () {
-                return ["on", "off"];
-            },
-            currentValue: function () {
-                return Config.currentTheme === "custom" ? "on" : "off";
-            },
-            apply: function (value) {
-                Config.setCustomTheme(value === "on");
-            },
-            preview: function (item) {
-                return Config.currentFont;
-            }
-        },
-        {
-            prefix: "progressbar:",
-            label: "Border progress",
-            width: 380,
-            items: function () {
-                return ["on", "off"];
-            },
-            currentValue: function () {
-                return Config.borderProgressEnabled ? "on" : "off";
-            },
-            apply: function (value) {
-                Config.setBorderProgressEnabled(value === "on");
-            },
-            preview: function (item) {
-                return Config.currentFont;
-            }
-        },
-        {
-            prefix: "tape:",
-            label: "Tape mode",
-            width: 380,
-            items: function () {
-                return ["on", "off"];
-            },
-            currentValue: function () {
-                return Config.tapeModeEnabled ? "on" : "off";
-            },
-            apply: function (value) {
-                Config.setTapeModeEnabled(value === "on");
-            },
-            preview: function (item) {
-                return Config.currentFont;
-            }
-        },
-        {
-            prefix: "precision:",
-            label: "Precision mode",
-            width: 380,
-            items: function () {
-                return ["on", "off"];
-            },
-            currentValue: function () {
-                return Config.precisionModeEnabled ? "on" : "off";
-            },
-            apply: function (value) {
-                Config.setPrecisionModeEnabled(value === "on");
-            },
-            preview: function (item) {
-                return Config.currentFont;
-            }
-        },
-        {
-            prefix: "keyboard:",
-            label: "Keyboard Visuzalizer",
-            width: 380,
-            items: function () {
-                return ["on", "off"];
-            },
-            currentValue: function () {
-                return Config.keyboardVizModeEnabled ? "on" : "off";
-            },
-            apply: function (value) {
-                Config.setKeyboardVizModeEnabled(value === "on");
-            },
-            preview: function (item) {
-                return Config.currentFont;
-            }
-        },
-        {
-            prefix: "watcher:",
-            label: "Watcher",
-            width: 380,
-            items: function () {
-                return ["on", "off"];
-            },
-            currentValue: function () {
-                return Config.watcherEnabled ? "on" : "off";
-            },
-            apply: function (value) {
-                Config.setWatcherEnabled(value === "on");
-            },
-            preview: function (item) {
-                return Config.currentFont;
-            }
-        },
-    ]
+        toggleSource("custom:", "Custom theme", () => Config.currentTheme === "custom", v => Config.setCustomTheme(v)), toggleSource("progressbar:", "Border progress", () => Config.borderProgressEnabled, v => Config.setBorderProgressEnabled(v)), toggleSource("tape:", "Tape mode", () => Config.tapeModeEnabled, v => Config.setTapeModeEnabled(v)), toggleSource("precision:", "Precision mode", () => Config.precisionModeEnabled, v => Config.setPrecisionModeEnabled(v)), toggleSource("keyboard:", "Keyboard Visualizer", () => Config.keyboardVizModeEnabled, v => Config.setKeyboardVizModeEnabled(v)), toggleSource("watcher:", "Watcher", () => Config.watcherEnabled, v => Config.setWatcherEnabled(v))]
     function computeTargetWidth() {
         if (root.results.length === 0) {
             return root.minWidth;
