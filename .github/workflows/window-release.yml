@@ -1,0 +1,51 @@
+name: typeshi-windows
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+jobs:
+  windows-build:
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Disable Windows Python Alias
+        run: Remove-Item $env:USERPROFILE\AppData\Local\Microsoft\WindowsApps\python*.exe -Force
+        shell: powershell
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.8.3'
+          arch: 'win64_msvc2022_64'
+          modules: 'qtmultimedia'
+
+      - name: Configure
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build --config Release -j
+
+      - name: Package
+        shell: pwsh
+        run: |
+          $exe = Get-ChildItem -Recurse -Filter "typeshi.exe" -Path build | Select-Object -First 1
+          $outDir = "typeshi-windows"
+          $ver = "${{ github.ref_name }}" -replace '^v',''
+
+          New-Item -ItemType Directory -Path $outDir
+          Copy-Item "$($exe.DirectoryName)\*" $outDir -Recurse
+          Remove-Item "$outDir\typeshi.exp", "$outDir\typeshi.lib" -ErrorAction SilentlyContinue
+
+          windeployqt --qmldir application "$outDir\typeshi.exe"
+          & "$outDir\typeshi.exe" --pbs
+
+          Compress-Archive "$outDir\*" "typeshi-bin-windows-$ver.zip"
+
+      - name: Release
+        uses: softprops/action-gh-release@v3
+        with:
+          files: typeshi-bin-windows-*.zip
