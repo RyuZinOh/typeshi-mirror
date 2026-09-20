@@ -1,6 +1,7 @@
 #include "./ConfigManager.hpp"
 #include <QDir>
 #include <QFile>
+#include <QStandardPaths>
 #include <QTextStream>
 #include <QUrl>
 
@@ -20,16 +21,8 @@ ConfigManager::ConfigManager(QObject *parent) : QObject(parent) {
             }
           });
 }
-
-// QString ConfigManager::configDir() const {
-//   return QDir::homePath() + "/.config/typeShi";
-// }
 QString ConfigManager::configDir() const {
-  const QString xdgConfig = qEnvironmentVariable("XDG_CONFIG_HOME");
-  if (!xdgConfig.isEmpty()) {
-    return xdgConfig + "/typeShi";
-  }
-  return QDir::homePath() + "/.config/typeShi";
+  return QStandardPaths::writableLocation(QStandardPaths::AppConfigLocation);
 }
 
 QString ConfigManager::configPath() const {
@@ -37,11 +30,9 @@ QString ConfigManager::configPath() const {
 }
 
 QString ConfigManager::stateDir() const {
-  const QString xdgState = qEnvironmentVariable("XDG_STATE_HOME");
-  if (!xdgState.isEmpty()) {
-    return xdgState + "/typeShi";
-  }
-  return QDir::homePath() + "/.local/state/typeShi";
+  return QStandardPaths::writableLocation(
+             QStandardPaths::AppLocalDataLocation) +
+         "/state";
 }
 QVariantMap ConfigManager::previewColors(const QString &themeName,
                                          const QString &variant) const {
