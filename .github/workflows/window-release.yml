@@ -1,0 +1,46 @@
+name: typeshi-windows
+on:
+  push:
+    branches:
+      - test-windows
+  workflow_dispatch:
+jobs:
+  windows-build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Disable Windows Python Alias
+        run: Remove-Item $env:USERPROFILE\AppData\Local\Microsoft\WindowsApps\python*.exe -Force
+        shell: powershell
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.8.3'
+          arch: 'win64_msvc2022_64'
+          modules: 'qtmultimedia'
+
+      - name: Configure
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build --config Release -j
+
+      - name: Package
+        shell: pwsh
+        run: |
+          $exe = Get-ChildItem -Recurse -Filter "typeshi.exe" -Path build | Select-Object -First 1
+          $outDir = "typeshi-windows"
+
+          New-Item -ItemType Directory -Path $outDir
+          Copy-Item "$($exe.DirectoryName)\*" $outDir -Recurse
+
+          windeployqt --qmldir application "$outDir\typeshi.exe"
+          & "$outDir\typeshi.exe" --pbs
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: typeshi-windows
+          path: typeshi-windows/
