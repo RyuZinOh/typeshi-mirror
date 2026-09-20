@@ -28,7 +28,7 @@ Item {
 
     // bounce stuff
     property real gravity: 2600
-    property real hopStrength: 300
+    property real hopStrength: 500
     property real restitution: 0.3
     property string lastPick: ""
     property real minBounceSpeed: 120
@@ -197,7 +197,7 @@ Item {
     transform: [
         Translate {
             x: root.lookX * 5
-            y: -root.hopY + root.lookY * 4
+            y: -root.hopY + root.lookY * 6
         },
         Scale {
             origin.x: root.width / 2
