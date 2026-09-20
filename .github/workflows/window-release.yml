@@ -4,13 +4,21 @@ on:
     tags:
       - 'v*'
   workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Attaching existing tag for zip'
+        required: true
 jobs:
   windows-build:
     runs-on: windows-latest
     permissions:
       contents: write
+    env:
+      TAG: ${{ github.event.inputs.tag || github.ref_name }}
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
 
       - name: Disable Windows Python Alias
         run: Remove-Item $env:USERPROFILE\AppData\Local\Microsoft\WindowsApps\python*.exe -Force
@@ -34,7 +42,7 @@ jobs:
         run: |
           $exe = Get-ChildItem -Recurse -Filter "typeshi.exe" -Path build | Select-Object -First 1
           $outDir = "typeshi-windows"
-          $ver = "${{ github.ref_name }}" -replace '^v',''
+          $ver = $env:TAG -replace '^v',''
 
           New-Item -ItemType Directory -Path $outDir
           Copy-Item "$($exe.DirectoryName)\*" $outDir -Recurse
@@ -48,4 +56,6 @@ jobs:
       - name: Release
         uses: softprops/action-gh-release@v3
         with:
+          tag_name: ${{ env.TAG }}
           files: typeshi-bin-windows-*.zip
+          overwrite_files: true
