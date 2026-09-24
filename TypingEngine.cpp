@@ -212,6 +212,9 @@ void TypingEngine::resetState() {
   m_missedCount = 0;
   m_permanentMistakeCount = 0;
   m_boundaryScanPos = 0;
+  m_boundaryTailStart = 0;
+  m_boundariesDirty = true;
+
   m_lastSampledMistakeCount = 0;
 
   m_captilizeNext = true;
@@ -405,8 +408,10 @@ QString TypingEngine::characterAt(int index) const {
   return QString(m_targetText.at(index));
 }
 
-QVariantList TypingEngine::wordBoundaries() const {
+void TypingEngine::ensureBoundaries() const {
   const int len = m_targetText.length();
+  if (len == m_boundaryScanPos)
+    return;
 
   if (m_boundaryScanPos > len) {
     m_cachedWordBoundaries.clear();
@@ -423,23 +428,30 @@ QVariantList TypingEngine::wordBoundaries() const {
     }
   }
   m_boundaryScanPos = len;
+  m_boundariesDirty = true;
+  m_boundaryTailStart = 0;
+}
 
-  QVariantList result;
-  result.reserve(m_cachedWordBoundaries.size() + 1);
+QVariantList TypingEngine::wordBoundaries() const {
+  ensureBoundaries();
+  m_boundariesVariant.clear();
+  m_boundariesVariant.reserve(m_cachedWordBoundaries.size() + 1);
   for (const auto &wb : m_cachedWordBoundaries) {
     QVariantMap entry;
     entry["start"] = wb.first;
     entry["end"] = wb.second;
-    result.append(entry);
+    m_boundariesVariant.append(entry);
   }
 
-  if (start < len) {
+  const int len = m_targetText.length();
+  if (m_boundaryTailStart < len) {
     QVariantMap entry;
-    entry["start"] = start;
+    entry["start"] = m_boundaryTailStart;
     entry["end"] = len;
-    result.append(entry);
+    m_boundariesVariant.append(entry);
   }
-  return result;
+  m_boundariesDirty = false;
+  return m_boundariesVariant;
 }
 
 QVariantList TypingEngine::lines() const {
@@ -499,16 +511,13 @@ void TypingEngine::rewrapLines() {
     return;
   }
 
-  const QVariantList words = wordBoundaries();
+  ensureBoundaries();
   QVector<LineRange> result;
   int lineStart = 0;
   qreal lineWidth = 0;
   constexpr qreal KSafetyMargin = 24.0;
 
-  for (const QVariant &wv : words) {
-    const QVariantMap w = wv.toMap();
-    const int wStart = w["start"].toInt();
-    const int wEnd = w["end"].toInt();
+  auto place = [&](int wStart, int wEnd) {
     const qreal chunkWidth = wordWidthFor(wStart, wEnd);
 
     if (lineWidth > 0 &&
@@ -518,6 +527,13 @@ void TypingEngine::rewrapLines() {
       lineWidth = 0;
     }
     lineWidth += chunkWidth;
+  };
+
+  for (const auto &wb : m_cachedWordBoundaries) {
+    place(wb.first, wb.second);
+  }
+  if (m_boundaryTailStart < m_targetText.length()) {
+    place(m_boundaryTailStart, static_cast<int>(m_targetText.length()));
   }
   if (lineStart < m_targetText.length()) {
     result.append({lineStart, static_cast<int>(m_targetText.length())});
@@ -623,6 +639,8 @@ bool TypingEngine::wordHasError(int wordStart, int wordEnd) const {
 void TypingEngine::invalidateBoundaryCache() {
   m_cachedWordBoundaries.clear();
   m_boundaryScanPos = 0;
+  m_boundaryTailStart = 0;
+  m_boundariesDirty = true;
   m_wordWidths.clear();
   emit wordWidthCacheInvalidated();
 }
