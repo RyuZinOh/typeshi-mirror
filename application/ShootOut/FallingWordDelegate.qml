@@ -4,8 +4,7 @@ import QtQuick
 Item {
     id: wordItem
     required property FallingWordItem modelData
-    required property QtObject controller
-    readonly property ShootoutViewport typedController: wordItem.controller as ShootoutViewport
+    required property var controller
     property alias letterRepeater: letterRepeaterInner
     readonly property int wordStart: wordItem.modelData ? wordItem.modelData.wordStart : -1
     readonly property int wordEnd: wordItem.modelData ? wordItem.modelData.wordEnd : -1
@@ -30,7 +29,7 @@ Item {
         if (!wordItem.modelData) {
             return false;
         }
-        return wordItem.typedController.wordHasCurrentError(wordItem.wordStart, wordItem.wordEnd);
+        return wordItem.controller.wordHasCurrentError(wordItem.wordStart, wordItem.wordEnd);
     }
 
     Behavior on opacity {
@@ -153,7 +152,7 @@ Item {
                     return ch === " " ? "\u00A0" : ch;
                 }
                 font.family: Config.currentFont
-                font.pixelSize: wordItem.typedController.passageFontSize
+                font.pixelSize: wordItem.controller.passageFontSize
                 font.bold: true
                 color: charState === TypingEngine.Correct ? Theme.primaryColor : (charState === TypingEngine.Incorrect ? Theme.errorColor : Theme.onSurfaceVariant)
                 opacity: charState === TypingEngine.Correct ? 0 : 1
