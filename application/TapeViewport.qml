@@ -1,5 +1,6 @@
 pragma ComponentBehavior: Bound
 import QtQuick
+import typeShitter
 
 Item {
     id: root
@@ -74,18 +75,11 @@ Item {
                 id: charDelegate
                 required property int index
 
-                property int charState: {
-                    TypingEngine.typedText.length;
-                    return TypingEngine.characterStateAt(charDelegate.index);
-                }
-                property string displayCh: {
-                    TypingEngine.typedText.length;
-                    return TypingEngine.displayCharAt(charDelegate.index);
-                }
+                property int charState: TypingEngine.characterStateAt(charDelegate.index)
+                property string displayCh: TypingEngine.displayCharAt(charDelegate.index)
                 text: displayCh === " " ? "\u00A0" : displayCh
                 font.family: Config.currentFont
                 font.pixelSize: root.passageFontSize
-                renderType: Text.NativeRendering
                 antialiasing: true
                 color: {
                     if (charState === TypingEngine.Correct)
@@ -95,6 +89,19 @@ Item {
                     if (charState === TypingEngine.Current)
                         return Theme.onSurface;
                     return Theme.onSurfaceVariant;
+                }
+                Connections {
+                    target: TypingEngine
+                    function onCharRangeChanged(start, end) {
+                        if (charDelegate.index >= start && charDelegate.index <= end) {
+                            charDelegate.charState = TypingEngine.characterStateAt(charDelegate.index);
+                            charDelegate.displayCh = TypingEngine.displayCharAt(charDelegate.index);
+                        }
+                    }
+                    function onTargetTextChanged() {
+                        charDelegate.charState = TypingEngine.characterStateAt(charDelegate.index);
+                        charDelegate.displayCh = TypingEngine.displayCharAt(charDelegate.index);
+                    }
                 }
             }
         }

@@ -191,14 +191,8 @@ Item {
 
                         property int globalIndex: lineFlow.modelData.start + charDelegate.index
 
-                        property int charState: {
-                            TypingEngine.typedText.length;
-                            return TypingEngine.characterStateAt(charDelegate.globalIndex);
-                        }
-                        property string displayCh: {
-                            TypingEngine.typedText.length;
-                            return TypingEngine.displayCharAt(charDelegate.globalIndex);
-                        }
+                        property int charState: TypingEngine.characterStateAt(charDelegate.globalIndex)
+                        property string displayCh: TypingEngine.displayCharAt(charDelegate.globalIndex)
                         text: displayCh === " " ? "\u00A0" : displayCh
                         font.family: Config.currentFont
                         font.pixelSize: root.passageFontSize
@@ -216,6 +210,19 @@ Item {
                                 return Theme.onSurface;
                             }
                             return Theme.onSurfaceVariant;
+                        }
+                        Connections {
+                            target: TypingEngine
+                            function onCharRangeChanged(start, end) {
+                                if (charDelegate.globalIndex >= start && charDelegate.globalIndex <= end) {
+                                    charDelegate.charState = TypingEngine.characterStateAt(charDelegate.globalIndex);
+                                    charDelegate.displayCh = TypingEngine.displayCharAt(charDelegate.globalIndex);
+                                }
+                            }
+                            function onTargetTextChanged() {
+                                charDelegate.charState = TypingEngine.characterStateAt(charDelegate.globalIndex);
+                                charDelegate.displayCh = TypingEngine.displayCharAt(charDelegate.globalIndex);
+                            }
                         }
                     }
                 }

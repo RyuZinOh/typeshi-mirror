@@ -143,6 +143,7 @@ signals:
   void elapsedMsChanged();
   void wordWidthCacheInvalidated();
   void overflowInsertionEnabledChanged();
+  void charRangeChanged(int start, int end);
 
   // configuration
   void testDurationChanged();
@@ -192,6 +193,8 @@ private:
   bool m_finished = false;
   int m_testDurationSeconds = 60;
   int m_frozenElapsedMs = 0;
+  int m_dirtyStart = 0;
+  int m_dirtyEnd = 0;
 
   bool m_wordCountMode = false;
   int m_testWordCount = 25;

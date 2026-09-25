@@ -280,6 +280,8 @@ void TypingEngine::commitWord() {
   }
 
   m_wordExtraCount = 0;
+  m_dirtyStart = wordStart;
+  m_dirtyEnd = m_lockedIndex + 1;
   ensureBuffer();
   finalizeMutation();
 }
@@ -328,6 +330,8 @@ void TypingEngine::typeCharacter(const QString &ch) {
     emit targetTextChanged();
   }
 
+  m_dirtyStart = pos;
+  m_dirtyEnd = m_targetText.length();
   m_typedText.append(typedChar);
   ensureBuffer();
   finalizeMutation();
@@ -338,6 +342,7 @@ void TypingEngine::deleteBackward(bool wholeWord) {
     return;
   }
   bool didSomething = false;
+  int rangeStarted = m_typedText.length();
   do {
     int pos = m_typedText.length() - 1;
     if (pos < m_lockedIndex) {
@@ -364,6 +369,8 @@ void TypingEngine::deleteBackward(bool wholeWord) {
   if (!didSomething) {
     return;
   }
+  m_dirtyStart = m_typedText.length();
+  m_dirtyEnd = rangeStarted + 1;
   finalizeMutation();
 }
 
@@ -888,6 +895,7 @@ void TypingEngine::finalizeMutation() {
   m_liveStatsDirty = true;
   emit typedTextChanged();
   emit statsChanged();
+  emit charRangeChanged(m_dirtyStart, m_dirtyEnd);
   updateLineState();
 }
 
