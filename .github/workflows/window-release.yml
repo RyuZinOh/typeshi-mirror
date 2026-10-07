@@ -29,7 +29,6 @@ jobs:
         with:
           version: '6.8.3'
           arch: 'win64_msvc2022_64'
-          modules: 'qtmultimedia'
 
       - name: Configure
         run: cmake -B build -DCMAKE_BUILD_TYPE=Release

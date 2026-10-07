@@ -5,8 +5,6 @@ Item {
     required property var appWindow
     anchors.fill: parent
 
-    property alias streakCelebration: streakCelebration
-
     Avatar {
         id: avatarImg
         anchors.bottom: parent.bottom
@@ -22,12 +20,6 @@ Item {
         onAccountSettingsRequested: root.appWindow.showAccountSettings = true
         onUserStatsRequested: root.appWindow.showUserStats = true
         onRequestFocusRestore: root.appWindow.restoreInputFocus()
-    }
-    StreakCelebration {
-        id: streakCelebration
-        anchors.bottom: parent.bottom
-        anchors.right: avatarImg.left
-        anchors.rightMargin: 12
     }
 
     ToggleChip {
@@ -86,18 +78,6 @@ Item {
                 streakCalendar.openFrom(pos.x, pos.y, streakTrigger.width, streakTrigger.height);
             }
         }
-    }
-
-    ToggleChip {
-        id: shootoutTrigger
-        anchors.bottom: parent.bottom
-        anchors.bottomMargin: 20
-        readonly property real restingX: rainTrigger.x + rainTrigger.width + 10 + streakTrigger.width + 10
-        x: Math.max(shootoutTrigger.restingX, streakCalendar.panelRightEdge + 10)
-        label: "shootout"
-        active: root.appWindow.shootoutEnabled
-        enabled: !root.appWindow.showUserStats && !root.appWindow.showAccountSettings
-        onToggled: root.appWindow.shootoutEnabled = !root.appWindow.shootoutEnabled
     }
 
     StreakCalendar {

@@ -15,9 +15,7 @@ Window {
     readonly property int sidePadding: 160
     property string testMode: "time"
     property bool rainEnabled: false
-    property bool inLobby: true
     property bool resettingProgress: false
-    property bool shootoutEnabled: false
     property bool showUserStats: false
     property bool showAccountSettings: false
     property bool aftermathLeaving: false
@@ -44,7 +42,6 @@ Window {
         }
         return Math.max(0, Math.min(1, TypingEngine.elapsedMs / totalMs));
     }
-    onShootoutEnabledChanged: TypingEngine.setOverflowInsertionEnabled(!appWindow.shootoutEnabled)
     onShowUserStatsChanged: if (showUserStats) {
         appWindow.showAccountSettings = false;
     }
@@ -60,16 +57,6 @@ Window {
         appWindow.restartTest();
         inputCatcher.forceActiveFocus();
     }
-    Connections {
-        target: Shootout
-        function onWordMissed(wordStart) {
-            if (appWindow.shootoutEnabled && !TypingEngine.finished) {
-                appWindow.shootoutEnabled = false;
-                appWindow.restartTest();
-            }
-        }
-    }
-
     ShaderScene {
         id: sceneLayer
         anchors.fill: parent
@@ -167,23 +154,6 @@ Window {
 
                     height: viewportLoader.height + 80
 
-                    opacity: appWindow.shootoutEnabled ? 0 : 1
-                    scale: appWindow.shootoutEnabled ? 0.96 : 1
-                    visible: opacity > 0.01
-
-                    Behavior on opacity {
-                        NumberAnimation {
-                            duration: 260
-                            easing.type: Easing.OutCubic
-                        }
-                    }
-                    Behavior on scale {
-                        NumberAnimation {
-                            duration: 260
-                            easing.type: Easing.OutCubic
-                        }
-                    }
-
                     ModeControls {
                         id: modeRow
                         anchors.horizontalCenter: parent.horizontalCenter
@@ -203,7 +173,6 @@ Window {
                         anchors.top: parent.top
                         anchors.topMargin: 60
                         width: parent.width
-                        active: !appWindow.shootoutEnabled
                         sourceComponent: Config.tapeModeEnabled ? tapeViewportComponent : normalViewportComponent
                     }
 
@@ -244,41 +213,10 @@ Window {
                 }
             }
 
-            Loader {
-                id: shootoutFullscreenLoader
-                anchors.fill: parent
-                z: 55
-                active: appWindow.shootoutEnabled && !TypingEngine.finished
-
-                opacity: appWindow.shootoutEnabled ? 1 : 0
-                scale: appWindow.shootoutEnabled ? 1 : 0.96
-
-                Behavior on opacity {
-                    NumberAnimation {
-                        duration: 260
-                        easing.type: Easing.OutCubic
-                    }
-                }
-                Behavior on scale {
-                    NumberAnimation {
-                        duration: 260
-                        easing.type: Easing.OutCubic
-                    }
-                }
-
-                sourceComponent: Component {
-                    ShootoutViewport {
-                        passageFontSize: appWindow.passageFontSize
-                    }
-                }
-            }
-
             Component {
                 id: soloAftermathComponent
                 Aftermath {
-                    resultMode: appWindow.testMode === "quote" ? "quote" : (appWindow.testMode === "words" ? "words" : "english")
-                    resultDuration: appWindow.testMode === "quote" ? 0 : (appWindow.testMode === "words" ? TypingEngine.testWordCount : TypingEngine.testDurationSeconds)
-                    resultPunctuation: appWindow.testMode === "quote" ? false : TypingEngine.punctuationEnabled
+                    ctx: appWindow.resultContext()
                     onRestartRequested: appWindow.leaveAftermathThen(appWindow.restartTest)
                     isRepeat: appWindow.testMode === "repeat"
                     onRepeatRequested: appWindow.leaveAftermathThen(appWindow.repeatTest)
@@ -311,37 +249,9 @@ Window {
                         fadeOutTimer.restart();
                     }
                 }
-
                 onActiveChanged: {
                     if (active && aftermathLoader.shouldShow) {
-                        let mode = "english";
-                        let dur = TypingEngine.testDurationSeconds;
-                        let punct = TypingEngine.punctuationEnabled;
-                        let words = 0;
-                        if (appWindow.testMode === "quote") {
-                            mode = "quote";
-                            dur = 0;
-                            punct = false;
-                        } else if (appWindow.testMode === "words") {
-                            mode = "words";
-                            dur = 0;
-                            words = TypingEngine.testWordCount;
-                        }
-
-                        if (appWindow.testMode !== "repeat") {
-                            const oldBest = appWindow.testMode === "words" ? History.bestWpmForWords(words, punct ? 1 : 0, Config.currentWordList) : History.bestWpmFor(mode, dur, punct ? 1 : 0, -1, Config.currentWordList);
-                            const wasFirstToday = History.testsToday === 0;
-
-                            History.recordResult(TypingEngine.wpm, TypingEngine.rawWpm, TypingEngine.accuracy, TypingEngine.consistency, Math.round(TypingEngine.elapsedMs / 1000), TypingEngine.correctCount, TypingEngine.incorrectCount, TypingEngine.extraCount, TypingEngine.missedCount, mode, punct, words, Config.currentWordList);
-
-                            if (TypingEngine.wpm > 0 && TypingEngine.wpm > oldBest) {
-                                confetti.tryBurst();
-                            }
-
-                            if (wasFirstToday && TypingEngine.wpm > 0) {
-                                bottomTray.streakCelebration.start(History.currentStreak);
-                            }
-                        }
+                        appWindow.recordAndCelebrate();
                     }
                 }
                 sourceComponent: soloAftermathComponent
@@ -411,7 +321,6 @@ Window {
                 }
             }
             BottomTrayIcons {
-                id: bottomTray
                 appWindow: appWindow
             }
             Loader {
@@ -419,7 +328,7 @@ Window {
                 anchors.top: parent.top
                 anchors.topMargin: 40
                 anchors.horizontalCenter: parent.horizontalCenter
-                active: Config.watcherEnabled && !appWindow.shootoutEnabled && !appWindow.showUserStats && !appWindow.showAccountSettings
+                active: Config.watcherEnabled && !appWindow.showUserStats && !appWindow.showAccountSettings
                 sourceComponent: Watcher {
                     id: watcher
                     size: 110
@@ -482,5 +391,46 @@ Window {
         Qt.callLater(function () {
             appWindow.resettingProgress = false;
         });
+    }
+    function resultContext() {
+        const mode = appWindow.testMode;
+        if (mode === "quote") {
+            return {
+                mode: "quote",
+                duration: 0,
+                words: 0,
+                punctuation: false
+            };
+        }
+        if (mode === "words") {
+            return {
+                mode: "words",
+                duration: 0,
+                words: TypingEngine.testWordCount,
+                punctuation: TypingEngine.punctuationEnabled
+            };
+        }
+        return {
+            mode: "english",
+            duration: TypingEngine.testDurationSeconds,
+            words: 0,
+            punctuation: TypingEngine.punctuationEnabled
+        };
+    }
+    function recordAndCelebrate() {
+        if (appWindow.testMode === "repeat") {
+            return;
+        }
+        const ctx = appWindow.resultContext();
+        const wl = Config.currentWordList;
+        const p = ctx.punctuation ? 1 : 0;
+
+        const oldBest = History.bestWpmFor(ctx.mode, ctx.duration, p, ctx.words, wl);
+
+        History.recordResult(TypingEngine.wpm, TypingEngine.rawWpm, TypingEngine.accuracy, TypingEngine.consistency, Math.round(TypingEngine.elapsedMs / 1000), TypingEngine.correctCount, TypingEngine.incorrectCount, TypingEngine.extraCount, TypingEngine.missedCount, ctx.mode, ctx.punctuation, ctx.words, wl);
+
+        if (TypingEngine.wpm > 0 && TypingEngine.wpm > oldBest) {
+            confetti.tryBurst();
+        }
     }
 }

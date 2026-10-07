@@ -77,9 +77,6 @@ Row {
         active: root.appWindow.testMode === "quote"
         onToggled: {
             root.appWindow.testMode = root.appWindow.testMode === "quote" ? "time" : "quote";
-            if (root.appWindow.testMode === "quote") {
-                root.appWindow.shootoutEnabled = false;
-            }
             Config.saveTestDefaults(root.appWindow.testMode, TypingEngine.testDurationSeconds, TypingEngine.testWordCount, TypingEngine.punctuationEnabled);
             root.appWindow.restartTest();
         }

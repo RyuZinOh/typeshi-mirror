@@ -6,30 +6,37 @@ Item {
     anchors.fill: parent
 
     readonly property int sidePadding: 160
-    property string resultMode: "english"
-    property int resultDuration: 0
-    property bool resultPunctuation: false
+    property var ctx: ({
+            mode: "english",
+            duration: 0,
+            words: 0,
+            punctuation: false
+        })
     property bool isRepeat: false
     signal restartRequested
     signal repeatRequested
-    readonly property bool isNewBest: !aftermath.isRepeat && TypingEngine.wpm > 0 && TypingEngine.wpm >= (aftermath.resultMode === "words" ? History.bestWpmForWords(aftermath.resultDuration, aftermath.resultPunctuation ? 1 : 0, Config.currentWordList) : History.bestWpmFor(aftermath.resultMode, aftermath.resultDuration, aftermath.resultPunctuation ? 1 : 0, -1, Config.currentWordList))
+
+    readonly property bool isNewBest: {
+        if (aftermath.isRepeat || TypingEngine.wpm <= 0) {
+            return false;
+        }
+        const c = aftermath.ctx;
+        const p = c.punctuation ? 1 : 0;
+        const wl = Config.currentWordList;
+        const best = History.bestWpmFor(c.mode, c.duration, p, c.words, wl);
+        return TypingEngine.wpm >= best;
+    }
     Component.onCompleted: Qt.callLater(function () {
         restartButtonRef.forceActiveFocus();
     })
 
     readonly property string modeLabel: {
-        if (aftermath.resultMode === "quote") {
+        const c = aftermath.ctx;
+        if (c.mode === "quote") {
             return "quote";
         }
-        if (aftermath.resultMode === "words") {
-            let label = "english " + aftermath.resultDuration + " words";
-            if (aftermath.resultPunctuation) {
-                label += " - punctuation";
-            }
-            return label;
-        }
-        let label = "english " + aftermath.resultDuration + "s";
-        if (aftermath.resultPunctuation) {
+        let label = c.mode === "words" ? "english " + c.words + " words" : "english " + c.duration + "s";
+        if (c.punctuation) {
             label += " - punctuation";
         }
         return label;
@@ -135,7 +142,7 @@ Item {
                     width: parent.width
                     height: 200
                     history: TypingEngine.wpmHistory
-                    totalSeconds: aftermath.resultMode === "english" ? TypingEngine.testDurationSeconds : 0
+                    totalSeconds: aftermath.ctx.duration
                 }
 
                 Item {
