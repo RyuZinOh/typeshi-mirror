@@ -1,34 +1,37 @@
-name: typeshi
+name: release
 on:
   push:
-    tags:
-      - 'v*'
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
 jobs:
-  hello:
+  build:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
+    container: archlinux:latest
     steps:
-      - uses: actions/checkout@v7
-      # - name: SAY HELLO
-      # run: echo "hello mirror! tag was ${GITHUB_REF_NAME}"
-      # - name: LIST REPO
-      # run: ls -la
-      - name: Install Qt6
-        uses: jurplel/install-qt-action@v4
-        with:
-          version: '6.11.*'
+      - name: Install dependencies
+        run: pacman -Syu --noconfirm base-devel git cmake ninja qt6-base qt6-declarative qt6-svg
+
+      - uses: actions/checkout@v5
+
       - name: Build
         run: |
-          chmod +x compile.sh
-          ./compile.sh
+          cmake -B build -S . -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr -G Ninja
+          ninja -C build
+
       - name: Package
         run: |
-          chmod +x package-bin.sh
-          ./package-bin.sh "${GITHUB_REF_NAME#v}"
-      - name: List Output
-        run: ls -a *.tar.gz
-      - name: Create Github Release
+          VER="${GITHUB_REF_NAME#v}"
+          DESTDIR="$PWD/staging" ninja -C build install/strip
+          tar czf "typeshi-bin-$VER-x86_64.tar.gz" -C staging usr
+          sha256sum "typeshi-bin-$VER-x86_64.tar.gz" > "typeshi-bin-$VER-x86_64.tar.gz.sha256"
+          ls -la typeshi-bin-*
+
+      - name: Create GitHub release
         uses: softprops/action-gh-release@v3
         with:
-          files: typeshi-bin*.tar.gz
+          files: |
+            typeshi-bin-*-x86_64.tar.gz
+            typeshi-bin-*-x86_64.tar.gz.sha256
