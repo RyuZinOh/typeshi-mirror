@@ -20,9 +20,6 @@ target_compile_definitions(typeshi PRIVATE
 set_source_files_properties(application/Theme.qml PROPERTIES
     QT_QML_SINGLETON_TYPE TRUE
 )
-set_source_files_properties(application/Shapes/ShapeCatalog.qml PROPERTIES
-    QT_QML_SINGLETON_TYPE TRUE
-)
 file(GLOB_RECURSE QML_ABS CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/application/*.qml")
 file(GLOB_RECURSE JS_ABS CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/application/*.js")
 file(GLOB_RECURSE ASSET_FILES_ABS CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/application/assets/*")
@@ -61,7 +58,19 @@ qt_add_qml_module(typeshi
         QuoteManager.hpp
         FuzzyFinder.cpp
         FuzzyFinder.hpp
+        Core/paintutil.cpp
+        Core/paintutil.hpp
+        Core/spring.hpp
+        shapes/materialshape.cpp
+        shapes/materialshape.hpp
+        shapes/materialshapeborder.hpp
+        shapes/morph.cpp
+        shapes/morph.hpp
+        shapes/svgpath.cpp
+        shapes/svgpath.hpp
 )
+
+target_sources(typeshi PRIVATE shapes/shapedata.inc)
 
 qt_add_resources(typeshi "assets"
     PREFIX "/qt/qml/typeShitter"
@@ -69,7 +78,11 @@ qt_add_resources(typeshi "assets"
     FILES ${ASSET_FILES}
 )
 
-target_include_directories(typeshi PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
+target_include_directories(typeshi PRIVATE
+    "${CMAKE_CURRENT_SOURCE_DIR}"
+    "${CMAKE_CURRENT_SOURCE_DIR}/shapes"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Core"
+)
 
 target_link_libraries(typeshi PRIVATE
     Qt6::Core

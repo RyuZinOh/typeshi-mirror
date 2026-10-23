@@ -1,13 +1,13 @@
 pragma ComponentBehavior: Bound
 import QtQuick
-import QtQuick.Effects
+import typeShitter
 
 Item {
     id: root
     property int size: 250
     property string username: Config.username
     property string avatarPath: Config.avatarPath
-    property int shapeIndex: 18
+    property int shapeIndex: MaterialShape.Cookie7Sided
 
     signal clicked
 
@@ -31,75 +31,32 @@ Item {
         anchors.right: parent.right
         width: root.size
         height: root.size
-        clip: false
 
-        ShapeImage {
-            id: borderLayer
-            anchors.centerIn: parent
-            width: parent.width + (shapeArea.containsMouse ? 6 : 0)
-            height: parent.height + (shapeArea.containsMouse ? 6 : 0)
-            source: ShapeCatalog.get(root.shapeIndex)
-            color: shapeArea.containsMouse ? Theme.primaryColor : Theme.outlineVariant
+        MaterialShape {
+            id: avatarShape
+            anchors.fill: parent
+            shape: root.shapeIndex
+            animated: false
+            color: root.avatarPath === "" ? root.generatedColor : "transparent"
+            source: root.avatarPath
+            fillMode: MaterialShape.Crop
+            border.width: shapeArea.containsMouse ? 3 : 2
+            border.color: shapeArea.containsMouse ? Theme.primaryColor : Theme.outlineVariant
 
-            Behavior on width {
-                NumberAnimation {
-                    duration: 150
-                }
-            }
-            Behavior on height {
+            Behavior on border.width {
                 NumberAnimation {
                     duration: 150
                 }
             }
         }
 
-        Item {
-            id: fillClip
+        Text {
             anchors.centerIn: parent
-            width: root.size
-            height: root.size
-            clip: true
-
-            Image {
-                id: maskSvg
-                anchors.fill: parent
-                source: ShapeCatalog.get(root.shapeIndex)
-                sourceSize.width: width * 2
-                sourceSize.height: height * 2
-                fillMode: Image.PreserveAspectFit
-                visible: false
-            }
-
-            Image {
-                id: avatarPhoto
-                anchors.fill: parent
-                source: root.avatarPath !== "" ? (root.avatarPath.startsWith("file://") ? root.avatarPath : "file://" + root.avatarPath) : ""
-                visible: false
-            }
-
-            MultiEffect {
-                anchors.fill: parent
-                source: avatarPhoto
-                maskEnabled: true
-                maskSource: maskSvg
-                visible: root.avatarPath !== ""
-            }
-
-            ShapeImage {
-                anchors.fill: parent
-                source: maskSvg.source
-                color: root.generatedColor
-                visible: root.avatarPath === ""
-            }
-
-            Text {
-                anchors.centerIn: parent
-                visible: root.avatarPath === ""
-                text: root.username.length > 0 ? root.username.charAt(0).toUpperCase() : "?"
-                font.pixelSize: root.size * 0.45
-                font.bold: true
-                color: "white"
-            }
+            visible: root.avatarPath === ""
+            text: root.username.length > 0 ? root.username.charAt(0).toUpperCase() : "?"
+            font.pixelSize: root.size * 0.45
+            font.bold: true
+            color: "white"
         }
 
         MouseArea {
@@ -110,6 +67,7 @@ Item {
             onClicked: root.clicked()
         }
     }
+
     Text {
         id: nameLabel
         anchors.top: shape.bottom

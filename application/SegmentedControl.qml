@@ -1,5 +1,6 @@
 pragma ComponentBehavior: Bound
 import QtQuick
+import typeShitter
 
 Rectangle {
     id: root
@@ -63,12 +64,13 @@ Rectangle {
             }
         }
 
-        ShapeImage {
+        MaterialShape {
             id: selectionShape
             width: root.cellHeight
             height: root.cellHeight
             color: Theme.primaryColor
-            source: ShapeCatalog.get(21)
+            shape: MaterialShape.Ghostish
+            animated: false
             x: inner.selectedIndex * (root.cellWidth + root.cellSpacing) + (root.cellWidth - width) / 2
             y: 0
             z: 0
