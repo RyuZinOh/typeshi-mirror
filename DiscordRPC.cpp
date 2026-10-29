@@ -1,6 +1,7 @@
 #include "./DiscordRPC.hpp"
 #include <QCoreApplication>
 #include <QDateTime>
+#include <QDebug>
 #include <QFileInfo>
 #include <QJsonDocument>
 #include <QUuid>
@@ -20,6 +21,9 @@ QStringList runtimeDirs() {
 } // namespace
 
 DiscordRPC::DiscordRPC(QObject *parent) : QObject(parent) {
+  m_flushTimer.setSingleShot(true);
+  connect(&m_flushTimer, &QTimer::timeout, this, &DiscordRPC::flush);
+
   connect(&m_dirWatcher, &QFileSystemWatcher::directoryChanged, this,
           [this](const QString &) {
             if (m_enabled &&
@@ -41,6 +45,7 @@ DiscordRPC::DiscordRPC(QObject *parent) : QObject(parent) {
 
 DiscordRPC::~DiscordRPC() {
   m_enabled = false;
+  m_flushTimer.stop();
   m_socket.abort();
 }
 
@@ -51,16 +56,20 @@ void DiscordRPC::setEnabled(bool enabled) {
   m_enabled = enabled;
 
   if (enabled) {
+    m_sessionStart = QDateTime::currentSecsSinceEpoch();
     watchRuntimeDirs();
     connectToDiscord();
     return;
   }
 
+  m_flushTimer.stop();
   m_socket.abort();
   teardown();
-  m_pending = {};
-  m_hasPending = false;
-  m_lastKey.clear();
+  m_results.clear();
+  m_latest = {};
+  m_latestKey.clear();
+  m_hasLatest = false;
+  m_sentKey.clear();
   if (!m_dirWatcher.directories().isEmpty()) {
     m_dirWatcher.removePaths(m_dirWatcher.directories());
   }
@@ -105,6 +114,8 @@ void DiscordRPC::tryNextCandidate() {
 
 void DiscordRPC::teardown() {
   m_buffer.clear();
+  m_flushTimer.stop();
+  m_sentKey.clear();
   if (m_ready) {
     m_ready = false;
     emit connectedChanged();
@@ -145,16 +156,18 @@ void DiscordRPC::handleFrame(quint32 op, const QByteArray &data) {
     send(Pong, QJsonDocument::fromJson(data).object());
     break;
   case Close:
+    qWarning().noquote() << "[rpc] server sent CLOSE:" << data;
     m_socket.abort();
     break;
   case Frame: {
     const QJsonObject obj = QJsonDocument::fromJson(data).object();
-    if (obj.value("evt").toString() == "READY") {
+    const QString evt = obj.value("evt").toString();
+    if (evt == "READY") {
       m_ready = true;
       emit connectedChanged();
-      if (m_hasPending) {
-        sendActivity();
-      }
+      requestFlush();
+    } else if (evt == "ERROR") {
+      qWarning().noquote() << "[rpc] ERROR:" << obj;
     }
     break;
   }
@@ -169,7 +182,7 @@ void DiscordRPC::setIdle(const QString &testLabel) {
   if (!m_enabled) {
     return;
   }
-  publish("Idle", testLabel);
+  publish("Idle", testLabel, m_sessionStart);
 }
 
 void DiscordRPC::setTyping(const QString &username, const QString &testLabel,
@@ -196,11 +209,11 @@ void DiscordRPC::setFinished(const QString &testLabel, double wpm,
                             .arg(qRound(wpm))
                             .arg(qRound(accuracy))
                             .arg(qRound(consistency));
-  publish("Finished " + testLabel, stats);
+  publish("Finished " + testLabel, stats, m_sessionStart, 0, true);
 }
 
 void DiscordRPC::publish(const QString &details, const QString &state,
-                         qint64 start, qint64 end) {
+                         qint64 start, qint64 end, bool isResult) {
   QJsonObject activity{{"details", details},
                        {"state", state},
                        {"assets", QJsonObject{{"large_image", "typeshi"},
@@ -218,25 +231,103 @@ void DiscordRPC::publish(const QString &details, const QString &state,
   }
 
   const QByteArray key = QJsonDocument(activity).toJson(QJsonDocument::Compact);
-  if (key == m_lastKey) {
+
+  if (isResult) {
+    if (!m_results.isEmpty() && m_results.last().key == key) {
+      return;
+    }
+    m_results.append({activity, key});
+    while (m_results.size() > kMaxQueuedResults) {
+      m_results.removeFirst();
+    }
+  } else if (m_hasLatest && key == m_latestKey) {
     return;
   }
-  m_lastKey = key;
-  m_pending = activity;
-  m_hasPending = true;
 
+  m_latest = activity;
+  m_latestKey = key;
+  m_hasLatest = true;
+
+  requestFlush();
+}
+
+bool DiscordRPC::hasWork() const {
+  return !m_results.isEmpty() || (m_hasLatest && m_latestKey != m_sentKey);
+}
+
+void DiscordRPC::requestFlush() {
+  if (!m_enabled) {
+    return;
+  }
   if (m_ready) {
-    sendActivity();
+    if (hasWork()) {
+      m_flushTimer.start(kDebounceMs);
+    }
   } else if (m_socket.state() == QLocalSocket::UnconnectedState) {
     connectToDiscord();
   }
 }
 
-void DiscordRPC::sendActivity() {
+void DiscordRPC::flush() {
+  if (!m_enabled || !m_ready) {
+    return;
+  }
+
+  while (!m_results.isEmpty() && m_results.first().key == m_sentKey) {
+    m_results.removeFirst();
+  }
+
+  if (!hasWork()) {
+    return;
+  }
+
+  if (m_sendClock.isValid()) {
+    const qint64 elapsed = m_sendClock.elapsed();
+    if (elapsed < kMinIntervalMs) {
+      m_flushTimer.start(static_cast<int>(kMinIntervalMs - elapsed) + 100);
+      return;
+    }
+  }
+
+  QJsonObject next;
+  QByteArray nextKey;
+  if (!m_results.isEmpty()) {
+    next = m_results.first().activity;
+    nextKey = m_results.first().key;
+    m_results.removeFirst();
+  } else {
+    next = m_latest;
+    nextKey = m_latestKey;
+  }
+
+  sendActivity(next);
+  m_sendClock.restart();
+  m_sentKey = nextKey;
+
+  if (hasWork()) {
+    m_flushTimer.start(static_cast<int>(kMinIntervalMs) + 100);
+  }
+}
+
+void DiscordRPC::sendActivity(const QJsonObject &activity) {
+  QJsonObject act = activity;
+  QJsonObject timestamps = act.value("timestamps").toObject();
+  if (timestamps.contains("end")) {
+    const qint64 end = static_cast<qint64>(timestamps.value("end").toDouble());
+    if (end <= QDateTime::currentSecsSinceEpoch()) {
+      timestamps.remove("end");
+      if (timestamps.isEmpty()) {
+        act.remove("timestamps");
+      } else {
+        act["timestamps"] = timestamps;
+      }
+    }
+  }
+
   send(Frame,
        QJsonObject{
            {"cmd", "SET_ACTIVITY"},
            {"args", QJsonObject{{"pid", QCoreApplication::applicationPid()},
-                                {"activity", m_pending}}},
+                                {"activity", act}}},
            {"nonce", QUuid::createUuid().toString(QUuid::WithoutBraces)}});
 }
