@@ -1,6 +1,7 @@
 pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Window
+import typeShitter
 
 Window {
     id: appWindow
@@ -56,6 +57,7 @@ Window {
         TypingEngine.setPunctuationEnabled(Config.lastPunctuation);
         appWindow.restartTest();
         inputCatcher.forceActiveFocus();
+        appWindow.syncDiscord();
     }
     ShaderScene {
         id: sceneLayer
@@ -357,6 +359,55 @@ Window {
             }
         }
     }
+
+    function discordLabel() {
+        const mode = appWindow.testMode;
+        let label = "english " + TypingEngine.testDurationSeconds + "s";
+        if (mode === "words") {
+            label = "english " + TypingEngine.testWordCount + " words";
+        } else if (mode === "quote") {
+            label = "quote";
+        } else if (mode === "repeat") {
+            label = "repeating words";
+        }
+        if (TypingEngine.punctuationEnabled && mode !== "quote") {
+            label += " + punctuation";
+        }
+        return label;
+    }
+
+    function syncDiscord() {
+        Discord.setEnabled(Config.discordEnabled);
+        if (!Config.discordEnabled) {
+            return;
+        }
+        const label = appWindow.discordLabel();
+        if (TypingEngine.finished) {
+            Discord.setFinished(label, TypingEngine.wpm, TypingEngine.accuracy, TypingEngine.consistency);
+        } else if (TypingEngine.started) {
+            const timed = appWindow.testMode === "time";
+            Discord.setTyping(Config.username, label, timed ? TypingEngine.testDurationSeconds : 0);
+        } else {
+            Discord.setIdle(label);
+        }
+    }
+
+    Connections {
+        target: TypingEngine
+        function onStartedChanged() {
+            appWindow.syncDiscord();
+        }
+        function onFinishedChanged() {
+            appWindow.syncDiscord();
+        }
+    }
+    Connections {
+        target: Config
+        function onConfigChanged() {
+            appWindow.syncDiscord();
+        }
+    }
+
     function leaveAftermathThen(action) {
         appWindow.aftermathLeaving = true;
         leaveTimer.action = action;

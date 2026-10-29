@@ -206,6 +206,7 @@ void ConfigManager::load() {
   m_keyboardVizModeenabled =
       m_general.value("keyboardVizModeEnabled", "0").toString() == "1";
   m_watcherEnabled = m_general.value("watcherEnabled", "1").toString() == "1";
+  m_discordEnabled = m_general.value("discordEnabled", "1").toString() == "1";
   m_currentWordList = m_general.value("wordList", "english").toString();
 
   m_username = m_general.value("username", "typeshitter").toString();
@@ -396,6 +397,7 @@ void ConfigManager::saveTestDefaults(const QString &mode, int duration,
 bool ConfigManager::borderProgressEnabled() const {
   return m_borderProgressEnabled;
 }
+bool ConfigManager::discordEnabled() const { return m_discordEnabled; }
 QString ConfigManager::currentWordList() const { return m_currentWordList; }
 QVariantMap ConfigManager::theme() const { return m_theme; }
 QStringList ConfigManager::words() const { return m_words; }
@@ -443,6 +445,15 @@ QColor ConfigManager::themeColor(const QString &key) const {
   return color;
 }
 
+void ConfigManager::setDiscordEnabled(bool enabled) {
+  if (enabled == m_discordEnabled) {
+    return;
+  }
+  m_discordEnabled = enabled;
+  m_general["discordEnabled"] = enabled ? "1" : "0";
+  writeGeneral();
+  emit configChanged();
+}
 void ConfigManager::setTapeModeEnabled(bool enabled) {
   if (enabled == m_tapeModeEnabled) {
     return;

@@ -1,5 +1,6 @@
 pragma ComponentBehavior: Bound
 import QtQuick
+import typeShitter
 
 Item {
     id: root
@@ -106,7 +107,7 @@ Item {
                 return Config.currentFont;
             }
         },
-        toggleSource("custom:", "Custom theme", () => Config.currentTheme === "custom", v => Config.setCustomTheme(v)), toggleSource("progressbar:", "Border progress", () => Config.borderProgressEnabled, v => Config.setBorderProgressEnabled(v)), toggleSource("tape:", "Tape mode", () => Config.tapeModeEnabled, v => Config.setTapeModeEnabled(v)), toggleSource("precision:", "Precision mode", () => Config.precisionModeEnabled, v => Config.setPrecisionModeEnabled(v)), toggleSource("keyboard:", "Keyboard Visualizer", () => Config.keyboardVizModeEnabled, v => Config.setKeyboardVizModeEnabled(v)), toggleSource("watcher:", "Watcher", () => Config.watcherEnabled, v => Config.setWatcherEnabled(v))]
+        toggleSource("custom:", "Custom theme", () => Config.currentTheme === "custom", v => Config.setCustomTheme(v)), toggleSource("progressbar:", "Border progress", () => Config.borderProgressEnabled, v => Config.setBorderProgressEnabled(v)), toggleSource("tape:", "Tape mode", () => Config.tapeModeEnabled, v => Config.setTapeModeEnabled(v)), toggleSource("precision:", "Precision mode", () => Config.precisionModeEnabled, v => Config.setPrecisionModeEnabled(v)), toggleSource("keyboard:", "Keyboard Visualizer", () => Config.keyboardVizModeEnabled, v => Config.setKeyboardVizModeEnabled(v)), toggleSource("watcher:", "Watcher", () => Config.watcherEnabled, v => Config.setWatcherEnabled(v)), toggleSource("discord:", "Discord presence", () => Config.discordEnabled, v => Config.setDiscordEnabled(v))]
     function computeTargetWidth() {
         if (root.results.length === 0) {
             return root.minWidth;

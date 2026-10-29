@@ -23,6 +23,7 @@ class ConfigManager : public QObject {
   Q_PROPERTY(QString lastMode READ lastMode NOTIFY configChanged)
   Q_PROPERTY(int lastDuration READ lastDuration NOTIFY configChanged)
   Q_PROPERTY(int lastWordCount READ lastWordCount NOTIFY configChanged)
+  Q_PROPERTY(bool discordEnabled READ discordEnabled NOTIFY configChanged)
   Q_PROPERTY(bool lastPunctuation READ lastPunctuation NOTIFY configChanged)
   Q_PROPERTY(QString username READ username NOTIFY configChanged)
   Q_PROPERTY(QString avatarPath READ avatarPath NOTIFY configChanged)
@@ -52,6 +53,7 @@ public:
   QString avatarPath() const;
   QString currentWordList() const;
   QString currentFont() const;
+  bool discordEnabled() const;
   bool borderProgressEnabled() const;
   static void registerFontFamily(const QString &family);
 
@@ -60,6 +62,7 @@ public:
   Q_INVOKABLE QStringList availableThemes() const;
   Q_INVOKABLE QVariantMap previewColors(const QString &themeName,
                                         const QString &variant) const;
+  Q_INVOKABLE void setDiscordEnabled(bool enabled);
   Q_INVOKABLE void setTheme(const QString &themeName, const QString &variant);
   Q_INVOKABLE void setCustomTheme(bool enabled);
   Q_INVOKABLE void saveTestDefaults(const QString &mode, int duration,
@@ -92,6 +95,7 @@ private:
   QString m_avatarPath;
 
   // defaults
+  bool m_discordEnabled = true;
   QString m_currentTheme = "midnight_purple";
   QString m_currentVariant = "dark";
   QString m_lastMode = "time";
