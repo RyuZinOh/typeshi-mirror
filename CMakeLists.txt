@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.20)
+cmake_minimum_required(VERSION 3.21)
 project(typeshi VERSION 0.1.19)
 
 option(FLATPAK_BUILD "Build for Flatpak packaging" OFF)
@@ -10,6 +10,11 @@ find_package(Qt6 REQUIRED COMPONENTS Core Gui Qml Quick Sql)
 
 qt_standard_project_setup()
 qt_policy(SET QTP0004 NEW)
+
+set(RYU_MODULES "Shapes" CACHE STRING "" FORCE)
+set(RYU_STATIC ON CACHE BOOL "" FORCE)
+set(RYU_INSTALL OFF CACHE BOOL "" FORCE)
+add_subdirectory(third_party/ryu)
 
 qt_add_executable(typeshi)
 
@@ -54,23 +59,13 @@ qt_add_qml_module(typeshi
         HistoryManager.hpp
         ConfettiRenderer.cpp
         ConfettiRenderer.hpp
+        DiscordRPC.cpp
+        DiscordRPC.hpp
         QuoteManager.cpp
         QuoteManager.hpp
         FuzzyFinder.cpp
         FuzzyFinder.hpp
-        Core/paintutil.cpp
-        Core/paintutil.hpp
-        Core/spring.hpp
-        shapes/materialshape.cpp
-        shapes/materialshape.hpp
-        shapes/materialshapeborder.hpp
-        shapes/morph.cpp
-        shapes/morph.hpp
-        shapes/svgpath.cpp
-        shapes/svgpath.hpp
 )
-
-target_sources(typeshi PRIVATE shapes/shapedata.inc)
 
 qt_add_resources(typeshi "assets"
     PREFIX "/qt/qml/typeShitter"
@@ -80,8 +75,6 @@ qt_add_resources(typeshi "assets"
 
 target_include_directories(typeshi PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}"
-    "${CMAKE_CURRENT_SOURCE_DIR}/shapes"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Core"
 )
 
 target_link_libraries(typeshi PRIVATE
@@ -90,6 +83,8 @@ target_link_libraries(typeshi PRIVATE
     Qt6::Qml
     Qt6::Quick
     Qt6::Sql
+    Ryu::Shapes
+    Ryu::Shapesplugin
 )
 
 qt_import_qml_plugins(typeshi)

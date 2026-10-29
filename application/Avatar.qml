@@ -1,6 +1,7 @@
 pragma ComponentBehavior: Bound
 import QtQuick
 import typeShitter
+import Ryu.Shapes
 
 Item {
     id: root
