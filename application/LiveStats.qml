@@ -17,6 +17,43 @@ Row {
     property real displayAccuracy: 0
     property real displayConsistency: 0
 
+    TextMetrics {
+        id: valueMetrics
+        font.family: Config.currentFont
+        font.pixelSize: root.valueSize
+        font.bold: true
+        text: Config.precisionModeEnabled ? "888.8" : "888"
+    }
+    TextMetrics {
+        id: wpmLabelMetrics
+        font.family: Config.currentFont
+        font.pixelSize: root.labelSize
+        text: "wpm"
+    }
+    TextMetrics {
+        id: rawLabelMetrics
+        font.family: Config.currentFont
+        font.pixelSize: root.labelSize
+        text: "raw"
+    }
+    TextMetrics {
+        id: accuracyLabelMetrics
+        font.family: Config.currentFont
+        font.pixelSize: root.labelSize
+        text: "accuracy"
+    }
+    TextMetrics {
+        id: consistencyLabelMetrics
+        font.family: Config.currentFont
+        font.pixelSize: root.labelSize
+        text: "consistency"
+    }
+
+    readonly property real wpmCellWidth: Math.ceil(Math.max(valueMetrics.width, wpmLabelMetrics.width))
+    readonly property real rawCellWidth: Math.ceil(Math.max(valueMetrics.width, rawLabelMetrics.width))
+    readonly property real accuracyCellWidth: Math.ceil(Math.max(root.ringSize, accuracyLabelMetrics.width))
+    readonly property real consistencyCellWidth: Math.ceil(Math.max(root.ringSize, consistencyLabelMetrics.width))
+
     Behavior on displayWpm {
         enabled: !root.instant
         NumberAnimation {
@@ -53,6 +90,10 @@ Row {
         root.displayConsistency = TypingEngine.consistency;
     }
 
+    function format(value) {
+        return Config.precisionModeEnabled ? value.toFixed(1) : value.toFixed(0);
+    }
+
     Timer {
         interval: 250
         running: TypingEngine.started && !TypingEngine.finished
@@ -72,6 +113,7 @@ Row {
             }
         }
     }
+
     opacity: TypingEngine.started ? 1 : 0
     visible: opacity > 0.01
     Behavior on opacity {
@@ -82,14 +124,19 @@ Row {
     }
 
     Column {
+        width: root.wpmCellWidth
         spacing: 0
         Text {
+            width: parent.width
             text: "wpm"
+            font.family: Config.currentFont
             font.pixelSize: root.labelSize
             color: Theme.onSurfaceVariant
         }
         Text {
-            text: Config.precisionModeEnabled ? root.displayWpm.toFixed(1) : root.displayWpm.toFixed(0)
+            width: parent.width
+            text: root.format(root.displayWpm)
+            font.family: Config.currentFont
             font.pixelSize: root.valueSize
             font.bold: true
             color: Theme.primaryColor
@@ -97,14 +144,19 @@ Row {
     }
 
     Column {
+        width: root.rawCellWidth
         spacing: 0
         Text {
+            width: parent.width
             text: "raw"
+            font.family: Config.currentFont
             font.pixelSize: root.labelSize
             color: Theme.onSurfaceVariant
         }
         Text {
-            text: Config.precisionModeEnabled ? root.displayRawWpm.toFixed(1) : root.displayRawWpm.toFixed(0)
+            width: parent.width
+            text: root.format(root.displayRawWpm)
+            font.family: Config.currentFont
             font.pixelSize: root.valueSize
             font.bold: true
             color: Theme.onSurface
@@ -112,17 +164,21 @@ Row {
     }
 
     Column {
+        width: root.accuracyCellWidth
         spacing: 2
         Text {
+            width: parent.width
+            horizontalAlignment: Text.AlignHCenter
             text: "accuracy"
+            font.family: Config.currentFont
             font.pixelSize: root.labelSize
             color: Theme.onSurfaceVariant
-            anchors.horizontalCenter: parent.horizontalCenter
         }
         Item {
             width: root.ringSize
             height: root.ringSize
             anchors.horizontalCenter: parent.horizontalCenter
+
             WavyProgress {
                 anchors.fill: parent
                 style: WavyProgress.Circular
@@ -139,7 +195,8 @@ Row {
 
             Text {
                 anchors.centerIn: parent
-                text: Config.precisionModeEnabled ? root.displayAccuracy.toFixed(1) : root.displayAccuracy.toFixed(0)
+                text: root.format(root.displayAccuracy)
+                font.family: Config.currentFont
                 font.pixelSize: root.valueSize * 0.65
                 font.bold: true
                 color: Theme.onSurface
@@ -148,12 +205,15 @@ Row {
     }
 
     Column {
+        width: root.consistencyCellWidth
         spacing: 2
         Text {
+            width: parent.width
+            horizontalAlignment: Text.AlignHCenter
             text: "consistency"
+            font.family: Config.currentFont
             font.pixelSize: root.labelSize
             color: Theme.onSurfaceVariant
-            anchors.horizontalCenter: parent.horizontalCenter
         }
         Item {
             width: root.ringSize
@@ -173,9 +233,11 @@ Row {
                 waveSpeed: 0.5
                 gap: 10
             }
+
             Text {
                 anchors.centerIn: parent
-                text: Config.precisionModeEnabled ? root.displayConsistency.toFixed(1) : root.displayConsistency.toFixed(0)
+                text: root.format(root.displayConsistency)
+                font.family: Config.currentFont
                 font.pixelSize: root.valueSize * 0.65
                 font.bold: true
                 color: Theme.onSurface
