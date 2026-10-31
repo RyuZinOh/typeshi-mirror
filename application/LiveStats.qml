@@ -1,5 +1,7 @@
 pragma ComponentBehavior: Bound
 import QtQuick
+import typeShitter
+import Ryu.Extraa
 
 Row {
     id: root
@@ -121,14 +123,20 @@ Row {
             width: root.ringSize
             height: root.ringSize
             anchors.horizontalCenter: parent.horizontalCenter
-
-            CircularProgress {
+            WavyProgress {
                 anchors.fill: parent
-                trackWidth: 3
-                value: root.displayAccuracy / 100
-                progressColor: Theme.primaryColor
-                animated: false
+                style: WavyProgress.Circular
+                indeterminate: false
+                progress: root.displayAccuracy / 100
+                color: Theme.primaryColor
+                trackColor: Theme.outlineVariant
+                strokeWidth: 3
+                amplitude: 1.5
+                wavelength: 20
+                waveSpeed: 0.5
+                gap: 10
             }
+
             Text {
                 anchors.centerIn: parent
                 text: Config.precisionModeEnabled ? root.displayAccuracy.toFixed(1) : root.displayAccuracy.toFixed(0)
@@ -152,12 +160,18 @@ Row {
             height: root.ringSize
             anchors.horizontalCenter: parent.horizontalCenter
 
-            CircularProgress {
+            WavyProgress {
                 anchors.fill: parent
-                trackWidth: 3
-                value: root.displayConsistency / 100
-                animated: false
-                progressColor: Theme.onSurface
+                style: WavyProgress.Circular
+                indeterminate: false
+                progress: root.displayConsistency / 100
+                color: Theme.onSurface
+                trackColor: Theme.outlineVariant
+                strokeWidth: 3
+                amplitude: 1.5
+                wavelength: 20
+                waveSpeed: 0.5
+                gap: 10
             }
             Text {
                 anchors.centerIn: parent

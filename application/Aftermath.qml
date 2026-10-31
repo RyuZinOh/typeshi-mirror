@@ -1,5 +1,7 @@
 pragma ComponentBehavior: Bound
 import QtQuick
+import Ryu.Extraa
+import typeShitter
 
 Item {
     id: aftermath
@@ -272,11 +274,16 @@ Item {
                 }
             }
 
-            ToggleChip {
+            MaterialButton {
                 label: "repeat these words"
-                active: false
-                chipHeight: 32
-                onToggled: aftermath.repeatRequested()
+                type: MaterialButton.Outlined
+                sizeStyle: MaterialButton.ExtraSmall
+                shape: MaterialButton.Square
+                color: Theme.surfaceContainer
+                contentColor: Theme.onSurfaceVariant
+                borderColor: Theme.outlineVariant
+                borderWidth: 1
+                onClicked: aftermath.repeatRequested()
             }
         }
 

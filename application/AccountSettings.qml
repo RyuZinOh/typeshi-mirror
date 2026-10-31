@@ -2,6 +2,9 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Dialogs
 import QtCore
+import Ryu.Shapes
+import Ryu.Extraa
+import typeShitter
 
 Item {
     id: root
@@ -49,13 +52,34 @@ Item {
         Row {
             spacing: 28
 
-            Avatar {
+            MaterialShape {
                 id: previewAvatar
-                size: 96
-                avatarPath: root.pendingAvatarUrl !== "" ? root.pendingAvatarUrl : Config.avatarPath
+                width: 96
+                height: 96
+                shape: MaterialShape.Cookie7Sided
+                animated: false
+                fillMode: MaterialShape.Crop
+                source: root.pendingAvatarUrl !== "" ? root.pendingAvatarUrl : Config.avatarPath
+                color: previewAvatar.source.toString() === "" ? Theme.primaryContainerColor : "transparent"
+
+                glyph: previewAvatar.source.toString() === "" && Config.username.length > 0 ? Config.username.charAt(0).toUpperCase() : ""
+                glyphColor: Theme.onPrimaryContainer
+                glyphFont.bold: true
+                glyphSize: previewAvatar.width * 0.45
+
+                border.width: avatarArea.containsMouse ? 3 : 2
+                border.color: avatarArea.containsMouse ? Theme.primaryColor : Theme.outlineVariant
+
+                Behavior on border.width {
+                    NumberAnimation {
+                        duration: 150
+                    }
+                }
 
                 MouseArea {
+                    id: avatarArea
                     anchors.fill: parent
+                    hoverEnabled: true
                     cursorShape: Qt.PointingHandCursor
                     onClicked: avatarDialogLoader.active = true
                 }
@@ -96,13 +120,19 @@ Item {
 
         Item {
             width: parent.width
-            height: 28
+            height: doneButton.height
 
-            ToggleChip {
+            MaterialButton {
+                id: doneButton
                 anchors.left: parent.left
                 label: "done"
-                active: true
-                onToggled: root.commitAndBack()
+                type: MaterialButton.Filled
+                sizeStyle: MaterialButton.Small
+                shape: MaterialButton.Round
+                color: Theme.primaryColor
+                contentColor: Theme.onPrimary
+                font.family: Config.currentFont
+                onClicked: root.commitAndBack()
             }
         }
     }

@@ -11,7 +11,7 @@ find_package(Qt6 REQUIRED COMPONENTS Core Gui Qml Quick Sql)
 qt_standard_project_setup()
 qt_policy(SET QTP0004 NEW)
 
-set(RYU_MODULES "Shapes" CACHE STRING "" FORCE)
+set(RYU_MODULES "Shapes;Extraa" CACHE STRING "" FORCE)
 set(RYU_STATIC ON CACHE BOOL "" FORCE)
 set(RYU_INSTALL OFF CACHE BOOL "" FORCE)
 add_subdirectory(third_party/ryu)
@@ -85,6 +85,8 @@ target_link_libraries(typeshi PRIVATE
     Qt6::Sql
     Ryu::Shapes
     Ryu::Shapesplugin
+    Ryu::Extraa
+    Ryu::Extraaplugin
 )
 
 qt_import_qml_plugins(typeshi)

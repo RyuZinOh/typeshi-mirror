@@ -1,4 +1,6 @@
 import QtQuick
+import Ryu.Extraa
+import typeShitter
 
 Row {
     id: root
@@ -13,15 +15,31 @@ Row {
             duration: 150
         }
     }
-
-    SegmentedControl {
+    MaterialSegmentedButton {
         id: primaryControl
+        height: root.controlCellHeight + 10
         enabled: root.appWindow.testMode === "time" || root.appWindow.testMode === "words"
-        options: root.appWindow.testMode === "words" ? [10, 25, 50, 100] : [15, 30, 60, 120]
-        selectedValue: root.appWindow.testMode === "words" ? TypingEngine.testWordCount : TypingEngine.testDurationSeconds
-        suffix: root.appWindow.testMode === "words" ? "" : "s"
-        cellHeight: root.controlCellHeight
-        onSelected: value => {
+
+        readonly property var options: root.appWindow.testMode === "words" ? [10, 25, 50, 100] : [15, 30, 60, 120]
+        readonly property var selectedValue: root.appWindow.testMode === "words" ? TypingEngine.testWordCount : TypingEngine.testDurationSeconds
+        readonly property string suffix: root.appWindow.testMode === "words" ? "" : "s"
+
+        labels: options.map(v => v + suffix)
+        selectionMode: MaterialSegmentedButton.Single
+        currentIndex: options.indexOf(selectedValue)
+
+        color: Theme.surfaceContainer
+        checkedColor: Theme.primaryColor
+        textColor: Theme.onSurfaceVariant
+        checkedTextColor: Theme.onPrimary
+        borderWidth: 1
+        borderColor: Theme.outlineVariant
+        font.family: Config.currentFont
+        showCheck: true
+        checkIconSource: "assets/icons/check.svg"
+
+        onClicked: index => {
+            const value = options[index];
             if (root.appWindow.testMode === "words") {
                 TypingEngine.setTestWordCount(value);
             } else {
@@ -31,52 +49,51 @@ Row {
             root.appWindow.restartTest();
         }
     }
-
-    ToggleChip {
-        id: wordList1kChip
-        label: "1k"
-        chipHeight: root.controlCellHeight + 10
-        enabled: root.appWindow.testMode !== "quote"
-        active: Config.currentWordList === "english1k"
-        onToggled: {
-            Config.setWordList(Config.currentWordList === "english1k" ? "english" : "english1k");
-            root.appWindow.restartTest();
+    MaterialButtonGroup {
+        id: optionGroup
+        height: root.controlCellHeight + 10
+        spacing: 6
+        sizeStyle: MaterialButtonGroup.Small
+        labels: ["1k", "words", "punctuation", "quote"]
+        selectionMode: MaterialButtonGroup.Multiple
+        checkedIndices: {
+            const list = [];
+            if (Config.currentWordList === "english1k")
+                list.push(0);
+            if (root.appWindow.testMode === "words")
+                list.push(1);
+            if (TypingEngine.punctuationEnabled)
+                list.push(2);
+            if (root.appWindow.testMode === "quote")
+                list.push(3);
+            return list;
         }
-    }
 
-    ToggleChip {
-        id: wordsChip
-        label: "words"
-        chipHeight: root.controlCellHeight + 10
-        enabled: root.appWindow.testMode !== "quote"
-        active: root.appWindow.testMode === "words"
-        onToggled: {
-            root.appWindow.testMode = root.appWindow.testMode === "words" ? "time" : "words";
-            Config.saveTestDefaults(root.appWindow.testMode, TypingEngine.testDurationSeconds, TypingEngine.testWordCount, TypingEngine.punctuationEnabled);
-            root.appWindow.restartTest();
-        }
-    }
+        color: Theme.surfaceContainer
+        checkedColor: Theme.primaryColor
+        textColor: Theme.onSurfaceVariant
+        checkedTextColor: Theme.onPrimary
+        borderWidth: 1
+        borderColor: Theme.outlineVariant
+        font.family: Config.currentFont
 
-    ToggleChip {
-        id: punctuationChip
-        label: "punctuation"
-        chipHeight: root.controlCellHeight + 10
-        enabled: root.appWindow.testMode !== "quote"
-        active: TypingEngine.punctuationEnabled
-        onToggled: {
-            TypingEngine.setPunctuationEnabled(!TypingEngine.punctuationEnabled);
-            Config.saveTestDefaults(root.appWindow.testMode, TypingEngine.testDurationSeconds, TypingEngine.testWordCount, TypingEngine.punctuationEnabled);
-            root.appWindow.restartTest();
-        }
-    }
+        onToggled: (index, checked) => {
+            const quote = root.appWindow.testMode === "quote";
+            if (quote && index !== 3) {
+                optionGroup.setChecked(index, !checked);
+                return;
+            }
 
-    ToggleChip {
-        id: quoteChip
-        label: "quote"
-        chipHeight: root.controlCellHeight + 10
-        active: root.appWindow.testMode === "quote"
-        onToggled: {
-            root.appWindow.testMode = root.appWindow.testMode === "quote" ? "time" : "quote";
+            if (index === 0) {
+                Config.setWordList(Config.currentWordList === "english1k" ? "english" : "english1k");
+            } else if (index === 1) {
+                root.appWindow.testMode = root.appWindow.testMode === "words" ? "time" : "words";
+            } else if (index === 2) {
+                TypingEngine.setPunctuationEnabled(!TypingEngine.punctuationEnabled);
+            } else if (index === 3) {
+                root.appWindow.testMode = quote ? "time" : "quote";
+            }
+
             Config.saveTestDefaults(root.appWindow.testMode, TypingEngine.testDurationSeconds, TypingEngine.testWordCount, TypingEngine.punctuationEnabled);
             root.appWindow.restartTest();
         }

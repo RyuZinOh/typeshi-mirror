@@ -67,6 +67,17 @@ Window {
         Item {
             id: sceneRoot
             anchors.fill: parent
+            HoverHandler {
+                id: mouseHover
+                onPointChanged: {
+                    if (TypingEngine.started && !TypingEngine.finished) {
+                        return;
+                    }
+                    uiOverlay.mousePos = mouseHover.point.scenePosition;
+                    uiOverlay.mouseFollow = true;
+                    mouseIdleTimer.restart();
+                }
+            }
 
             ConfettiRenderer {
                 id: confetti
@@ -297,18 +308,6 @@ Window {
 
             property bool mouseFollow: false
             property point mousePos: Qt.point(0, 0)
-
-            HoverHandler {
-                id: mouseHover
-                onPointChanged: {
-                    if (TypingEngine.started && !TypingEngine.finished) {
-                        return;
-                    }
-                    uiOverlay.mousePos = mouseHover.point.scenePosition;
-                    uiOverlay.mouseFollow = true;
-                    mouseIdleTimer.restart();
-                }
-            }
 
             Timer {
                 id: mouseIdleTimer
