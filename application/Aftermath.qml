@@ -275,6 +275,7 @@ Item {
             }
 
             MaterialButton {
+                id: repeatButton
                 label: "repeat these words"
                 type: MaterialButton.Outlined
                 sizeStyle: MaterialButton.ExtraSmall
@@ -283,6 +284,8 @@ Item {
                 contentColor: Theme.onSurfaceVariant
                 borderColor: Theme.outlineVariant
                 borderWidth: 1
+                KeyNavigation.tab: restartButtonRef
+                KeyNavigation.backtab: restartButtonRef
                 onClicked: aftermath.repeatRequested()
             }
         }
@@ -297,6 +300,8 @@ Item {
                 alwaysVisible: true
                 hoverRotates: true
                 iconSize: 26
+                tabTarget: repeatButton
+                KeyNavigation.backtab: repeatButton
                 onActivated: aftermath.restartRequested()
             }
         }

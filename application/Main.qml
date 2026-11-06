@@ -1,6 +1,7 @@
 pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Window
+import Ryu.Discord
 import typeShitter
 
 Window {
@@ -57,8 +58,45 @@ Window {
         TypingEngine.setPunctuationEnabled(Config.lastPunctuation);
         appWindow.restartTest();
         inputCatcher.forceActiveFocus();
-        appWindow.syncDiscord();
     }
+
+    Discord {
+        id: rpc
+        clientId: "1565031824369909830"
+        enabled: Config.discordEnabled
+        largeImage: "typeshi"
+        largeText: "typeShi"
+
+        readonly property real sessionStart: Math.floor(Date.now() / 1000)
+        property real typingStart: 0
+        readonly property bool typing: TypingEngine.started && !TypingEngine.finished
+        readonly property string label: appWindow.discordLabel()
+
+        details: TypingEngine.finished ? "Finished " + rpc.label : (rpc.typing ? Config.username + " is typeShitting" : "Idle")
+        state: TypingEngine.finished ? Math.round(TypingEngine.wpm) + " wpm · " + Math.round(TypingEngine.accuracy) + "% acc · " + Math.round(TypingEngine.consistency) + "% con" : rpc.label
+        startTimestamp: rpc.typing ? rpc.typingStart : rpc.sessionStart
+        endTimestamp: rpc.typing && appWindow.testMode === "time" ? rpc.typingStart + TypingEngine.testDurationSeconds : 0
+    }
+
+    Connections {
+        target: TypingEngine
+        function onStartedChanged() {
+            if (TypingEngine.started) {
+                rpc.typingStart = Math.floor(Date.now() / 1000);
+            }
+        }
+        function onFinishedChanged() {
+            if (TypingEngine.finished) {
+                rpc.pushActivity({
+                    details: "Finished " + rpc.label,
+                    state: Math.round(TypingEngine.wpm) + " wpm · " + Math.round(TypingEngine.accuracy) + "% acc · " + Math.round(TypingEngine.consistency) + "% con",
+                    start: rpc.sessionStart,
+                    end: 0
+                });
+            }
+        }
+    }
+
     ShaderScene {
         id: sceneLayer
         anchors.fill: parent
@@ -373,38 +411,6 @@ Window {
             label += " + punctuation";
         }
         return label;
-    }
-
-    function syncDiscord() {
-        Discord.setEnabled(Config.discordEnabled);
-        if (!Config.discordEnabled) {
-            return;
-        }
-        const label = appWindow.discordLabel();
-        if (TypingEngine.finished) {
-            Discord.setFinished(label, TypingEngine.wpm, TypingEngine.accuracy, TypingEngine.consistency);
-        } else if (TypingEngine.started) {
-            const timed = appWindow.testMode === "time";
-            Discord.setTyping(Config.username, label, timed ? TypingEngine.testDurationSeconds : 0);
-        } else {
-            Discord.setIdle(label);
-        }
-    }
-
-    Connections {
-        target: TypingEngine
-        function onStartedChanged() {
-            appWindow.syncDiscord();
-        }
-        function onFinishedChanged() {
-            appWindow.syncDiscord();
-        }
-    }
-    Connections {
-        target: Config
-        function onConfigChanged() {
-            appWindow.syncDiscord();
-        }
     }
 
     function leaveAftermathThen(action) {

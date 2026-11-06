@@ -1,17 +1,17 @@
 cmake_minimum_required(VERSION 3.21)
-project(typeshi VERSION 0.1.23)
+project(typeshi VERSION 0.1.24)
 
 option(FLATPAK_BUILD "Build for Flatpak packaging" OFF)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_AUTOMOC ON)
 
-find_package(Qt6 REQUIRED COMPONENTS Core Gui Qml Quick Sql)
+find_package(Qt6 REQUIRED COMPONENTS Core Gui Qml Quick Sql Network)
 
 qt_standard_project_setup()
 qt_policy(SET QTP0004 NEW)
 
-set(RYU_MODULES "Shapes;Extraa" CACHE STRING "" FORCE)
+set(RYU_MODULES "Shapes;Extraa;Discord" CACHE STRING "" FORCE)
 set(RYU_STATIC ON CACHE BOOL "" FORCE)
 set(RYU_INSTALL OFF CACHE BOOL "" FORCE)
 add_subdirectory(third_party/ryu)
@@ -59,8 +59,6 @@ qt_add_qml_module(typeshi
         HistoryManager.hpp
         ConfettiRenderer.cpp
         ConfettiRenderer.hpp
-        DiscordRPC.cpp
-        DiscordRPC.hpp
         QuoteManager.cpp
         QuoteManager.hpp
         FuzzyFinder.cpp
@@ -83,10 +81,13 @@ target_link_libraries(typeshi PRIVATE
     Qt6::Qml
     Qt6::Quick
     Qt6::Sql
+    Qt6::Network 
     Ryu::Shapes
     Ryu::Shapesplugin
     Ryu::Extraa
     Ryu::Extraaplugin
+    Ryu::Discord
+    Ryu::Discordplugin  
 )
 
 qt_import_qml_plugins(typeshi)
